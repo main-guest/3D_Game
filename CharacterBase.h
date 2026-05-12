@@ -18,7 +18,7 @@ public:
 	CharacterBase();
 	virtual ~CharacterBase();
 
-	virtual void Init(const CHAR* modelPath);
+	virtual void Init(const TCHAR* modelPath);
 	virtual void Update(Object& object);
 	virtual void Draw();
 

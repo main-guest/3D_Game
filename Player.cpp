@@ -2,28 +2,21 @@
 #include <cmath>
 
 Player::Player()
-	:handle(-1),
-	pos(VGet(0.0f, 0.0f, 0.0f)),
-	characterAngle(0.0f),
-	velocityY(0.0f),
-	isGround(false),
-	currentAnimAttach(-1),
-	animTime(0.0f),
-	jumpRequest(false),
-	oldMouse(0)
+	:oldMouse(0),
+	jumpRequest(false)
 {
 
 }
 
 Player::~Player()
 {
-	MV1DeleteModel(handle);
+
 }
 
 void Player::Init()
 {
 	// ===== モデル読み込み =====
-	handle = MV1LoadModel(_T("mv1model/Player2.mv1"));
+	handle = MV1LoadModel(_T("mv1model/Player.mv1"));
 
 	// ===== アニメーション番号 =====
 	idleAnim = 0;
@@ -35,12 +28,11 @@ void Player::Init()
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
-	currentAnimAttach = MV1AttachAnim(handle, idleAnim);
-
-	animTime = 0.0f;
+	
+	ChangeAnimation(idleAnim);
 
 	// ===== 初期位置 =====
-	MV1SetPosition(handle, pos);
+	//MV1SetPosition(handle, pos);
 
 	//// ===== アニメ確認 =====
 	//int animNum = MV1GetAnimNum(handle);
@@ -58,7 +50,7 @@ void Player::Update(float cameraAngle, Object& object)
 	float moveX = 0.0f;
 	float moveZ = 0.0f;
 
-	bool canMove = currentState != AnimState::Attack01 && !jumpRequest && currentState != AnimState::JumpEnd;
+	bool canMove = currentState != AnimState::Attack01 && currentState != AnimState::JumpEnd && !jumpRequest;
 
 	//　=====　入力　=====
 	if (canMove)
@@ -161,36 +153,15 @@ void Player::Update(float cameraAngle, Object& object)
 	}
 	
 	//　=====　重力　=====
-	velocityY += gravity;
+	UpdateGravity(object);
 
-	VECTOR newPos = pos;
+	//　=====　着地　=====
 
-	newPos.y += velocityY;
-
-	//　=====　Y方向当たり判定　=====
-
-	if (!object.CheckCollision(newPos, radius))
+	if (isGround && currentState == AnimState::JumpLoop)
 	{
-		pos.y = newPos.y;
+		currentState = AnimState::JumpEnd;
 
-		isGround = false;
-	}
-	else
-	{
-		// 落下中のみ接地扱い
-		if (velocityY <= 0.0f)
-		{
-			isGround = true;
-
-			if (currentState == AnimState::JumpLoop)
-			{
-				currentState = AnimState::JumpEnd;
-
-				ChangeAnimation(jumpEndAnim);
-			}
-		}
-
-		velocityY = 0.0f;
+		ChangeAnimation(jumpEndAnim);
 	}
 
 	//　=====　地面判定　=====
@@ -246,6 +217,7 @@ void Player::Update(float cameraAngle, Object& object)
 		}
 	}
 
+	//　=====　JumpEnd終了　=====
 	if (currentState == AnimState::JumpEnd)
 	{
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
@@ -258,6 +230,7 @@ void Player::Update(float cameraAngle, Object& object)
 		}
 	}
 
+	//　=====　Attack終了　=====
 	if (currentState == AnimState::Attack01)
 	{
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
@@ -271,22 +244,7 @@ void Player::Update(float cameraAngle, Object& object)
 	}
 
 	//　=====　アニメーション更新　=====
-	animTime += 0.7f;
-
-	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-	bool isLoopAnim =
-		currentState == AnimState::Idle ||
-		currentState == AnimState::Walk ||
-		currentState == AnimState::JumpLoop;
-
-	// ループ
-	if (isLoopAnim && animTime >= totalTime)
-	{
-		animTime = 0.0f;
-	}
-
-	MV1SetAttachAnimTime(handle, currentAnimAttach, animTime);
+	UpdateAnimation();
 
 	//　=====　反映　=====
 	MV1SetPosition(handle, pos);
@@ -294,26 +252,26 @@ void Player::Update(float cameraAngle, Object& object)
 
 }
 
-void Player::ChangeAnimation(int animIndex)
-{
-	// ===== 前のアニメ削除 =====
-	if (currentAnimAttach != -1)
-	{
-		MV1DetachAnim(handle, currentAnimAttach);
-	}
-	// ===== 新しいアニメ設定 =====
-
-	currentAnimAttach = MV1AttachAnim(handle, animIndex);
-
-	// ===== 再生時間リセット =====
-	animTime = 0.0f;
-}
-
-void Player::Draw()
-{
-	MV1DrawModel(handle);
-
-	DrawFormatString(0, 380, GetColor(255, 255, 255), _T("PLAYERの座標:　(%.2f,　%.2f,　%.2f)"), pos.x, pos.y, pos.z);
-	DrawFormatString(0, 400, GetColor(255, 255, 255), _T("velocityY:　(%.2f)"), velocityY);
-	DrawFormatString(0, 420, GetColor(255, 255, 255), _T("isGround:　(%d)"), isGround);
-}
+//void Player::ChangeAnimation(int animIndex)
+//{
+//	// ===== 前のアニメ削除 =====
+//	if (currentAnimAttach != -1)
+//	{
+//		MV1DetachAnim(handle, currentAnimAttach);
+//	}
+//	// ===== 新しいアニメ設定 =====
+//
+//	currentAnimAttach = MV1AttachAnim(handle, animIndex);
+//
+//	// ===== 再生時間リセット =====
+//	animTime = 0.0f;
+//}
+//
+//void Player::Draw()
+//{
+//	MV1DrawModel(handle);
+//
+//	DrawFormatString(0, 380, GetColor(255, 255, 255), _T("PLAYERの座標:　(%.2f,　%.2f,　%.2f)"), pos.x, pos.y, pos.z);
+//	DrawFormatString(0, 400, GetColor(255, 255, 255), _T("velocityY:　(%.2f)"), velocityY);
+//	DrawFormatString(0, 420, GetColor(255, 255, 255), _T("isGround:　(%d)"), isGround);
+//}

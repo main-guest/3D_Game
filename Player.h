@@ -1,20 +1,7 @@
 #pragma once
-#include "Dxlib.h"
-#include "Object.h"
+#include "CharacterBase.h"
 
-enum class AnimState
-{
-	Idle,
-	Walk,
-
-	JumpStart,
-	JumpLoop,
-	JumpEnd,
-
-	Attack01
-};
-
-class Player
+class Player : public CharacterBase
 {
 public:
 	Player();
@@ -23,49 +10,13 @@ public:
 	void Init();
 	void Update(float cameraAngle, Object& object);
 
-	void ChangeAnimation(int animIndex);
-
-	void Draw();
-
-	VECTOR GetPos() const { return pos; }
-
 private:
-	// ===== モデル =====
-	int handle;
+	// ===== 入力 =====
+	int oldMouse;
 
-	VECTOR pos;
-
-	float characterAngle;
-
-	float velocityY;
-
-	bool isGround;
-
-	// ===== アニメーション =====
-	AnimState currentState;
-
-	int currentAnimAttach;
-	float animTime;
-
-	int idleAnim;
-	int walkAnim;
-
-	int jumpStartAnim;
-	int jumpLoopAnim;
-	int jumpEndAnim;
-
-	int attack01Anim;
+	// ===== 状態 =====
 
 	bool jumpRequest;
 
-	int oldMouse;
-
-	const float jumpStartFrame = 52.0f;
-
-	const float speed = 2.5f;
-	const float gravity = -0.2f;
-	const float radius = 10.0f;			//　PLAYER当たり判定半径
-	const float jumpPower = 7.0f;
-
-	const float groundHeight = 0.0f;
+	const float jumpStartFrame = 56.0f;
 };
