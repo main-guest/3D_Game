@@ -3,6 +3,7 @@
 #include "DxLib.h"
 
 #include "Player.h"
+#include "Enemy.h"
 #include "Camera.h"
 #include "Object.h"
 
@@ -25,10 +26,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// ===== オブジェクト生成 =====
 	Player player;
+	Enemy enemy;
 	Camera camera;
 	Object object;
 
 	player.Init();
+	enemy.Init(VGet(500, 0, 200));
 	camera.Init();
 	object.Init();
 
@@ -48,12 +51,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --- 更新 ---
 		camera.Update(player.GetPos());
 		player.Update(deltaTime,camera.GetYaw(), object);
+		enemy.Update(deltaTime, object, player.GetPos());
 
 		// --- 描画 ---
 		ClearDrawScreen();
 
 		object.Draw();
 		player.Draw();
+		enemy.Draw();
 
 		// デバッグ表示
 		VECTOR camPos = camera.GetPosition();
