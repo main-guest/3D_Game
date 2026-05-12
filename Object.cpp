@@ -108,7 +108,7 @@ void Object::Draw()
 	MV1DrawModel(groundHandle);
 
 	// ===== Box•`‰æ =====
-	for (const auto& box : boxes)
+	for (auto& box : boxes)
 	{
 		MV1SetPosition(box.handle, box.pos);
 

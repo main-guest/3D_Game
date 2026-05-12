@@ -3,9 +3,8 @@
 #include "DxLib.h"
 
 #include "Player.h"
-#include "Enemy.h"
 #include "Camera.h"
-#include "Object.h"
+#include "Stage.h"
 
 // ===== 定数 =====
 const int SCREEN_W = 1280;
@@ -26,14 +25,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// ===== オブジェクト生成 =====
 	Player player;
-	Enemy enemy;
 	Camera camera;
-	Object object;
+	Stage stage;
 
 	player.Init();
-	enemy.Init(VGet(500, 0, 200));
 	camera.Init();
-	object.Init();
+	stage.Init();
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -50,15 +47,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// --- 更新 ---
 		camera.Update(player.GetPos());
-		player.Update(deltaTime,camera.GetYaw(), object);
-		enemy.Update(deltaTime, object, player.GetPos());
+		player.Update(deltaTime, camera.GetYaw(), stage.GetObject());
+		stage.Update(deltaTime, player.GetPos());
 
 		// --- 描画 ---
 		ClearDrawScreen();
 
-		object.Draw();
+		stage.Draw();
 		player.Draw();
-		enemy.Draw();
 
 		// デバッグ表示
 		VECTOR camPos = camera.GetPosition();
