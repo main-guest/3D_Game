@@ -53,13 +53,13 @@ void CharacterBase::ChangeAnimation(int animIndex)
 	animTime = 0.0f;
 }
 
-void CharacterBase::UpdateGravity(Object& object)
+void CharacterBase::UpdateGravity(float deltaTime, Object& object)
 {
-	velocityY += gravity;
+	velocityY += gravity * deltaTime;
 
 	VECTOR newPos = pos;
 
-	newPos.y += velocityY;
+	newPos.y += velocityY * deltaTime;
 
 	// Boxè’ìÀ
 	if (!object.CheckCollision(newPos, radius))
@@ -87,9 +87,9 @@ void CharacterBase::UpdateGravity(Object& object)
 	}
 }
 
-void CharacterBase::UpdateAnimation()
+void CharacterBase::UpdateAnimation(float deltaTime)
 {
-	animTime += 1.0f;
+	animTime += 60.0f * deltaTime;
 
 	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 

@@ -8,7 +8,7 @@ public:
 	virtual ~Player();
 
 	void Init();
-	void Update(float cameraAngle, Object& object);
+	void Update(float deltaTime, float cameraAngle, Object& object);
 
 private:
 	// ===== “ü—Í =====
@@ -18,5 +18,5 @@ private:
 
 	bool jumpRequest;
 
-	const float jumpStartFrame = 56.0f;
+	const float jumpStartFrame = 61.0f;
 };

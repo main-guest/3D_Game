@@ -1,6 +1,7 @@
 #include <tchar.h>
 #include <cmath>
 #include "DxLib.h"
+
 #include "Player.h"
 #include "Camera.h"
 #include "Object.h"
@@ -31,15 +32,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	camera.Init();
 	object.Init();
 
+	// ===== deltaTime用 =====
+	LONGLONG prevTime = GetNowHiPerformanceCount();
+
 	// ===== メインループ =====
 	while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
 	{
 		// --- 開始時間 ---
-		LONGLONG start = GetNowHiPerformanceCount();
+		LONGLONG nowTime = GetNowHiPerformanceCount();
+
+		float deltaTime = (nowTime - prevTime) / 1000000.0f;
+
+		prevTime = nowTime;
 
 		// --- 更新 ---
 		camera.Update(player.GetPos());
-		player.Update(camera.GetYaw(), object);
+		player.Update(deltaTime,camera.GetYaw(), object);
 
 		// --- 描画 ---
 		ClearDrawScreen();
@@ -50,11 +58,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// デバッグ表示
 		VECTOR camPos = camera.GetPosition();
 		DrawFormatString(0, 360, GetColor(255, 255, 255), _T("CamPos: X=%.2f Y=%.2f Z=%.2f"), camPos.x, camPos.y, camPos.z);
+		DrawFormatString(0, 340, GetColor(255, 255, 255), _T("deltaTime : %.4f"), deltaTime);
 
 		ScreenFlip();
 
 		// 60FPS待機
-		while (GetNowHiPerformanceCount() - start < 16667)
+		while (GetNowHiPerformanceCount() - nowTime < 16667)
 		{
 
 		}

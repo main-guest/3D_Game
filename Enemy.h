@@ -6,5 +6,5 @@ class Enemy :public CharacterBase
 public:
 	void Init(VECTOR startPos);
 
-	void Update(Object& object, VECTOR playerPos);
+	void Update(float deltaTime, Object& object, VECTOR playerPos);
 };

@@ -1,7 +1,7 @@
 #include "Enemy.h"
 #include <cmath>
 
-void Enemy::Update(Object& object, VECTOR playerPos)
+void Enemy::Update(float deltaTime, Object& object, VECTOR playerPos)
 {
 	VECTOR dir;
 
@@ -27,7 +27,7 @@ void Enemy::Update(Object& object, VECTOR playerPos)
 		currentState = AnimState::Idle;
 	}
 
-	UpdateGravity(object);
+	UpdateGravity(deltaTime, object);
 
-	UpdateAnimation();
+	UpdateAnimation(deltaTime);
 }

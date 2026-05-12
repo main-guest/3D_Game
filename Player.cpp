@@ -45,7 +45,7 @@ void Player::Init()
 	//}
 }
 
-void Player::Update(float cameraAngle, Object& object)
+void Player::Update(float deltaTime, float cameraAngle, Object& object)
 {
 	float moveX = 0.0f;
 	float moveZ = 0.0f;
@@ -109,7 +109,7 @@ void Player::Update(float cameraAngle, Object& object)
 		// X方向
 		VECTOR newPos = pos;
 
-		newPos.x += move.x * speed;
+		newPos.x += move.x * speed * deltaTime;
 
 		if (!object.CheckCollision(newPos, radius))
 		{
@@ -119,7 +119,7 @@ void Player::Update(float cameraAngle, Object& object)
 		// Z方向
 		newPos = pos;
 
-		newPos.z += move.z * speed;
+		newPos.z += move.z * speed * deltaTime;
 
 		if (!object.CheckCollision(newPos, radius))
 		{
@@ -135,7 +135,7 @@ void Player::Update(float cameraAngle, Object& object)
 		while (diff < -DX_PI)diff += DX_TWO_PI;
 
 		// 滑らか回転
-		characterAngle += diff * 0.2f;
+		characterAngle += diff * 10.0f * deltaTime;
 	}
 
 	// ===== Y方向移動 =====
@@ -153,7 +153,7 @@ void Player::Update(float cameraAngle, Object& object)
 	}
 	
 	//　=====　重力　=====
-	UpdateGravity(object);
+	UpdateGravity(deltaTime, object);
 
 	//　=====　着地　=====
 
@@ -244,7 +244,7 @@ void Player::Update(float cameraAngle, Object& object)
 	}
 
 	//　=====　アニメーション更新　=====
-	UpdateAnimation();
+	UpdateAnimation(deltaTime);
 
 	//　=====　反映　=====
 	MV1SetPosition(handle, pos);

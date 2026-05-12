@@ -51,14 +51,14 @@ protected:
 	// ===== ‹¤’ÊŠÖ” ====
 	void ChangeAnimation(int animIndex);
 
-	void UpdateGravity(Object& object);
+	void UpdateGravity(float deltaTime, Object& object);
 
-	void UpdateAnimation();
+	void UpdateAnimation(float deltaTime);
 
 	// ===== ’è” ====
-	const float speed = 2.5f;
-	const float gravity = -0.2f;
+	const float speed = 220.0f;
+	const float gravity = -1200.0f;
 	const float radius = 10.0f;		// “–‚½‚è”»’è”¼Œa
-	const float jumpPower = 7.0f;
+	const float jumpPower = 500.0f;
 	const float groundHeight = 0.0f;
 };
