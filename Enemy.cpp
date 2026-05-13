@@ -1,5 +1,7 @@
-#include "Enemy.h"
 #include <cmath>
+#include "Enemy.h"
+#include "CollisionWorld.h"
+#include "PhysicsManager.h"
 
 Enemy::Enemy()
 	:jumpRequest(false)
@@ -36,7 +38,7 @@ void Enemy::Init(VECTOR startPos)
 	ChangeAnimation(idleAnim);
 }
 
-void Enemy::Update(float deltaTime, Object& object, VECTOR playerPos)
+void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 {
 	VECTOR dir = VGet(0, 0, 0);
 
@@ -45,7 +47,9 @@ void Enemy::Update(float deltaTime, Object& object, VECTOR playerPos)
 
 	float distance = sqrtf(dir.x * dir.x + dir.z * dir.z);
 
-	bool isMove = false;
+	bool isMove = (velocity.x != 0 || velocity.z != 0);
+
+	velocity = VGet(0, 0, 0);
 
 	// ==== プレイヤー追跡 ====
 	if (distance < searchRange)
@@ -55,26 +59,14 @@ void Enemy::Update(float deltaTime, Object& object, VECTOR playerPos)
 			dir.x /= distance;
 			dir.z /= distance;
 
-			// ===== 移動 =====
-			VECTOR newPos = pos;
+			float sinY = sinf(characterAngle);
+			float cosY = cosf(characterAngle);
 
-			// X方向
-			newPos.x += dir.x * speed * deltaTime;
+			// ワールド方向
+			velocity.x = dir.x * speed;
+			velocity.z = dir.z * speed;
 
-			if (!object.CheckCollision(newPos, radius))
-			{
-				pos.x = newPos.x;
-			}
-
-			// Z方向
-			newPos = pos;
-
-			newPos.z += dir.z * speed * deltaTime;
-
-			if (!object.CheckCollision(newPos, radius))
-			{
-				pos.z = newPos.z;
-			}
+			isMove = true;
 
 			// ===== 回転 =====
 			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
@@ -91,22 +83,12 @@ void Enemy::Update(float deltaTime, Object& object, VECTOR playerPos)
 				diff += DX_TWO_PI;
 			}
 
-			characterAngle += diff * 10.0f * deltaTime;
-
-			isMove = true;
+			characterAngle += diff * 10.0f * dt;
 		}
 	}
 
-	//　=====　重力　=====
-	UpdateGravity(deltaTime, object);
-
-	//　=====　着地　=====
-	if (isGround && currentState == AnimState::JumpLoop)
-	{
-		currentState = AnimState::JumpEnd;
-
-		ChangeAnimation(jumpEndAnim);
-	}
+	//　=====　物理処理　=====
+	physics.MoveAndCheckCollision(pos, velocity, radius, isGround, dt);
 
 	//　=====　状態更新　=====
 	if (currentState != AnimState::Attack01 && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd)
@@ -144,21 +126,8 @@ void Enemy::Update(float deltaTime, Object& object, VECTOR playerPos)
 		}
 	}
 
-	// ===== JumpEnd終了 =====
-	if (currentState == AnimState::JumpEnd)
-	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		if (animTime >= totalTime - 1.0f)
-		{
-			currentState = isMove ? AnimState::Walk : AnimState::Idle;
-
-			ChangeAnimation(isMove ? walkAnim : idleAnim);
-		}
-	}
-
 	// ===== アニメーション更新 =====
-	UpdateAnimation(deltaTime);
+	UpdateAnimation(dt);
 
 	// ===== モデル反映 =====
 	MV1SetPosition(handle, pos);

@@ -1,6 +1,5 @@
 #pragma once
 #include "Dxlib.h"
-#include "Object.h"
 
 enum class AnimState
 {
@@ -19,7 +18,6 @@ public:
 	virtual ~CharacterBase();
 
 	virtual void Init(const TCHAR* modelPath);
-	virtual void Update(Object& object);
 	virtual void Draw();
 
 	VECTOR GetPos() const { return pos; }
@@ -31,9 +29,6 @@ protected:
 	// ===== 座標 =====
 	VECTOR pos;
 	float characterAngle;
-
-	float velocityY;
-	bool isGround;
 
 	// ===== アニメーション =====
 	AnimState currentState;
@@ -51,9 +46,7 @@ protected:
 	// ===== 共通関数 ====
 	void ChangeAnimation(int animIndex);
 
-	void UpdateGravity(float deltaTime, Object& object);
-
-	void UpdateAnimation(float deltaTime);
+	void UpdateAnimation(float dt);
 
 	// ===== 定数 ====
 	const float speed = 220.0f;
@@ -61,4 +54,6 @@ protected:
 	const float radius = 10.0f;		// 当たり判定半径
 	const float jumpPower = 500.0f;
 	const float groundHeight = 0.0f;
+
+	bool isGround = true;
 };

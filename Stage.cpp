@@ -1,43 +1,36 @@
 #include "Stage.h"
 
-Stage::Stage()
+void Stage::Init(CollisionWorld& world, PhysicsManager& physicsRef)
 {
+	// ===== 地形 =====
+	collisionWorld = &world;
 
-}
-
-Stage::~Stage()
-{
-
-}
-
-void Stage::Init()
-{
-	// ===== Object =====
-	object.Init();
+	// ===== 物理 =====
+	physics = &physicsRef;
 
 	// ===== Enemy生成 =====
 	auto enemy1 = std::make_unique<Enemy>();
-	enemy1->Init(VGet(600, 0, 600));
+	enemy1->Init(VGet(1000, 0, 1000));
 	enemies.push_back(std::move(enemy1));
 
 	auto enemy2 = std::make_unique<Enemy>();
-	enemy2->Init(VGet(-600, 0, -600));
+	enemy2->Init(VGet(-1000, 0, -1000));
 	enemies.push_back(std::move(enemy2));
 }
 
-void Stage::Update(float deltaTime, VECTOR playerPos)
+void Stage::Update(float dt, VECTOR playerPos)
 {
 	// ===== Enemy更新 =====
 	for (auto& enemy : enemies)
 	{
-		enemy->Update(deltaTime, object, playerPos);
+		enemy->Update(dt, playerPos, *physics);
 	}
 }
 
 void Stage::Draw()
 {
 	// ===== Object描画 =====
-	object.Draw();
+	collisionWorld->Draw();
 
 	// ===== Enemy描画 =====
 	for (auto& enemy : enemies)

@@ -1,6 +1,8 @@
 #pragma once
 #include "CharacterBase.h"
 
+class PhysicsManager;
+
 class Enemy :public CharacterBase
 {
 public:
@@ -9,14 +11,16 @@ public:
 
 	void Init(VECTOR startPos);
 
-	void Update(float deltaTime, Object& object, VECTOR playerPos);
+	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
 
 private:
+	VECTOR velocity;
+
 	// ==== AI ====
 	float searchRange = 500.0f;
 
 	// ==== ƒWƒƒƒ“ƒv ====
-	bool jumpRequest;
+	bool jumpRequest = false;
 
 	const float jumpStartFrame = 50.0f;
 };

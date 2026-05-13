@@ -4,8 +4,6 @@ CharacterBase::CharacterBase()
 	:handle(-1),
 	pos(VGet(0.0f, 0.0f, 0.0f)),
 	characterAngle(0.0f),
-	velocityY(0.0f),
-	isGround(false),
 	currentState(AnimState::Idle),
 	currentAnimAttach(-1),
 	animTime(0.0f)
@@ -28,11 +26,6 @@ void CharacterBase::Init(const TCHAR* modelPath)
 	MV1SetPosition(handle, pos);
 }
 
-void CharacterBase::Update(Object& object)
-{
-
-}
-
 void CharacterBase::Draw()
 {
 	MV1DrawModel(handle);
@@ -47,62 +40,18 @@ void CharacterBase::ChangeAnimation(int animIndex)
 	}
 
 	// 新アニメ設定
-	currentAnimAttach = MV1AttachAnim(handle, animIndex);
+	currentAnimAttach = MV1AttachAnim(handle, animIndex, -1, FALSE);
 
 	// 再生時間リセット
 	animTime = 0.0f;
 }
 
-void CharacterBase::UpdateGravity(float deltaTime, Object& object)
+void CharacterBase::UpdateAnimation(float dt)
 {
-	velocityY += gravity * deltaTime;
 
-	VECTOR newPos = pos;
+	if (currentAnimAttach == -1) return;
 
-	newPos.y += velocityY * deltaTime;
-
-	// Box衝突
-	if (!object.CheckCollision(newPos, radius))
-	{
-		pos.y = newPos.y;
-
-		isGround = false;
-	}
-	else
-	{
-		if (velocityY <= 0.0f)
-		{
-			isGround = true;
-		}
-	}
-
-	// 地面
-	if (pos.y < groundHeight)
-	{
-		pos.y = groundHeight;
-
-		velocityY = 0.0f;
-
-		isGround = true;
-	}
-}
-
-void CharacterBase::UpdateAnimation(float deltaTime)
-{
-	animTime += 60.0f * deltaTime;
-
-	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-	bool isLoopAnim =
-		currentState == AnimState::Idle ||
-		currentState == AnimState::Walk ||
-		currentState == AnimState::JumpLoop;
-
-	// ループ
-	if (isLoopAnim && animTime >= totalTime)
-	{
-		animTime = 0.0f;
-	}
+	animTime += 60.0f * dt;
 
 	MV1SetAttachAnimTime(handle, currentAnimAttach, animTime);
 }

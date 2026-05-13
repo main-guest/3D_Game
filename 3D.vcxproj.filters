@@ -24,7 +24,7 @@
     <ClCompile Include="Camera.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Object.cpp">
+    <ClCompile Include="CollisionWorld.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Enemy.cpp">
@@ -36,6 +36,9 @@
     <ClCompile Include="Stage.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="PhysicsManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Player.h">
@@ -44,7 +47,7 @@
     <ClInclude Include="Camera.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Object.h">
+    <ClInclude Include="CollisionWorld.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Enemy.h">
@@ -54,6 +57,9 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Stage.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsManager.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>

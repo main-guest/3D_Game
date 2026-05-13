@@ -139,7 +139,8 @@
     <ClCompile Include="CharacterBase.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Object.cpp" />
+    <ClCompile Include="CollisionWorld.cpp" />
+    <ClCompile Include="PhysicsManager.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Stage.cpp" />
   </ItemGroup>
@@ -147,7 +148,8 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CharacterBase.h" />
     <ClInclude Include="Enemy.h" />
-    <ClInclude Include="Object.h" />
+    <ClInclude Include="CollisionWorld.h" />
+    <ClInclude Include="PhysicsManager.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Stage.h" />
   </ItemGroup>

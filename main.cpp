@@ -5,6 +5,8 @@
 #include "Player.h"
 #include "Camera.h"
 #include "Stage.h"
+#include "CollisionWorld.h"
+#include "PhysicsManager.h"
 
 // ===== 定数 =====
 const int SCREEN_W = 1280;
@@ -23,14 +25,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SetMouseDispFlag(FALSE); // マウス非表示
 	SetDrawScreen(DX_SCREEN_BACK);
 
+	// ===== 地形生成 =====
+	CollisionWorld world;
+	world.Init();
+
+	PhysicsManager physics;
+	physics.Init(&world);
+
 	// ===== オブジェクト生成 =====
 	Player player;
 	Camera camera;
 	Stage stage;
 
-	player.Init();
+	player.Init(&world);
 	camera.Init();
-	stage.Init();
+
+	stage.Init(world, physics);
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -47,7 +57,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// --- 更新 ---
 		camera.Update(player.GetPos());
-		player.Update(deltaTime, camera.GetYaw(), stage.GetObject());
+		player.Update(deltaTime, camera.GetYaw(), physics);
 		stage.Update(deltaTime, player.GetPos());
 
 		// --- 描画 ---
