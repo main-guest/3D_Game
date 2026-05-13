@@ -29,6 +29,30 @@ void Stage::Update(float dt, VECTOR playerPos)
 		enemy->Update(dt, playerPos, physics);
 	}
 
+	// ===== キャラ衝突用リスト作成 =====
+	std::vector<VECTOR> enemyPositions;
+
+	for (auto& enemy : enemies)
+	{
+		if (!enemy->IsDead())
+		{
+			enemyPositions.push_back(enemy->GetPos());
+		}
+	}
+
+	// ===== Player押し返し =====
+	if (player)
+	{
+		VECTOR p = player->GetPos();
+		VECTOR v = player->GetVelocity();
+
+		physics.ResolveCharacterCollision(p, v, 10.0f, enemyPositions);
+
+		// 位置反映
+		player->SetPos(p);
+		player->SetVelocity(v);
+	}
+
 	// ===== Player攻撃判定 =====
 	if (player)
 	{

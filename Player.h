@@ -15,6 +15,13 @@ public:
 
 	void CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies);
 
+	void SetPos(const VECTOR& p) { pos = p; }
+
+	const VECTOR& GetVelocity() const;
+	VECTOR& GetVelocity();
+
+	void SetVelocity(const VECTOR& v);
+
 private:
 	// “à•”ˆ—
 	void UpdateInput(float dt, float cameraAngle);

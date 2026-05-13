@@ -31,7 +31,7 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	UpdateInput(dt, cameraAngle);
 
 	//　=====　物理　=====
-	physics.MoveAndCheckCollision(pos, velocity, radius, isGround, dt);
+	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
 
 	//　=====　状態更新　=====
 	UpdateState();
@@ -45,6 +45,14 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　反映　=====
 	MV1SetPosition(handle, pos);
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
+
+	DrawFormatString(
+		20, 220,
+		GetColor(255, 255, 255),
+		_T("State: %d  AnimTime: %.2f"),
+		(int)currentState,
+		animTime
+	);
 }
 
 void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -109,6 +117,22 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 			attackHit = true;
 
+			// ===== ヒットデバッグ =====
+			DrawFormatString(
+				20, 200,
+				GetColor(0, 255, 0),
+				_T("HIT!! Enemy damaged")
+			);
+
+			DrawSphere3D(
+				enemy->GetPos(),
+				20.0f,
+				12,
+				GetColor(0, 255, 0),
+				GetColor(0, 255, 0),
+				FALSE
+			);
+
 			break;
 		}
 	}
@@ -122,6 +146,31 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 		GetColor(255, 0, 0),
 		FALSE
 	);
+
+	// 中心点も見たいなら小さい球
+	DrawSphere3D(
+		attackPos,
+		5.0f,
+		8,
+		GetColor(255, 255, 0),
+		GetColor(255, 255, 0),
+		TRUE
+	);
+}
+
+const VECTOR& Player::GetVelocity() const
+{
+	return velocity;
+}
+
+VECTOR& Player::GetVelocity()
+{
+	return velocity;
+}
+
+void Player::SetVelocity(const VECTOR& v)
+{
+	velocity = v;
 }
 
 void Player::UpdateInput(float dt, float cameraAngle)

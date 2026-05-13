@@ -22,6 +22,8 @@ public:
 
 	VECTOR GetPos() const { return pos; }
 
+	float GetRadius() const { return radius; }
+
 protected:
 	// ===== ƒ‚ƒfƒ‹ =====
 	int handle;

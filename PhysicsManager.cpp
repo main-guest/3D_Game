@@ -1,3 +1,4 @@
+#include <cmath>
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
 
@@ -6,7 +7,7 @@ void PhysicsManager::Init(CollisionWorld* w)
 	world = w;
 }
 
-bool PhysicsManager::MoveAndCheckCollision(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt)
+void PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt)
 {
 	// ===== 重力 =====
 	velocity.y -= gravity * dt;
@@ -34,7 +35,7 @@ bool PhysicsManager::MoveAndCheckCollision(VECTOR& pos, VECTOR& velocity, float 
 	nextPos = pos;
 	nextPos.y += velocity.y * dt;
 
-	float groundY = 0.0f;
+	float groundY;
 
 	if (velocity.y > 0.0f)
 	{
@@ -56,16 +57,41 @@ bool PhysicsManager::MoveAndCheckCollision(VECTOR& pos, VECTOR& velocity, float 
 			pos.y = groundY + radius;
 		}
 	}
+}
 
-	// ===== 地面 =====
-	if (pos.y < groundHeight)
+void PhysicsManager::ResolveCharacterCollision(VECTOR& pos, VECTOR& velocity, float radius, const std::vector<VECTOR>& others)
+{
+	for (const auto& o : others)
 	{
-		pos.y = groundHeight;
+		float dx = pos.x - o.x;
+		float dz = pos.z - o.z;
 
-		velocity.y = 0.0f;
+		float distSq = dx * dx + dz * dz;
+		float minDist = radius * 10.0f; // 同サイズ想定
 
-		isGround = true;
+		if (distSq < minDist * minDist)
+		{
+			float dist = sqrtf(distSq);
+			if (dist < 0.001f) continue;
+
+			// 押し出し方向
+			float pushX = dx / dist;
+			float pushZ = dz / dist;
+
+			float overlap = (minDist - dist);
+
+			// ===== 位置補正（半分ずつ）=====
+			pos.x += pushX * overlap * 0.5f;
+			pos.z += pushZ * overlap * 0.5f;
+
+			// ===== 速度も殺す =====
+			float dot = velocity.x * pushX + velocity.z * pushZ;
+
+			if (dot < 0.0f)
+			{
+				velocity.x -= pushX * dot;
+				velocity.z -= pushZ * dot;
+			}
+		}
 	}
-
-	return true;
 }

@@ -88,7 +88,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 	}
 
 	//　=====　物理処理　=====
-	physics.MoveAndCheckCollision(pos, velocity, radius, isGround, dt);
+	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
 
 	//　=====　状態更新　=====
 	if (currentState != AnimState::Attack01 && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd)
