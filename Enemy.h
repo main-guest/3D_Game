@@ -13,8 +13,16 @@ public:
 
 	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
 
+	bool IsDead() const { return isDead; }
+
+	void Damage(int power);
 private:
 	VECTOR velocity;
+
+	// ==== ステータス ====
+	int hp = 100;
+
+	bool isDead = false;
 
 	// ==== AI ====
 	float searchRange = 500.0f;

@@ -44,7 +44,7 @@ protected:
 	int attack01Anim;
 
 	// ===== ã§í ä÷êî ====
-	void ChangeAnimation(int animIndex);
+	void ChangeAnimation(int animIndex,bool loop);
 
 	void UpdateAnimation(float dt);
 
@@ -56,4 +56,5 @@ protected:
 	const float groundHeight = 0.0f;
 
 	bool isGround = true;
+	bool loopAnim = true;
 };

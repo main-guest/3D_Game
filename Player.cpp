@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
+#include "Enemy.h"
 
 void Player::Init(CollisionWorld* w)
 {
@@ -21,7 +22,7 @@ void Player::Init(CollisionWorld* w)
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
 	
-	ChangeAnimation(idleAnim);
+	ChangeAnimation(idleAnim, true);
 }
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
@@ -44,6 +45,83 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　反映　=====
 	MV1SetPosition(handle, pos);
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
+}
+
+void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
+{
+	// Attack01中のみ
+	if (currentState != AnimState::Attack01)
+	{
+		attackHit = false;
+		return;
+	}
+
+	// 攻撃判定フレーム
+	if (animTime < 20.0f || animTime>35.0f)
+	{
+		return;
+	}
+
+	// 既にヒット済み
+	if (attackHit)
+	{
+		return;
+	}
+
+	// 前方向
+	VECTOR forward;
+
+	forward.x = sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = cosf(characterAngle);
+
+	// 攻撃中心
+	VECTOR attackPos;
+
+	attackPos.x = pos.x + forward.x * 50.0f;
+	attackPos.y = 0.0f;
+	attackPos.z = pos.z + forward.z * 50.0f;
+
+	float attackRadius = 40.0f;
+
+	// Enemyチェック
+	for (auto& enemy : enemies)
+	{
+		if (enemy->IsDead())
+		{
+			continue;
+		}
+
+		VECTOR epos = enemy->GetPos();
+
+		float dx = epos.x - attackPos.x;
+		float dy = epos.y - attackPos.y;
+		float dz = epos.z - attackPos.z;
+
+		float distanceSq =
+			dx * dx +
+			dy * dy +
+			dz * dz;
+
+		if (distanceSq <= attackRadius * attackRadius)
+		{
+			enemy->Damage(20);
+
+			attackHit = true;
+
+			break;
+		}
+	}
+
+	// デバッグ表示
+	DrawSphere3D(
+		attackPos,
+		attackRadius,
+		16,
+		GetColor(255, 0, 0),
+		GetColor(255, 0, 0),
+		FALSE
+	);
 }
 
 void Player::UpdateInput(float dt, float cameraAngle)
@@ -72,7 +150,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	{
 		currentState = AnimState::Attack01;
 
-		ChangeAnimation(attack01Anim);
+		ChangeAnimation(attack01Anim, false);
 	}
 
 	// ===== ジャンプ =====
@@ -81,7 +159,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 		jumpRequest = true;
 
 		currentState = AnimState::JumpStart;
-		ChangeAnimation(jumpStartAnim);
+		ChangeAnimation(jumpStartAnim, false);
 	}
 
 	// ==== 移動 ====
@@ -137,7 +215,7 @@ void Player::UpdateState()
 
             currentState = AnimState::JumpLoop;
 
-            ChangeAnimation(jumpLoopAnim);
+            ChangeAnimation(jumpLoopAnim, true);
         }
 
         return;
@@ -151,28 +229,30 @@ void Player::UpdateState()
 		// アニメ終了
 		if (animTime >= totalTime)
 		{
+
 			if (fabsf(velocity.x) > 0.1f ||
 				fabsf(velocity.z) > 0.1f)
 			{
 				currentState = AnimState::Walk;
-				ChangeAnimation(walkAnim);
+				ChangeAnimation(walkAnim, true);
 			}
 			else
 			{
 				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim);
+				ChangeAnimation(idleAnim, true);
 			}
 		}
-
         return;
     }
 
     //　=====　着地瞬間検知　=====
-    if (!prevGround && isGround)
+	bool landed = (!prevGround && isGround);
+
+    if (landed && currentState != AnimState::JumpEnd)
     {
         currentState = AnimState::JumpEnd;
 
-        ChangeAnimation(jumpEndAnim);
+        ChangeAnimation(jumpEndAnim, false);
 
         return;
     }
@@ -183,20 +263,20 @@ void Player::UpdateState()
         // アニメ終了判定
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
-        if (animTime >= totalTime)
-        {
-            if (fabsf(velocity.x) > 0.1f ||
-                fabsf(velocity.z) > 0.1f)
-            {
-                currentState = AnimState::Walk;
-                ChangeAnimation(walkAnim);
-            }
-            else
-            {
-                currentState = AnimState::Idle;
-                ChangeAnimation(idleAnim);
-            }
-        }
+		if (animTime >= totalTime - 0.1f)
+		{
+			if (fabsf(velocity.x) > 0.1f ||
+				fabsf(velocity.z) > 0.1f)
+			{
+				currentState = AnimState::Walk;
+				ChangeAnimation(walkAnim, true);
+			}
+			else
+			{
+				currentState = AnimState::Idle;
+				ChangeAnimation(idleAnim, true);
+			}
+		}
 
         return;
     }
@@ -221,15 +301,15 @@ void Player::UpdateState()
         switch (currentState)
         {
         case AnimState::Idle:
-            ChangeAnimation(idleAnim);
+            ChangeAnimation(idleAnim, true);
             break;
 
         case AnimState::Walk:
-            ChangeAnimation(walkAnim);
+            ChangeAnimation(walkAnim, true);
             break;
 
         case AnimState::JumpLoop:
-            ChangeAnimation(jumpLoopAnim);
+            ChangeAnimation(jumpLoopAnim, true);
             break;
         }
     }

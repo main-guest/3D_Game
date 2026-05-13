@@ -50,7 +50,7 @@ void CollisionWorld::Init()
 
 		ground.pos = VGet(0, 0, 0);
 		ground.rotation = VGet(0, 0, 0);
-		ground.halfSize = VGet(1000, 10, 1000);
+		ground.halfSize = VGet(10000, 10, 10000);
 
 		ground.type = CollisionType::Ground;
 

@@ -1,12 +1,15 @@
 #include "Stage.h"
+#include "Player.h"
 
-void Stage::Init(CollisionWorld& world, PhysicsManager& physicsRef)
+void Stage::Init(Player* p)
 {
 	// ===== ínå` =====
-	collisionWorld = &world;
+	collisionWorld.Init();
 
 	// ===== ï®óù =====
-	physics = &physicsRef;
+	physics.Init(&collisionWorld);
+
+	player = p;
 
 	// ===== Enemyê∂ê¨ =====
 	auto enemy1 = std::make_unique<Enemy>();
@@ -23,14 +26,20 @@ void Stage::Update(float dt, VECTOR playerPos)
 	// ===== EnemyçXêV =====
 	for (auto& enemy : enemies)
 	{
-		enemy->Update(dt, playerPos, *physics);
+		enemy->Update(dt, playerPos, physics);
+	}
+
+	// ===== PlayerçUåÇîªíË =====
+	if (player)
+	{
+		player->CheckAttackHit(enemies);
 	}
 }
 
 void Stage::Draw()
 {
 	// ===== Objectï`âÊ =====
-	collisionWorld->Draw();
+	collisionWorld.Draw();
 
 	// ===== Enemyï`âÊ =====
 	for (auto& enemy : enemies)

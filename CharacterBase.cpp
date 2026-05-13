@@ -1,3 +1,4 @@
+#include <cmath>
 #include "CharacterBase.h"
 
 CharacterBase::CharacterBase()
@@ -31,7 +32,7 @@ void CharacterBase::Draw()
 	MV1DrawModel(handle);
 }
 
-void CharacterBase::ChangeAnimation(int animIndex)
+void CharacterBase::ChangeAnimation(int animIndex, bool loop)
 {
 	if (currentAnimAttach != -1)
 	{
@@ -40,18 +41,34 @@ void CharacterBase::ChangeAnimation(int animIndex)
 	}
 
 	// 新アニメ設定
-	currentAnimAttach = MV1AttachAnim(handle, animIndex, -1, FALSE);
+	currentAnimAttach = MV1AttachAnim(handle, animIndex, - 1, TRUE);
 
 	// 再生時間リセット
 	animTime = 0.0f;
+
+	loopAnim = loop;
 }
 
 void CharacterBase::UpdateAnimation(float dt)
 {
-
 	if (currentAnimAttach == -1) return;
 
 	animTime += 60.0f * dt;
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	// ループ
+	if (animTime >= totalTime)
+	{
+		if (loopAnim)
+		{
+			animTime = fmodf(animTime, totalTime);
+		}
+		else
+		{
+			animTime = totalTime;
+		}
+	}
 
 	MV1SetAttachAnimTime(handle, currentAnimAttach, animTime);
 }

@@ -35,7 +35,7 @@ void Enemy::Init(VECTOR startPos)
 	// ===== èâä˙èÛë‘ =====
 	currentState = AnimState::Idle;
 
-	ChangeAnimation(idleAnim);
+	ChangeAnimation(idleAnim, true);
 }
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
@@ -112,15 +112,15 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 			switch (currentState)
 			{
 			case AnimState::Idle:
-				ChangeAnimation(idleAnim);
+				ChangeAnimation(idleAnim, true);
 				break;
 
 			case AnimState::Walk:
-				ChangeAnimation(walkAnim);
+				ChangeAnimation(walkAnim, true);
 				break;
 
 			case AnimState::JumpLoop:
-				ChangeAnimation(jumpLoopAnim);
+				ChangeAnimation(jumpLoopAnim, true);
 				break;
 			}
 		}
@@ -133,4 +133,14 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 	MV1SetPosition(handle, pos);
 
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
+}
+
+void Enemy::Damage(int power)
+{
+	hp -= power;
+
+	if (hp <= 0)
+	{
+		isDead = true;
+	}
 }

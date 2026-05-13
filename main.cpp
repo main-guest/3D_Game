@@ -25,22 +25,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SetMouseDispFlag(FALSE); // マウス非表示
 	SetDrawScreen(DX_SCREEN_BACK);
 
-	// ===== 地形生成 =====
-	CollisionWorld world;
-	world.Init();
-
-	PhysicsManager physics;
-	physics.Init(&world);
-
 	// ===== オブジェクト生成 =====
 	Player player;
 	Camera camera;
 	Stage stage;
 
-	player.Init(&world);
+	stage.Init(&player);
+	player.Init(&stage.GetCollisionWorld());
 	camera.Init();
-
-	stage.Init(world, physics);
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -57,7 +49,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// --- 更新 ---
 		camera.Update(player.GetPos());
-		player.Update(deltaTime, camera.GetYaw(), physics);
+		player.Update(deltaTime, camera.GetYaw(), stage.GetPhysics());
 		stage.Update(deltaTime, player.GetPos());
 
 		// --- 描画 ---
