@@ -68,7 +68,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	oldMouse = mouse;
 
 	// ===== 攻撃 =====
-	if (leftClick && currentState != AnimState::Attack01)
+	if (leftClick && currentState != AnimState::Attack01 && isGround)
 	{
 		currentState = AnimState::Attack01;
 
@@ -88,7 +88,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	velocity.x = 0.0f;
 	velocity.z = 0.0f;
 
-	if (currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
+	if (currentState != AnimState::Attack01 && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
 	{
 		//　正規化
 		float len = sqrtf(moveX * moveX + moveZ * moveZ);
@@ -146,6 +146,24 @@ void Player::UpdateState()
     //　=====　Attack中　=====
     if (currentState == AnimState::Attack01)
     {
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// アニメ終了
+		if (animTime >= totalTime)
+		{
+			if (fabsf(velocity.x) > 0.1f ||
+				fabsf(velocity.z) > 0.1f)
+			{
+				currentState = AnimState::Walk;
+				ChangeAnimation(walkAnim);
+			}
+			else
+			{
+				currentState = AnimState::Idle;
+				ChangeAnimation(idleAnim);
+			}
+		}
+
         return;
     }
 
