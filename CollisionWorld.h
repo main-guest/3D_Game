@@ -31,8 +31,12 @@ public:
 	void Init();
 	void Draw();
 
+	void DrawDebug();
+
 	bool CheckWallCollision(VECTOR pos, float radius) const;
 	bool CheckGroundCollision(VECTOR pos, float radius, float& groundY) const;
+
+	//void DebugDraw();
 
 private:
 	bool SphereVsBox(VECTOR pos, float radius, const Box& box) const ;

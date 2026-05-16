@@ -8,7 +8,8 @@ enum class AnimState
 	JumpStart,
 	JumpLoop,
 	JumpEnd,
-	Attack01
+	Attack01,
+	Hit
 };
 
 class CharacterBase
@@ -18,11 +19,32 @@ public:
 	virtual ~CharacterBase();
 
 	virtual void Init(const TCHAR* modelPath);
-	virtual void Draw();
 
-	VECTOR GetPos() const { return pos; }
+	void UpdateAnimation(float dt);
 
+	// ===== Position =====
+	const VECTOR& GetPos() const { return pos; }
+	void SetPos(const VECTOR& p) { pos = p; }
+
+	// ===== Velocity =====
+	const VECTOR& GetVelocity() const { return velocity; }
+	VECTOR& GetVelocity() { return velocity; }
+
+	void SetVelocity(const VECTOR& v)
+	{
+		velocity = v;
+	}
+
+	// ===== Capsule =====
 	float GetRadius() const { return radius; }
+	float GetHeight() const { return height; }
+
+	// ===== Forward =====
+	VECTOR GetForward() const;
+
+protected:
+	
+	void ChangeAnimation(int animIndex, bool loop);
 
 protected:
 	// ===== モデル =====
@@ -30,7 +52,13 @@ protected:
 
 	// ===== 座標 =====
 	VECTOR pos;
+	VECTOR velocity;
+
 	float characterAngle;
+
+	// ===== Capsule =====
+	float radius;
+	float height;
 
 	// ===== アニメーション =====
 	AnimState currentState;
@@ -44,16 +72,11 @@ protected:
 	int jumpLoopAnim;
 	int jumpEndAnim;
 	int attack01Anim;
-
-	// ===== 共通関数 ====
-	void ChangeAnimation(int animIndex,bool loop);
-
-	void UpdateAnimation(float dt);
+	int hitAnim;
 
 	// ===== 定数 ====
-	const float speed = 220.0f;
-	const float gravity = -1200.0f;
-	const float radius = 10.0f;		// 当たり判定半径
+	float speed;						// 移動速度
+	const float gravity = -1200.0f;		// 当たり判定半径
 	const float jumpPower = 500.0f;
 	const float groundHeight = 0.0f;
 

@@ -79,7 +79,7 @@ void Camera::Update(VECTOR playerPos)
 		forward.z = cosf(pitch) * cosf(yaw);
 
 		// 注視点（プレイヤーの上）
-		cameraTarget = VAdd(playerPos, VGet(0.0f, 170.0f, 0.0f));
+		cameraTarget = VAdd(playerPos, VGet(0.0f, 140.0f, 0.0f));
 
 		// カメラ位置
 		cameraPos = VSub(cameraTarget, VScale(forward, distance));

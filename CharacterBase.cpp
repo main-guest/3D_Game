@@ -4,6 +4,7 @@
 CharacterBase::CharacterBase()
 	:handle(-1),
 	pos(VGet(0.0f, 0.0f, 0.0f)),
+	velocity(VGet(0,0,0)),
 	characterAngle(0.0f),
 	currentState(AnimState::Idle),
 	currentAnimAttach(-1),
@@ -23,13 +24,6 @@ CharacterBase::~CharacterBase()
 void CharacterBase::Init(const TCHAR* modelPath)
 {
 	handle = MV1LoadModel(modelPath);
-
-	MV1SetPosition(handle, pos);
-}
-
-void CharacterBase::Draw()
-{
-	MV1DrawModel(handle);
 }
 
 void CharacterBase::ChangeAnimation(int animIndex, bool loop)
@@ -71,4 +65,15 @@ void CharacterBase::UpdateAnimation(float dt)
 	}
 
 	MV1SetAttachAnimTime(handle, currentAnimAttach, animTime);
+}
+
+VECTOR CharacterBase::GetForward() const
+{
+	VECTOR forward;
+
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	return forward;
 }

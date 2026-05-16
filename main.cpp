@@ -22,6 +22,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	if (DxLib_Init() == -1) return -1;
 
+	// Zバッファ有効
+	SetUseZBuffer3D(TRUE);
+	SetWriteZBuffer3D(TRUE);
+
 	SetMouseDispFlag(FALSE); // マウス非表示
 	SetDrawScreen(DX_SCREEN_BACK);
 
@@ -29,10 +33,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Player player;
 	Camera camera;
 	Stage stage;
+	//CollisionWorld world;
 
 	stage.Init(&player);
 	player.Init(&stage.GetCollisionWorld());
 	camera.Init();
+	//world.Init();
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -57,6 +63,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		stage.Draw();
 		player.Draw();
+
+		player.DebugDraw();
+		player.DrawCapsuleDebug(stage.GetEnemies());
+		//world.DebugDraw();
 
 		// デバッグ表示
 		VECTOR camPos = camera.GetPosition();

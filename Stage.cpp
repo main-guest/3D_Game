@@ -46,7 +46,7 @@ void Stage::Update(float dt, VECTOR playerPos)
 		VECTOR p = player->GetPos();
 		VECTOR v = player->GetVelocity();
 
-		physics.ResolveCharacterCollision(p, v, 10.0f, enemyPositions);
+		physics.ResolveCharacterCollision(p, v, player->GetRadius(), player->GetHeight(), enemyPositions, 140.0f );  // Enemy height = 140.0f
 
 		// ˆÊ’u”½‰f
 		player->SetPos(p);
@@ -68,6 +68,11 @@ void Stage::Draw()
 	// ===== Enemy•`‰æ =====
 	for (auto& enemy : enemies)
 	{
-		enemy->Draw();
+		enemy->Render();
 	}
+}
+
+std::vector<std::unique_ptr<Enemy>>& Stage::GetEnemies()
+{
+	return enemies;
 }

@@ -48,9 +48,9 @@ void CollisionWorld::Init()
 
 		ground.handle = MV1DuplicateModel(groundHandle);
 
-		ground.pos = VGet(0, 0, 0);
+		ground.pos = groundPos;
 		ground.rotation = VGet(0, 0, 0);
-		ground.halfSize = VGet(10000, 10, 10000);
+		ground.halfSize = VGet(10000, 0, 10000);
 
 		ground.type = CollisionType::Ground;
 
@@ -140,10 +140,6 @@ void CollisionWorld::Init()
 
 void CollisionWorld::Draw()
 {
-	// ===== 地面 =====
-	MV1SetPosition(groundHandle, groundPos);
-	MV1DrawModel(groundHandle);
-
 	// ===== Box描画 =====
 	for (auto& box : boxes)
 	{
@@ -227,7 +223,7 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 		if (SphereVsBox(pos, radius, box))
 		{
 			// Box上面
-			groundY = box.pos.y + box.halfSize.y;
+			groundY = box.pos.y;
 
 			return true;
 		}
@@ -242,3 +238,70 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 
 	return false;
 }
+
+//void CollisionWorld::DebugDraw()
+//{
+//	for (const auto& box : boxes)
+//	{
+//		// ===== 色分け =====
+//		unsigned int color = 0;
+//
+//		switch (box.type)
+//		{
+//		case CollisionType::Ground:
+//			color = GetColor(0, 200, 0);   // 緑
+//			break;
+//
+//		case CollisionType::Wall:
+//			color = GetColor(0, 100, 255); // 青
+//			break;
+//		}
+//
+//		// ===== Box描画（ワイヤー代わり）=====
+//		VECTOR size;
+//		size.x = box.halfSize.x * 2.0f;
+//		size.y = box.halfSize.y * 2.0f;
+//		size.z = box.halfSize.z * 2.0f;
+//
+//		DrawCube3D(
+//			box.pos,
+//			size,
+//			color,
+//			color,
+//			TRUE   // ワイヤー表示
+//		);
+//
+//		// ===== 中心点 =====
+//		DrawSphere3D(
+//			box.pos,
+//			5.0f,
+//			8,
+//			color,
+//			color,
+//			TRUE
+//		);
+//
+//		// ===== 方向確認（回転）=====
+//		VECTOR forward;
+//		forward.x = sinf(box.rotation.y);
+//		forward.y = 0.0f;
+//		forward.z = cosf(box.rotation.y);
+//
+//		VECTOR lineEnd;
+//		lineEnd.x = box.pos.x + forward.x * 50.0f;
+//		lineEnd.y = box.pos.y;
+//		lineEnd.z = box.pos.z + forward.z * 50.0f;
+//
+//		DrawLine3D(box.pos, lineEnd, color);
+//	}
+//
+//	// ===== 地面デバッグ（任意）=====
+//	DrawSphere3D(
+//		groundPos,
+//		10.0f,
+//		8,
+//		GetColor(255, 255, 0),
+//		GetColor(255, 255, 0),
+//		TRUE
+//	);
+//}

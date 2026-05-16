@@ -12,6 +12,7 @@ class Player : public CharacterBase
 public:
 	void Init(CollisionWorld* w);
 	void Update(float dt, float cameraAngle, PhysicsManager& physics);
+	void Draw();
 
 	void CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies);
 
@@ -21,6 +22,11 @@ public:
 	VECTOR& GetVelocity();
 
 	void SetVelocity(const VECTOR& v);
+
+	VECTOR GetForward() const;
+
+	void DebugDraw();
+	void DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies);
 
 private:
 	// “à•”ˆ—
@@ -38,9 +44,17 @@ private:
 
 	bool jumpRequest=false;
 
+	bool attackActive = false;
 	bool attackHit = false;
 
+	// ===== UŒ‚“–‚½‚è”»’è =====
+	VECTOR attackPos;
+
+	float attackRadius = 40.0f;
+
 	const float jumpStartFrame = 55.0f;
+	const float attackStartFrame = 50.0f;
+	const float attackEndFrame = 100.0f;
 
 	// ŠO•”QÆ
 	CollisionWorld* world = nullptr;

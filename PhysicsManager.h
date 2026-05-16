@@ -3,21 +3,27 @@
 #include "DxLib.h"
 
 class CollisionWorld;
-class Player;
-class Enemy;
 
 class PhysicsManager
 {
 public:
 	void Init(CollisionWorld* world);
 
-	void MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt);
+	bool MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt);
 
-	void ResolveCharacterCollision(VECTOR& pos, VECTOR& velocity, float radius, const std::vector<VECTOR>& others);
+	// ===== Capsule Collision ====
+	void ResolveCharacterCollision(VECTOR& pos, VECTOR& velocity, float radius, float height, const std::vector<VECTOR>& others, float otherHeight);
+
+private:
+	float Dot(VECTOR a, VECTOR b);
+	VECTOR Sub(VECTOR a, VECTOR b);
+	VECTOR Add(VECTOR a, VECTOR b);
+	VECTOR Mul(VECTOR v, float f);
+
+	VECTOR ClosestPointOnSegment(VECTOR a, VECTOR b, VECTOR p);
 
 private:
 	CollisionWorld* world = nullptr;
 
 	float gravity = 1200.0f;
-	float groundHeight = 0.0f;
 };

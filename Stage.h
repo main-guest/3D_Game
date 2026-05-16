@@ -26,6 +26,8 @@ public:
 		return physics;
 	}
 
+	std::vector<std::unique_ptr<Enemy>>& GetEnemies();
+
 private:
 	// ===== ステージオブジェクト =====
 	CollisionWorld collisionWorld;
