@@ -11,7 +11,11 @@ void Player::Init(CollisionWorld* w)
 	// ===== モデル読み込み =====
 	CharacterBase::Init(_T("mv1model/Player.mv1"));
 
-	weapon.Init(_T("mv1model/Blade.mv1"));
+	// 武器1
+	weapon1.Init(_T("mv1model/Blade.mv1"));
+
+	// 武器2
+	weapon2.Init(_T("mv1model/Gun01.mv1"));
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -30,12 +34,47 @@ void Player::Init(CollisionWorld* w)
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
+
+	// 初期装備
+	equipState = EquipState::Unarmed;
 	
 	ChangeAnimation(idleAnim, true);
 }
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
+	// =========================
+	// 武器切り替えテスト
+	// =========================
+	if (CheckHitKey(KEY_INPUT_1))
+	{
+		EquipWeapon1();
+	}
+	if(CheckHitKey(KEY_INPUT_2))
+	{
+		EquipWeapon2();
+	}
+	if (CheckHitKey(KEY_INPUT_3))
+	{
+		Unequip();
+	}
+	// =========================
+	// 武器更新
+	// =========================
+	switch (equipState)
+	{
+	case EquipState::Weapon1:
+		weapon1.Update(handle, _T("ArmRight_012"), characterAngle);
+		break;
+
+	case EquipState::Weapon2:
+		weapon2.Update(handle, _T("ArmRight_012"), characterAngle);
+		break;
+
+	case EquipState::Unarmed:
+		break;
+	}
+
 	//　=====　入力処理　=====
 	UpdateInput(dt, cameraAngle);
 
@@ -65,8 +104,39 @@ void Player::Draw()
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 	MV1DrawModel(handle);
 
-	//武器表示
-	weapon.Draw();
+	//武器描画
+	//weapon.Draw();
+	switch (equipState)
+	{
+	case EquipState::Weapon1:
+		weapon1.Draw();
+		break;
+
+	case EquipState::Weapon2:
+		weapon2.Draw();
+		break;
+
+	case EquipState::Unarmed:
+		break;
+	}
+}
+
+// ==========================================
+// 装備変更
+// ==========================================
+void Player::EquipWeapon1()
+{
+	equipState = EquipState::Weapon1;
+}
+
+void Player::EquipWeapon2()
+{
+	equipState = EquipState::Weapon2;
+}
+
+void Player::Unequip()
+{
+	equipState = EquipState::Unarmed;
 }
 
 void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)

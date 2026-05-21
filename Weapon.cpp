@@ -21,14 +21,11 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	MATRIX mat = MV1GetFrameLocalWorldMatrix(parentHandle, frame);
 
 	// ===== ボーン位置 =====
-	pos = VGet(
+	VECTOR pos = VGet(
 		mat.m[3][0],
 		mat.m[3][1],
 		mat.m[3][2]
 	);
-
-	// ===== 回転だけ取り出す =====
-	MATRIX rotMat = MGetIdent();
 
 	// X軸
 	VECTOR xAxis = VGet(mat.m[0][0], mat.m[0][1], mat.m[0][2]);
@@ -44,7 +41,34 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	yAxis = VNorm(yAxis);
 	zAxis = VNorm(zAxis);
 
-	// ===== rotMatへ代入 =====
+	// ===== 武器位置補正 =====
+	// 前方向
+	VECTOR right = xAxis;
+
+	// 上方向
+	VECTOR up = yAxis;
+
+	// 右方向
+	VECTOR forward = VScale(zAxis, -1.0f);
+
+	// ===== 武器位置オフセット =====
+	const float rightOff = 50.0f;
+	const float upOff = 35.0f;
+	const float fwdOff = 55.0f;
+
+	// ===== オフセット作成 =====
+	VECTOR offset;
+
+	offset.x = right.x * rightOff + up.x * upOff + forward.x * fwdOff;
+	offset.y = right.y * rightOff + up.y * upOff + forward.y * fwdOff;
+	offset.z = right.z * rightOff + up.z * upOff + forward.z * fwdOff;
+
+	// ===== 適用 =====
+	pos = VAdd(pos, offset);
+
+	// ===== 回転行列 =====
+	MATRIX rotMat = MGetIdent();
+
 	rotMat.m[0][0] = xAxis.x;
 	rotMat.m[0][1] = xAxis.y;
 	rotMat.m[0][2] = xAxis.z;
@@ -57,38 +81,10 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	rotMat.m[2][1] = zAxis.y;
 	rotMat.m[2][2] = zAxis.z;
 
-	// ===== 武器位置補正 =====
-	// 前方向
-	VECTOR forward;
-	forward.x = -sinf(characterAngle);
-	forward.y = 0.0f;
-	forward.z = -cosf(characterAngle);
-
-	// 右方向
-	VECTOR right;
-	right.x = cosf(characterAngle);
-	right.y = 0.0f;
-	right.z = -sinf(characterAngle);
-
-	// ===== 武器位置オフセット =====
-	const float rightOff = 50.0f;
-	const float upOff = -45.0f;
-	const float fwdOff = -30.0f;
-
-	// ===== オフセット作成 =====
-	VECTOR offset;
-
-	offset.x = right.x * rightOff + forward.x * fwdOff;
-	offset.y = upOff;
-	offset.z = right.z * rightOff + forward.z * fwdOff;
-
-	// ===== 適用 =====
-	pos = VAdd(pos, offset);
-
 	// ===== 武器角度補正 =====
 	MATRIX rotX = MGetRotX(DX_PI_F / 1.5f);
 	MATRIX rotY = MGetRotY(DX_PI_F / 2.5f);
-	MATRIX rotZ = MGetRotZ(DX_PI_F / -1.8f);
+	MATRIX rotZ = MGetRotZ(DX_PI_F / -1.95f);
 
 	// 回転合成
 	MATRIX tempMat = MMult(rotX, rotY);
