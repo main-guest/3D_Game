@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include "CharacterBase.h"
+#include "Weapon.h"
 
 class PhysicsManager;
 class CollisionWorld;
@@ -40,12 +41,18 @@ private:
 	int oldMouse = 0;
 
 	// ===== ó‘Ô =====
+	bool isDash = false;
+
 	bool prevGround = true;
 
 	bool jumpRequest=false;
 
 	bool attackActive = false;
 	bool attackHit = false;
+
+	// ===== ˆÚ“®‘¬“x =====
+	float walkSpeed = 220.0f;
+	float dashSpeed = 400.0f;
 
 	// ===== UŒ‚“–‚½‚è”»’è =====
 	VECTOR attackPos;
@@ -58,4 +65,8 @@ private:
 
 	// ŠO•”QÆ
 	CollisionWorld* world = nullptr;
+	
+	Weapon weapon;
+
+	int weponHandle;
 };

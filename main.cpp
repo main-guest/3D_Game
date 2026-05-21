@@ -33,12 +33,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Player player;
 	Camera camera;
 	Stage stage;
-	//CollisionWorld world;
 
 	stage.Init(&player);
 	player.Init(&stage.GetCollisionWorld());
 	camera.Init();
-	//world.Init();
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -66,12 +64,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		player.DebugDraw();
 		player.DrawCapsuleDebug(stage.GetEnemies());
-		//world.DebugDraw();
 
 		// デバッグ表示
 		VECTOR camPos = camera.GetPosition();
-		DrawFormatString(0, 360, GetColor(255, 255, 255), _T("CamPos: X=%.2f Y=%.2f Z=%.2f"), camPos.x, camPos.y, camPos.z);
-		DrawFormatString(0, 340, GetColor(255, 255, 255), _T("deltaTime : %.4f"), deltaTime);
+		DrawFormatString(20, 360, GetColor(255, 255, 255), _T("CamPos: X=%.2f Y=%.2f Z=%.2f"), camPos.x, camPos.y, camPos.z);
+		DrawFormatString(20, 340, GetColor(255, 255, 255), _T("deltaTime : %.4f"), deltaTime);
 
 		ScreenFlip();
 

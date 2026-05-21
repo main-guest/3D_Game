@@ -46,7 +46,7 @@ private:
 
 	// ==== 怯み（ヒットストップ）====
 	float hitStopTimer = 0.0f;
-	const float hitStopDuration = 3.0f;
+	const float hitStopDuration = 2.0f;
 
 	// ==== AI ====
 	float searchRange = 500.0f;

@@ -17,7 +17,7 @@ Enemy::~Enemy()
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== ‹¤’Ê‰Šú‰» =====
-	CharacterBase::Init(_T("mv1model/Enemy2.mv1"));
+	CharacterBase::Init(_T("mv1model/Enemy.mv1"));
 
 	// ===== “–‚½‚è”»’èƒTƒCƒY =====
 	radius = 10.0f;
@@ -37,8 +37,8 @@ void Enemy::Init(VECTOR startPos)
 	jumpStartAnim = 2;
 	jumpLoopAnim = 3;
 	jumpEndAnim = 4;
-	attack01Anim = 5;
-	hitAnim = 6;
+	hitAnim = 5;
+	attack01Anim = 6;
 
 	// ===== ‰Šúó‘Ô =====
 	currentState = AnimState::Idle;

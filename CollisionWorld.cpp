@@ -202,6 +202,16 @@ bool CollisionWorld::CheckWallCollision(VECTOR pos, float radius) const
 			continue;
 		}
 
+		// ===== Boxè„ñ  =====
+		float top = box.pos.y + box.halfSize.y;
+
+		// ===== è„Ç…èÊÇ¡ÇƒÇ¢ÇÈÇ»ÇÁï«îªíËÇµÇ»Ç¢ =====
+		if (pos.y - radius >= top - 5.0f)
+		{
+			continue;
+		}
+
+		// ===== í èÌï«îªíË =====
 		if (SphereVsBox(pos, radius, box))
 		{
 			return true;
@@ -215,20 +225,33 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 {
 	for (const auto& box : boxes)
 	{
-		if (box.type != CollisionType::Ground)
+		if (box.type != CollisionType::Ground && box.type != CollisionType::Wall)
 		{
 			continue;
 		}
 
-		if (SphereVsBox(pos, radius, box))
-		{
-			// Boxè„ñ 
-			groundY = box.pos.y;
+		// ===== BoxÇÃè„ñ  =====
+		float top = box.pos.y + box.halfSize.y;
 
-			return true;
+		// ===== XZîÕàÕì‡Ç© =====
+		bool insideX =
+			pos.x >= box.pos.x - box.halfSize.x &&
+			pos.x <= box.pos.x + box.halfSize.x;
+
+		bool insideZ =
+			pos.z >= box.pos.z - box.halfSize.z &&
+			pos.z <= box.pos.z + box.halfSize.z;
+
+		// ===== è„Ç©ÇÁê⁄êGÇµÇƒÇ¢ÇÈÇ© =====
+		bool onTop = pos.y - radius <= top && pos.y > top;
+
+		if (insideX && insideZ && onTop) 
+		{ 
+			groundY = top; return true;
 		}
 	}
 
+	// ===== ÉèÅ[ÉãÉhínñ  =====
 	if (pos.y - radius <= 0.0f)
 	{
 		groundY = 0.0f;

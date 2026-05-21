@@ -5,6 +5,7 @@ enum class AnimState
 {
 	Idle,
 	Walk,
+	Dash,
 	JumpStart,
 	JumpLoop,
 	JumpEnd,
@@ -68,6 +69,7 @@ protected:
 
 	int idleAnim;
 	int walkAnim;
+	int dashAnim;
 	int jumpStartAnim;
 	int jumpLoopAnim;
 	int jumpEndAnim;

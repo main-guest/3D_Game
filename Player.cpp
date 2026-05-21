@@ -11,20 +11,22 @@ void Player::Init(CollisionWorld* w)
 	// ===== モデル読み込み =====
 	CharacterBase::Init(_T("mv1model/Player.mv1"));
 
+	weapon.Init(_T("mv1model/Blade.mv1"));
+
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
 	height = 140.0f;
 
-	// ===== 移動速度 =====
-	speed = 220.0f;
-
 	// ===== アニメーション番号 =====
 	idleAnim = 0;
 	walkAnim = 1;
-	jumpStartAnim = 2;
-	jumpLoopAnim = 3;
-	jumpEndAnim = 4;
-	attack01Anim = 5;
+	dashAnim = 2;
+	jumpStartAnim = 3;
+	jumpLoopAnim = 4;
+	jumpEndAnim = 5;
+	hitAnim = 6;
+	attack01Anim = 7;
+
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
@@ -46,6 +48,10 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　アニメーション更新　=====
 	UpdateAnimation(dt);
 
+	//　=====　武器更新　=====
+	weapon.Update(handle, _T("ArmRight_012"), characterAngle);
+	weapon.SetRotation(VGet(0, characterAngle, 0));
+
 	//　=====　接地保存　=====
     prevGround = isGround;
 }
@@ -58,6 +64,9 @@ void Player::Draw()
 	MV1SetPosition(handle, drawPos);
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 	MV1DrawModel(handle);
+
+	//武器表示
+	weapon.Draw();
 }
 
 void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -248,7 +257,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	float moveX = 0.0f;
 	float moveZ = 0.0f;
 
-	//　=====　入力　=====
+	//　=====　入力　=====	
 	if (CheckHitKey(KEY_INPUT_W)) moveZ += 1.0f;
 	if (CheckHitKey(KEY_INPUT_S)) moveZ -= 1.0f;
 	if (CheckHitKey(KEY_INPUT_D)) moveX += 1.0f;
@@ -256,6 +265,12 @@ void Player::UpdateInput(float dt, float cameraAngle)
 
 	//　=====　移動判定　=====
 	bool isMove = (moveX != 0.0f || moveZ != 0.0f);
+
+	// ===== ダッシュ入力 =====
+	isDash = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+
+	// 速度切り替え
+	speed = isDash ? dashSpeed : walkSpeed;
 
 	// ===== マウスクリック =====
 	int mouse = GetMouseInput();
@@ -398,8 +413,16 @@ void Player::UpdateState()
 			if (fabsf(velocity.x) > 0.1f ||
 				fabsf(velocity.z) > 0.1f)
 			{
-				currentState = AnimState::Walk;
-				ChangeAnimation(walkAnim, true);
+				if (isDash)
+				{
+					currentState = AnimState::Dash;
+					ChangeAnimation(dashAnim, true);
+				}
+				else
+				{
+					currentState = AnimState::Walk;
+					ChangeAnimation(walkAnim, true);
+				}
 			}
 			else
 			{
@@ -421,7 +444,14 @@ void Player::UpdateState()
     else if (fabsf(velocity.x) > 0.1f ||
         fabsf(velocity.z) > 0.1f)
     {
-        nextState = AnimState::Walk;
+		if (isDash)
+		{
+			nextState = AnimState::Dash;
+		}
+		else
+		{
+			nextState = AnimState::Walk;
+		}
     }
 
     if (nextState != currentState)
@@ -437,6 +467,10 @@ void Player::UpdateState()
         case AnimState::Walk:
             ChangeAnimation(walkAnim, true);
             break;
+
+		case AnimState::Dash:
+			ChangeAnimation(dashAnim, true);
+			break;
 
         case AnimState::JumpLoop:
             ChangeAnimation(jumpLoopAnim, true);
