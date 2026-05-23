@@ -54,6 +54,12 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　アニメーション更新　=====
 	UpdateAnimation(dt);
 
+	VECTOR drawPos = pos;
+	drawPos.y -= 30; // 足元補正
+
+	MV1SetPosition(handle, drawPos);
+	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
+
 	//　=====　武器切り替え　=====
 	if (CheckHitKey(KEY_INPUT_1))
 	{
@@ -68,45 +74,24 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		Unequip();
 	}
 
-	//　=====　武器更新　=====
-	//weapon.Update(handle, _T("ArmRight_012"), characterAngle);
-	//weapon.SetRotation(VGet(0, characterAngle, 0));
-	switch (equipState)
-	{
-	case EquipState::Weapon1:
-		weapon1.Update(handle, _T("ArmRight_012"), characterAngle);
-		break;
-
-	case EquipState::Weapon2:
-		weapon2.Update(handle, _T("ArmRight_012"), characterAngle);
-		break;
-
-	case EquipState::Unarmed:
-		break;
-	}
-
 	//　=====　接地保存　=====
     prevGround = isGround;
 }
 
 void Player::Draw()
 {
-	VECTOR drawPos = pos;
-	drawPos.y -= 30; // 足元補正
-
-	MV1SetPosition(handle, drawPos);
-	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 	MV1DrawModel(handle);
 
-	//武器表示
-	//weapon.Draw();
+	//　=====　武器更新＆武器表示　=====
 	switch (equipState)
 	{
 	case EquipState::Weapon1:
+		weapon1.Update(handle, _T("mixamorig:RightHand"), characterAngle);
 		weapon1.Draw();
 		break;
 
 	case EquipState::Weapon2:
+		weapon2.Update(handle, _T("mixamorig:RightHand"), characterAngle);
 		weapon2.Draw();
 		break;
 

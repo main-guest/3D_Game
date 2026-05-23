@@ -56,9 +56,9 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	right.z = -sinf(characterAngle);
 
 	// ===== 武器位置オフセット =====
-	const float rightOff = 50.0f;
-	const float upOff = -45.0f;
-	const float fwdOff = -30.0f;
+	const float rightOff = 0.0f;
+	const float upOff = 0.0f;
+	const float fwdOff = 0.0f;
 
 	// ===== オフセット作成 =====
 	VECTOR offset;
@@ -86,9 +86,9 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	rotMat.m[2][2] = zAxis.z;
 
 	// ===== 武器角度補正 =====
-	MATRIX rotX = MGetRotX(DX_PI_F / 1.5f);
-	MATRIX rotY = MGetRotY(DX_PI_F / 2.5f);
-	MATRIX rotZ = MGetRotZ(DX_PI_F / -1.8f);
+	MATRIX rotX = MGetRotX(DX_PI_F / -2.0f);
+	MATRIX rotY = MGetRotY(DX_PI_F / 2.0f);
+	MATRIX rotZ = MGetRotZ(DX_PI_F);
 
 	// 回転合成
 	MATRIX tempMat = MMult(rotX, rotY);
@@ -110,5 +110,6 @@ void Weapon::SetRotation(VECTOR r)
 
 void Weapon::Draw()
 {
+	// ===== 武器描画 =====
 	MV1DrawModel(handle);
 }
