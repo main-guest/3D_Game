@@ -28,8 +28,6 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	);
 
 	// ===== 回転だけ取り出す =====
-	MATRIX rotMat = MGetIdent();
-
 	// X軸
 	VECTOR xAxis = VGet(mat.m[0][0], mat.m[0][1], mat.m[0][2]);
 
@@ -43,19 +41,6 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	xAxis = VNorm(xAxis);
 	yAxis = VNorm(yAxis);
 	zAxis = VNorm(zAxis);
-
-	// ===== rotMatへ代入 =====
-	rotMat.m[0][0] = xAxis.x;
-	rotMat.m[0][1] = xAxis.y;
-	rotMat.m[0][2] = xAxis.z;
-
-	rotMat.m[1][0] = yAxis.x;
-	rotMat.m[1][1] = yAxis.y;
-	rotMat.m[1][2] = yAxis.z;
-
-	rotMat.m[2][0] = zAxis.x;
-	rotMat.m[2][1] = zAxis.y;
-	rotMat.m[2][2] = zAxis.z;
 
 	// ===== 武器位置補正 =====
 	// 前方向
@@ -84,6 +69,21 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 
 	// ===== 適用 =====
 	pos = VAdd(pos, offset);
+
+	// ===== rotMatへ代入（回転行列） =====
+	MATRIX rotMat = MGetIdent();
+
+	rotMat.m[0][0] = xAxis.x;
+	rotMat.m[0][1] = xAxis.y;
+	rotMat.m[0][2] = xAxis.z;
+
+	rotMat.m[1][0] = yAxis.x;
+	rotMat.m[1][1] = yAxis.y;
+	rotMat.m[1][2] = yAxis.z;
+
+	rotMat.m[2][0] = zAxis.x;
+	rotMat.m[2][1] = zAxis.y;
+	rotMat.m[2][2] = zAxis.z;
 
 	// ===== 武器角度補正 =====
 	MATRIX rotX = MGetRotX(DX_PI_F / 1.5f);

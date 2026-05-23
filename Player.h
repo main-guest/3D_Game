@@ -8,12 +8,23 @@ class PhysicsManager;
 class CollisionWorld;
 class Enemy;
 
+enum class EquipState
+{
+	Unarmed,
+	Weapon1,
+	Weapon2
+};
+
 class Player : public CharacterBase
 {
 public:
 	void Init(CollisionWorld* w);
 	void Update(float dt, float cameraAngle, PhysicsManager& physics);
 	void Draw();
+
+	void EquipWeapon1();
+	void EquipWeapon2();
+	void Unequip();
 
 	void CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies);
 
@@ -66,7 +77,12 @@ private:
 	// ŠO•”QÆ
 	CollisionWorld* world = nullptr;
 	
-	Weapon weapon;
+	// ===== •Ší =====
+	Weapon weapon1;
+	Weapon weapon2;
+
+	// ===== Œ»İ‘•”õ =====
+	EquipState equipState;
 
 	int weponHandle;
 };

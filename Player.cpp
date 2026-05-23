@@ -11,7 +11,10 @@ void Player::Init(CollisionWorld* w)
 	// ===== モデル読み込み =====
 	CharacterBase::Init(_T("mv1model/Player.mv1"));
 
-	weapon.Init(_T("mv1model/Blade.mv1"));
+	// ===== 武器モデル読み込み =====
+	weapon1.Init(_T("mv1model/Blade.mv1"));
+	weapon2.Init(_T("mv1model/Gun01.mv1"));
+
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -32,6 +35,9 @@ void Player::Init(CollisionWorld* w)
 	currentState = AnimState::Idle;
 	
 	ChangeAnimation(idleAnim, true);
+
+	// 初期装備
+	equipState = EquipState::Unarmed;
 }
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
@@ -48,9 +54,36 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　アニメーション更新　=====
 	UpdateAnimation(dt);
 
+	//　=====　武器切り替え　=====
+	if (CheckHitKey(KEY_INPUT_1))
+	{
+		EquipWeapon1();
+	}
+	if (CheckHitKey(KEY_INPUT_2))
+	{
+		EquipWeapon2();
+	}
+	if (CheckHitKey(KEY_INPUT_3))
+	{
+		Unequip();
+	}
+
 	//　=====　武器更新　=====
-	weapon.Update(handle, _T("ArmRight_012"), characterAngle);
-	weapon.SetRotation(VGet(0, characterAngle, 0));
+	//weapon.Update(handle, _T("ArmRight_012"), characterAngle);
+	//weapon.SetRotation(VGet(0, characterAngle, 0));
+	switch (equipState)
+	{
+	case EquipState::Weapon1:
+		weapon1.Update(handle, _T("ArmRight_012"), characterAngle);
+		break;
+
+	case EquipState::Weapon2:
+		weapon2.Update(handle, _T("ArmRight_012"), characterAngle);
+		break;
+
+	case EquipState::Unarmed:
+		break;
+	}
 
 	//　=====　接地保存　=====
     prevGround = isGround;
@@ -66,7 +99,38 @@ void Player::Draw()
 	MV1DrawModel(handle);
 
 	//武器表示
-	weapon.Draw();
+	//weapon.Draw();
+	switch (equipState)
+	{
+	case EquipState::Weapon1:
+		weapon1.Draw();
+		break;
+
+	case EquipState::Weapon2:
+		weapon2.Draw();
+		break;
+
+	case EquipState::Unarmed:
+		break;
+	}
+}
+
+// ==========================================
+// 装備変更
+// ==========================================
+void Player::EquipWeapon1()
+{
+	equipState = EquipState::Weapon1;
+}
+
+void Player::EquipWeapon2()
+{
+	equipState = EquipState::Weapon2;
+}
+
+void Player::Unequip()
+{
+	equipState = EquipState::Unarmed;
 }
 
 void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
