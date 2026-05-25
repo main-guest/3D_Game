@@ -6,10 +6,13 @@ enum class AnimState
 	Idle,
 	Walk,
 	Dash,
+
 	JumpStart,
 	JumpLoop,
 	JumpEnd,
-	Attack01,
+
+	Attack,
+
 	Hit
 };
 
@@ -69,16 +72,23 @@ protected:
 
 	int idleAnim;
 	int walkAnim;
-	int dashAnim;
+
+	int dash01Anim;
+	int dash02Anim;
+
 	int jumpStartAnim;
 	int jumpLoopAnim;
 	int jumpEndAnim;
+
 	int attack01Anim;
+	int attack02Anim;
+	int attack03Anim;
+
 	int hitAnim;
 
 	// ===== ’è” ====
 	float speed;						// ˆÚ“®‘¬“x
-	const float gravity = -1200.0f;		// “–‚½‚è”»’è”¼Œa
+	const float gravity = -1200.0f;
 	const float jumpPower = 500.0f;
 	const float groundHeight = 0.0f;
 

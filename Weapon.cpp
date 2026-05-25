@@ -49,16 +49,11 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	VECTOR forward = zAxis;
 
 	// ===== 武器位置オフセット =====
-	const float rightOff = 0.0f;
-	const float upOff = 0.0f;
-	const float fwdOff = 0.0f;
-
-	// ===== オフセット作成 =====
 	VECTOR offset;
 
-	offset.x = right.x * rightOff + up.x * upOff + forward.x * fwdOff;
-	offset.y = right.y * rightOff + up.y * upOff + forward.y * fwdOff;
-	offset.z = right.z * rightOff + up.z * upOff + forward.z * fwdOff;
+	offset.x = right.x * data.posOffset.x + forward.x * data.posOffset.z;
+	offset.y = data.posOffset.y;
+	offset.z = right.z * data.posOffset.z + forward.z * data.posOffset.z;
 
 	// ===== 武器位置 =====
 	pos = VAdd(pos, offset);
@@ -79,9 +74,9 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	rotMat.m[2][2] = zAxis.z;
 
 	// ===== 武器角度補正 =====
-	MATRIX rotX = MGetRotX(DX_PI_F / -2.0f);
-	MATRIX rotY = MGetRotY(DX_PI_F / 2.0f);
-	MATRIX rotZ = MGetRotZ(DX_PI_F);
+	MATRIX rotX = MGetRotX(data.rotOffset.x);
+	MATRIX rotY = MGetRotY(data.rotOffset.y);
+	MATRIX rotZ = MGetRotZ(data.rotOffset.z);
 
 	// 回転合成
 	MATRIX tempMat = MMult(rotX, rotY);
@@ -100,4 +95,9 @@ void Weapon::Draw()
 {
 	// ===== 武器描画 =====
 	MV1DrawModel(handle);
+}
+
+void Weapon::SetData(const WeaponData& d)
+{
+	data = d;
 }

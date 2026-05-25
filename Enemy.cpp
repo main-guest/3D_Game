@@ -247,7 +247,7 @@ void Enemy::UpdateState()
 	}
 
 	//Å@=====Å@AttackíÜÅ@=====
-	if (currentState == AnimState::Attack01)
+	if (currentState == AnimState::Attack)
 	{
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 

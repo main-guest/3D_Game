@@ -46,8 +46,6 @@ private:
 	void UpdateState();
 
 private:
-	VECTOR velocity = VGet(0, 0, 0);
-
 	// ===== 入力 =====
 	int oldMouse = 0;
 
@@ -81,8 +79,13 @@ private:
 	Weapon weapon1;
 	Weapon weapon2;
 
+	// ===== 武器データ =====
+	WeaponData weapon1Data;
+	WeaponData weapon2Data;
+
 	// ===== 現在装備 =====
 	EquipState equipState;
 
-	int weponHandle;
+	// ===== 現在装備中データ =====
+	const WeaponData* currentWeaponData = nullptr;
 };

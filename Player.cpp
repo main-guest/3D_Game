@@ -15,21 +15,43 @@ void Player::Init(CollisionWorld* w)
 	weapon1.Init(_T("mv1model/Blade.mv1"));
 	weapon2.Init(_T("mv1model/Gun01.mv1"));
 
+	// ===== アニメーション番号 =====
+	idleAnim = 0;
+	walkAnim = 1;
+	dash01Anim = 2;
+	dash02Anim = 3;
+	jumpStartAnim = 4;
+	jumpLoopAnim = 5;
+	jumpEndAnim = 6;
+	attack01Anim = 7;
+	attack02Anim = 8;
+	attack03Anim = 9;
+	hitAnim = 10;
+
+	// ===== 武器データ設定 =====
+	// weapon1
+	weapon1Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
+
+	weapon1Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+
+	weapon1Data.attackAnim = attack02Anim;
+	weapon1Data.dashAnim = dash02Anim;
+
+	weapon1.SetData(weapon1Data);
+	
+	// weapon2
+	weapon2Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
+
+	weapon2Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+
+	weapon2Data.attackAnim = attack03Anim;
+	weapon2Data.dashAnim = dash01Anim;
+
+	weapon2.SetData(weapon2Data);
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
 	height = 140.0f;
-
-	// ===== アニメーション番号 =====
-	idleAnim = 0;
-	walkAnim = 1;
-	dashAnim = 2;
-	jumpStartAnim = 3;
-	jumpLoopAnim = 4;
-	jumpEndAnim = 5;
-	hitAnim = 6;
-	attack01Anim = 7;
-
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
@@ -74,6 +96,21 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		Unequip();
 	}
 
+	//　=====　武器更新　=====
+	switch (equipState)
+	{
+	case EquipState::Weapon1:
+		weapon1.Update(handle, _T("mixamorig:RightHand"), characterAngle);
+		break;
+
+	case EquipState::Weapon2:
+		weapon2.Update(handle, _T("mixamorig:RightHand"), characterAngle);
+		break;
+
+	case EquipState::Unarmed:
+		break;
+	}
+
 	//　=====　接地保存　=====
     prevGround = isGround;
 }
@@ -82,16 +119,14 @@ void Player::Draw()
 {
 	MV1DrawModel(handle);
 
-	//　=====　武器更新＆武器表示　=====
+	//　=====　武器表示　=====
 	switch (equipState)
 	{
 	case EquipState::Weapon1:
-		weapon1.Update(handle, _T("mixamorig:RightHand"), characterAngle);
 		weapon1.Draw();
 		break;
 
 	case EquipState::Weapon2:
-		weapon2.Update(handle, _T("mixamorig:RightHand"), characterAngle);
 		weapon2.Draw();
 		break;
 
@@ -106,16 +141,22 @@ void Player::Draw()
 void Player::EquipWeapon1()
 {
 	equipState = EquipState::Weapon1;
+
+	currentWeaponData = &weapon1Data;
 }
 
 void Player::EquipWeapon2()
 {
 	equipState = EquipState::Weapon2;
+
+	currentWeaponData = &weapon2Data;
 }
 
 void Player::Unequip()
 {
 	equipState = EquipState::Unarmed;
+
+	currentWeaponData = nullptr;
 }
 
 void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -329,11 +370,20 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	oldMouse = mouse;
 
 	// ===== 攻撃 =====
-	if (leftClick && currentState != AnimState::Attack01 && isGround)
+	if (leftClick && currentState != AnimState::Attack && isGround)
 	{
-		currentState = AnimState::Attack01;
+		currentState = AnimState::Attack;
 
-		ChangeAnimation(attack01Anim, false);
+		// ===== 武器ごとの攻撃アニメ =====
+		if (currentWeaponData)
+		{
+			ChangeAnimation(currentWeaponData->attackAnim, false);
+		}
+		else
+		{
+			// 素手
+			ChangeAnimation(attack01Anim, false);
+		}
 	}
 
 	// ===== ジャンプ =====
@@ -349,7 +399,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	velocity.x = 0.0f;
 	velocity.z = 0.0f;
 
-	if (currentState != AnimState::Attack01 && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
+	if (currentState != AnimState::Attack && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
 	{
 		//　正規化
 		float len = sqrtf(moveX * moveX + moveZ * moveZ);
@@ -405,7 +455,7 @@ void Player::UpdateState()
     }
 
     //　=====　Attack中　=====
-    if (currentState == AnimState::Attack01)
+    if (currentState == AnimState::Attack)
     {
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
@@ -465,7 +515,16 @@ void Player::UpdateState()
 				if (isDash)
 				{
 					currentState = AnimState::Dash;
-					ChangeAnimation(dashAnim, true);
+
+					// ===== 武器ごとのダッシュ =====
+					if (currentWeaponData)
+					{
+						ChangeAnimation(currentWeaponData->dashAnim, true);
+					}
+					else
+					{
+						ChangeAnimation(dash01Anim, true);
+					}
 				}
 				else
 				{
@@ -518,7 +577,15 @@ void Player::UpdateState()
             break;
 
 		case AnimState::Dash:
-			ChangeAnimation(dashAnim, true);
+			// ===== 武器ごとのダッシュ =====
+			if (currentWeaponData)
+			{
+				ChangeAnimation(currentWeaponData->dashAnim, true);
+			}
+			else
+			{
+				ChangeAnimation(dash01Anim, true);
+			}
 			break;
 
         case AnimState::JumpLoop:
