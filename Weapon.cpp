@@ -10,6 +10,7 @@ void Weapon::Init(const TCHAR* path)
 
 void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngle)
 {
+	// ===== ボーン取得 =====
 	int frame = MV1SearchFrame(parentHandle, boneName);
 
 	if (frame < 0)
@@ -42,18 +43,10 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	yAxis = VNorm(yAxis);
 	zAxis = VNorm(zAxis);
 
-	// ===== 武器位置補正 =====
-	// 前方向
-	VECTOR forward;
-	forward.x = -sinf(characterAngle);
-	forward.y = 0.0f;
-	forward.z = -cosf(characterAngle);
-
-	// 右方向
-	VECTOR right;
-	right.x = cosf(characterAngle);
-	right.y = 0.0f;
-	right.z = -sinf(characterAngle);
+	// ===== ボーン基準方向 =====
+	VECTOR right = xAxis;
+	VECTOR up = yAxis;
+	VECTOR forward = zAxis;
 
 	// ===== 武器位置オフセット =====
 	const float rightOff = 0.0f;
@@ -63,11 +56,11 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	// ===== オフセット作成 =====
 	VECTOR offset;
 
-	offset.x = right.x * rightOff + forward.x * fwdOff;
-	offset.y = upOff;
-	offset.z = right.z * rightOff + forward.z * fwdOff;
+	offset.x = right.x * rightOff + up.x * upOff + forward.x * fwdOff;
+	offset.y = right.y * rightOff + up.y * upOff + forward.y * fwdOff;
+	offset.z = right.z * rightOff + up.z * upOff + forward.z * fwdOff;
 
-	// ===== 適用 =====
+	// ===== 武器位置 =====
 	pos = VAdd(pos, offset);
 
 	// ===== rotMatへ代入（回転行列） =====
@@ -101,11 +94,6 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	MV1SetRotationMatrix(handle, finalMat);
 
 	MV1SetPosition(handle, pos);
-}
-
-void Weapon::SetRotation(VECTOR r)
-{
-	rot = r;
 }
 
 void Weapon::Draw()
