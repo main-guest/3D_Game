@@ -29,6 +29,16 @@ void Player::Init(CollisionWorld* w)
 	hitAnim = 10;
 
 	// ===== 武器データ設定 =====
+	// 素手
+	unarmedData.attackAnim = attack01Anim;
+	unarmedData.dashAnim = dash01Anim;
+
+	unarmedData.attackRadius = 40.0f;
+	unarmedData.attackDistance = 120.0f;
+	unarmedData.attackOffset = VGet(0, 115, 0);
+
+	unarmedData.followAttack = true;
+
 	// weapon1
 	weapon1Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
@@ -36,6 +46,12 @@ void Player::Init(CollisionWorld* w)
 
 	weapon1Data.attackAnim = attack02Anim;
 	weapon1Data.dashAnim = dash02Anim;
+
+	weapon1Data.attackRadius = 20.0f;
+	weapon1Data.attackDistance = 160.0f;
+	weapon1Data.attackOffset = VGet(0, 115, 0);
+
+	weapon1Data.followAttack = true;
 
 	weapon1.SetData(weapon1Data);
 	
@@ -46,6 +62,12 @@ void Player::Init(CollisionWorld* w)
 
 	weapon2Data.attackAnim = attack03Anim;
 	weapon2Data.dashAnim = dash01Anim;
+
+	weapon2Data.attackRadius = 10.0f;
+	weapon2Data.attackDistance = 220.0f;
+	weapon2Data.attackOffset = VGet(0, 115, 0);
+
+	weapon2Data.followAttack = false;
 
 	weapon2.SetData(weapon2Data);
 
@@ -60,6 +82,17 @@ void Player::Init(CollisionWorld* w)
 
 	// 初期装備
 	equipState = EquipState::Unarmed;
+
+	currentWeaponData = &unarmedData;
+
+	int frameNum = MV1GetFrameNum(handle);
+
+	for (int i = 0; i < frameNum; i++)
+	{
+		printfDx(_T("%d : %s\n"),
+			i,
+			MV1GetFrameName(handle, i));
+	}
 }
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
@@ -156,7 +189,18 @@ void Player::Unequip()
 {
 	equipState = EquipState::Unarmed;
 
-	currentWeaponData = nullptr;
+	currentWeaponData = &unarmedData;
+}
+
+void Player::UpdateAttackPos()
+{
+	// ===== 攻撃当たり判定 =====
+		// 前方向
+	VECTOR forward = GetForward();
+
+	attackPos.x = pos.x + forward.x * currentWeaponData->attackDistance + currentWeaponData->attackOffset.x;
+	attackPos.y = pos.y + currentWeaponData->attackOffset.y;
+	attackPos.z = pos.z + forward.z * currentWeaponData->attackDistance + currentWeaponData->attackOffset.z;
 }
 
 void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -167,12 +211,11 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 	// 既にヒット済み
 	if (attackHit) return;
 
-	// 前方向
-	VECTOR forward = GetForward();
-
-	attackPos.x = pos.x + forward.x * 120.0f;
-	attackPos.y = pos.y + height * 0.75f;
-	attackPos.z = pos.z + forward.z * 120.0f;
+	// ===== 追従型当たり判定 =====
+	if (currentWeaponData->followAttack)
+	{
+		UpdateAttackPos();
+	}
 
 	// Enemyチェック
 	for (auto& enemy : enemies)
@@ -192,7 +235,9 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 		float distanceSq = dx * dx + dy * dy + dz * dz;
 
-		if (distanceSq <= attackRadius * attackRadius)
+		float radius = currentWeaponData->attackRadius;
+
+		if (distanceSq <= radius * radius)
 		{
 			enemy->Damage(20);
 
@@ -258,7 +303,7 @@ void Player::DebugDraw()
 		20, 240,
 		GetColor(255, 255, 255),
 		_T("AttackRadius : %.2f"),
-		attackRadius
+		currentWeaponData->attackRadius
 	);
 
 	DrawFormatString(
@@ -276,6 +321,67 @@ void Player::DebugDraw()
 		_T("AttackActive : %d"),
 		attackActive
 	);
+
+	// =========================================
+	// 剣ボーン座標デバッグ
+	// =========================================
+
+	// 右手ボーン番号取得
+	int frameIndex = MV1SearchFrame(handle, _T("mixamorig:RightHand"));
+
+	if (frameIndex >= 0)
+	{
+		// ボーン行列取得
+		MATRIX frameMat = MV1GetFrameLocalWorldMatrix(handle, frameIndex);
+
+		// 座標抽出
+		VECTOR handPos = MV1GetFramePosition(handle, frameIndex);
+
+		DrawFormatString(
+			20, 320,
+			GetColor(0, 255, 255),
+			_T("RightHand Pos : X=%.2f Y=%.2f Z=%.2f"),
+			handPos.x,
+			handPos.y,
+			handPos.z
+		);
+	}
+
+	// =========================================
+	// weapon1モデル座標
+	// =========================================
+
+	if (equipState == EquipState::Weapon1)
+	{
+		VECTOR weaponPos = MV1GetPosition(weapon1.GetHandle());
+
+		DrawFormatString(
+			20, 340,
+			GetColor(255, 128, 0),
+			_T("Weapon1 Pos : X=%.2f Y=%.2f Z=%.2f"),
+			weaponPos.x,
+			weaponPos.y,
+			weaponPos.z
+		);
+	}
+
+	// =========================================
+	// weapon2モデル座標
+	// =========================================
+
+	if (equipState == EquipState::Weapon2)
+	{
+		VECTOR weaponPos = MV1GetPosition(weapon2.GetHandle());
+
+		DrawFormatString(
+			20, 360,
+			GetColor(128, 255, 0),
+			_T("Weapon2 Pos : X=%.2f Y=%.2f Z=%.2f"),
+			weaponPos.x,
+			weaponPos.y,
+			weaponPos.z
+		);
+	}
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -314,11 +420,20 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 	// ===== Player attack sphere =====
 	DrawSphere3D(
 		attackPos,
-		attackRadius,
+		currentWeaponData->attackRadius,
 		16,
 		GetColor(0, 255, 0),
 		GetColor(0, 255, 0),
 		FALSE
+	);
+
+	DrawSphere3D(
+		weapon1.GetDebugPos(),
+		5.0f,
+		8,
+		GetColor(0, 0, 255),
+		GetColor(0, 0, 255),
+		TRUE
 	);
 
 	// ===== Enemy positions =====
@@ -375,14 +490,12 @@ void Player::UpdateInput(float dt, float cameraAngle)
 		currentState = AnimState::Attack;
 
 		// ===== 武器ごとの攻撃アニメ =====
-		if (currentWeaponData)
+		ChangeAnimation(currentWeaponData->attackAnim, false);
+
+		// ===== 固定型当たり判定 =====
+		if (!currentWeaponData->followAttack)
 		{
-			ChangeAnimation(currentWeaponData->attackAnim, false);
-		}
-		else
-		{
-			// 素手
-			ChangeAnimation(attack01Anim, false);
+			UpdateAttackPos();
 		}
 	}
 
@@ -517,14 +630,7 @@ void Player::UpdateState()
 					currentState = AnimState::Dash;
 
 					// ===== 武器ごとのダッシュ =====
-					if (currentWeaponData)
-					{
-						ChangeAnimation(currentWeaponData->dashAnim, true);
-					}
-					else
-					{
-						ChangeAnimation(dash01Anim, true);
-					}
+					ChangeAnimation(currentWeaponData->dashAnim, true);
 				}
 				else
 				{
@@ -578,14 +684,7 @@ void Player::UpdateState()
 
 		case AnimState::Dash:
 			// ===== 武器ごとのダッシュ =====
-			if (currentWeaponData)
-			{
-				ChangeAnimation(currentWeaponData->dashAnim, true);
-			}
-			else
-			{
-				ChangeAnimation(dash01Anim, true);
-			}
+			ChangeAnimation(currentWeaponData->dashAnim, true);
 			break;
 
         case AnimState::JumpLoop:

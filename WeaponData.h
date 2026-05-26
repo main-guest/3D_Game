@@ -12,4 +12,12 @@ struct WeaponData
 	// ===== 使用アニメ =====
 	int attackAnim;
 	int dashAnim;
+
+	// ===== 攻撃判定 =====
+	float attackRadius;
+	float attackDistance;
+	VECTOR attackOffset;
+
+	// ===== 攻撃判定方式 =====
+	bool followAttack;
 };

@@ -89,6 +89,8 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	MV1SetRotationMatrix(handle, finalMat);
 
 	MV1SetPosition(handle, pos);
+
+	debugPos = pos;
 }
 
 void Weapon::Draw()

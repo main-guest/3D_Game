@@ -13,6 +13,16 @@ public:
 
 	void SetData(const WeaponData& d);
 
+	const VECTOR& GetDebugPos()const
+	{
+		return debugPos;
+	}
+
+	int GetHandle()const
+	{
+		return handle;
+	}
+
 private:
 	int handle = -1;
 
@@ -21,4 +31,6 @@ private:
 	VECTOR rotOffset;
 
 	WeaponData data;
+
+	VECTOR debugPos;
 };

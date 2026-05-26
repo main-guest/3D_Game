@@ -26,6 +26,8 @@ public:
 	void EquipWeapon2();
 	void Unequip();
 
+	void UpdateAttackPos();
+
 	void CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies);
 
 	void SetPos(const VECTOR& p) { pos = p; }
@@ -66,7 +68,7 @@ private:
 	// ===== 攻撃当たり判定 =====
 	VECTOR attackPos;
 
-	float attackRadius = 40.0f;
+	//float attackRadius = 40.0f;
 
 	const float jumpStartFrame = 55.0f;
 	const float attackStartFrame = 50.0f;
@@ -80,6 +82,7 @@ private:
 	Weapon weapon2;
 
 	// ===== 武器データ =====
+	WeaponData unarmedData;
 	WeaponData weapon1Data;
 	WeaponData weapon2Data;
 
@@ -87,5 +90,5 @@ private:
 	EquipState equipState;
 
 	// ===== 現在装備中データ =====
-	const WeaponData* currentWeaponData = nullptr;
+	const WeaponData* currentWeaponData = &unarmedData;
 };
