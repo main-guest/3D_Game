@@ -1,8 +1,16 @@
 #pragma once
 #include "DxLib.h"
 
+enum class AttackShape
+{
+	Sphere,
+	Line
+};
+
 struct WeaponData
 {
+	AttackShape attackShape;
+
 	// ===== ‘•”õˆÊ’u•â³ =====
 	VECTOR posOffset;
 

@@ -10,6 +10,10 @@ void Weapon::Init(const TCHAR* path)
 
 void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngle)
 {
+	// 前フレーム保存
+	prevRootPos = rootPos;
+	prevTipPos = tipPos;
+
 	// ===== ボーン取得 =====
 	int frame = MV1SearchFrame(parentHandle, boneName);
 
@@ -18,79 +22,43 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 		return;
 	}
 
-	// ===== ボーン行列取得（位置、回転、向き） =====
-	MATRIX mat = MV1GetFrameLocalWorldMatrix(parentHandle, frame);
-
-	// ===== ボーン位置 =====
-	pos = VGet(
-		mat.m[3][0],
-		mat.m[3][1],
-		mat.m[3][2]
-	);
-
-	// ===== 回転だけ取り出す =====
-	// X軸
-	VECTOR xAxis = VGet(mat.m[0][0], mat.m[0][1], mat.m[0][2]);
-
-	// Y軸
-	VECTOR yAxis = VGet(mat.m[1][0], mat.m[1][1], mat.m[1][2]);
-
-	// Z軸
-	VECTOR zAxis = VGet(mat.m[2][0], mat.m[2][1], mat.m[2][2]);
-
-	// ===== 正規化 =====
-	xAxis = VNorm(xAxis);
-	yAxis = VNorm(yAxis);
-	zAxis = VNorm(zAxis);
-
-	// ===== ボーン基準方向 =====
-	VECTOR right = xAxis;
-	VECTOR up = yAxis;
-	VECTOR forward = zAxis;
+	// ===== 手ボーン行列取得（位置、回転、向き） =====
+	MATRIX handMat = MV1GetFrameLocalWorldMatrix(parentHandle, frame);
 
 	// ===== 武器位置オフセット =====
-	VECTOR offset;
+	MATRIX transMat = MGetTranslate(data.posOffset);
 
-	offset.x = right.x * data.posOffset.x + forward.x * data.posOffset.z;
-	offset.y = data.posOffset.y;
-	offset.z = right.z * data.posOffset.z + forward.z * data.posOffset.z;
-
-	// ===== 武器位置 =====
-	pos = VAdd(pos, offset);
-
-	// ===== rotMatへ代入（回転行列） =====
-	MATRIX rotMat = MGetIdent();
-
-	rotMat.m[0][0] = xAxis.x;
-	rotMat.m[0][1] = xAxis.y;
-	rotMat.m[0][2] = xAxis.z;
-
-	rotMat.m[1][0] = yAxis.x;
-	rotMat.m[1][1] = yAxis.y;
-	rotMat.m[1][2] = yAxis.z;
-
-	rotMat.m[2][0] = zAxis.x;
-	rotMat.m[2][1] = zAxis.y;
-	rotMat.m[2][2] = zAxis.z;
-
-	// ===== 武器角度補正 =====
+	// ===== 武器回転オフセット =====
+	// X軸
 	MATRIX rotX = MGetRotX(data.rotOffset.x);
+
+	// Y軸
 	MATRIX rotY = MGetRotY(data.rotOffset.y);
+
+	// Z軸
 	MATRIX rotZ = MGetRotZ(data.rotOffset.z);
 
-	// 回転合成
-	MATRIX tempMat = MMult(rotX, rotY);
-	MATRIX adjustMat = MMult(tempMat, rotZ);
+	MATRIX rotOffset = MMult(MMult(rotX, rotY), rotZ);
 
-	// ===== ボーン回転 + 武器補正 =====
-	MATRIX finalMat = MMult(adjustMat, rotMat);
+	// ===== オフセット行列 =====
+	MATRIX offsetMat = MMult(rotOffset, transMat);
 
+	// ===== 武器最終行列 =====
+	MATRIX weaponMat = MMult(offsetMat, handMat);
+
+	// 保存
+	worldMatrix = weaponMat;
+
+	
 	// ===== 武器へ適用 =====
-	MV1SetRotationMatrix(handle, finalMat);
+	MV1SetMatrix(handle, weaponMat);
 
-	MV1SetPosition(handle, pos);
+	// デバッグ座標
+	debugPos = VGet(weaponMat.m[3][0], weaponMat.m[3][1], weaponMat.m[3][2]);
 
-	debugPos = pos;
+	// 現在フレーム更新
+	rootPos = VTransform(VGet(0.0f, 0.0f, 0.0f), worldMatrix);
+	tipPos = VTransform(VGet(0.0f, BLADE_LENGTH, 0.0f), worldMatrix);
 }
 
 void Weapon::Draw()

@@ -13,6 +13,26 @@ public:
 
 	void SetData(const WeaponData& d);
 
+	const VECTOR& GetRootPosition() const
+	{
+		return rootPos;
+	}
+
+	const VECTOR& GetTipPosition() const
+	{
+		return tipPos;
+	}
+
+	const VECTOR& GetPrevRootPosition() const
+	{
+		return prevRootPos;
+	}
+
+	const VECTOR& GetPrevTipPosition() const
+	{
+		return prevTipPos;
+	}
+
 	const VECTOR& GetDebugPos()const
 	{
 		return debugPos;
@@ -28,7 +48,16 @@ private:
 
 	VECTOR pos = VGet(0, 0, 0);
 
-	VECTOR rotOffset;
+	MATRIX worldMatrix = MGetIdent();
+
+	VECTOR rootPos{};
+	VECTOR tipPos{};
+
+	VECTOR prevRootPos{};
+	VECTOR prevTipPos{};
+
+	// åïêÊà íu
+	const float BLADE_LENGTH = 150.0f;
 
 	WeaponData data;
 

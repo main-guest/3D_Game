@@ -4,6 +4,41 @@
 #include "CollisionWorld.h"
 #include "Enemy.h"
 
+namespace
+{
+	float Clamp(float v, float min, float max)
+	{
+		if (v < min)return min;
+		if (v > max)return max;
+		return v;
+	}
+
+	bool LineSphereHit(const VECTOR& start, const VECTOR& end, const VECTOR& center, float radius)
+	{
+		VECTOR ab = VSub(end, start);
+		VECTOR ac = VSub(center, start);
+
+		float abLenSq = VDot(ab, ab);
+
+		if (abLenSq < 0.0001f)
+		{
+			return false;
+		}
+
+		float t = VDot(ac, ab) / abLenSq;
+
+		t = Clamp(t, 0.0f, 1.0f);
+
+		VECTOR nearest = { start.x + ab.x * t,start.y + ab.y * t,start.z + ab.z * t };
+
+		VECTOR diff = VSub(center, nearest);
+
+		float distSq = VDot(diff, diff);
+
+		return distSq <= radius * radius;
+	}
+}
+
 void Player::Init(CollisionWorld* w)
 {
 	world = w;
@@ -33,6 +68,7 @@ void Player::Init(CollisionWorld* w)
 	unarmedData.attackAnim = attack01Anim;
 	unarmedData.dashAnim = dash01Anim;
 
+	unarmedData.attackShape = AttackShape::Sphere;
 	unarmedData.attackRadius = 40.0f;
 	unarmedData.attackDistance = 120.0f;
 	unarmedData.attackOffset = VGet(0, 115, 0);
@@ -47,6 +83,7 @@ void Player::Init(CollisionWorld* w)
 	weapon1Data.attackAnim = attack02Anim;
 	weapon1Data.dashAnim = dash02Anim;
 
+	weapon1Data.attackShape = AttackShape::Line;
 	weapon1Data.attackRadius = 20.0f;
 	weapon1Data.attackDistance = 160.0f;
 	weapon1Data.attackOffset = VGet(0, 115, 0);
@@ -62,6 +99,7 @@ void Player::Init(CollisionWorld* w)
 
 	weapon2Data.attackAnim = attack03Anim;
 	weapon2Data.dashAnim = dash01Anim;
+	weapon2Data.attackShape = AttackShape::Sphere;
 
 	weapon2Data.attackRadius = 10.0f;
 	weapon2Data.attackDistance = 220.0f;
@@ -84,15 +122,6 @@ void Player::Init(CollisionWorld* w)
 	equipState = EquipState::Unarmed;
 
 	currentWeaponData = &unarmedData;
-
-	int frameNum = MV1GetFrameNum(handle);
-
-	for (int i = 0; i < frameNum; i++)
-	{
-		printfDx(_T("%d : %s\n"),
-			i,
-			MV1GetFrameName(handle, i));
-	}
 }
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
@@ -217,34 +246,74 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 		UpdateAttackPos();
 	}
 
-	// Enemyチェック
-	for (auto& enemy : enemies)
+	switch (currentWeaponData->attackShape)
 	{
-		if (enemy->IsDead())
+		case AttackShape::Sphere:
 		{
-			continue;
+			UpdateAttackPos();
+
+			// Enemyチェック
+			for (auto& enemy : enemies)
+			{
+				if (enemy->IsDead())
+				{
+					continue;
+				}
+
+				VECTOR epos = enemy->GetPos();
+
+				epos.y += enemy->GetHeight() * 0.75f;
+
+				float dx = epos.x - attackPos.x;
+				float dy = epos.y - attackPos.y;
+				float dz = epos.z - attackPos.z;
+
+				float distanceSq = dx * dx + dy * dy + dz * dz;
+
+				float radius = currentWeaponData->attackRadius;
+
+				if (distanceSq <= radius * radius)
+				{
+					enemy->Damage(20);
+
+					attackHit = true;
+					break;
+				}
+			}
+
+			break;
 		}
 
-		VECTOR epos = enemy->GetPos();
-
-		epos.y += enemy->GetHeight() * 0.75f;
-
-		float dx = epos.x - attackPos.x;
-		float dy = epos.y - attackPos.y;
-		float dz = epos.z - attackPos.z;
-
-		float distanceSq = dx * dx + dy * dy + dz * dz;
-
-		float radius = currentWeaponData->attackRadius;
-
-		if (distanceSq <= radius * radius)
+		case AttackShape::Line:
 		{
-			enemy->Damage(20);
+			VECTOR prevTip = weapon1.GetPrevTipPosition();
+			VECTOR tip = weapon1.GetTipPosition();
 
-			attackHit = true;
+			for (auto& enemy : enemies)
+			{
+				if (enemy->IsDead())
+					continue;
+
+				VECTOR center = enemy->GetPos();
+
+				center.y += enemy->GetHeight() * 0.5f;
+
+				float radius = 40.0f;
+
+				if (LineSphereHit(prevTip, tip, center, radius))
+				{
+					enemy->Damage(20);
+
+					attackHit = true;
+					break;
+				}
+			}
+
 			break;
 		}
 	}
+
+	
 }
 
 const VECTOR& Player::GetVelocity() const
@@ -382,6 +451,29 @@ void Player::DebugDraw()
 			weaponPos.z
 		);
 	}
+
+	VECTOR prevTip = weapon1.GetPrevTipPosition();
+	VECTOR tip = weapon1.GetTipPosition();
+
+	DrawFormatString(
+		20,
+		500,
+		GetColor(255, 255, 255),
+		_T("PrevTip %.1f %.1f %.1f"),
+		prevTip.x,
+		prevTip.y,
+		prevTip.z
+	);
+
+	DrawFormatString(
+		20,
+		520,
+		GetColor(255, 255, 255),
+		_T("Tip %.1f %.1f %.1f"),
+		tip.x,
+		tip.y,
+		tip.z
+	);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -434,6 +526,46 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 		GetColor(0, 0, 255),
 		GetColor(0, 0, 255),
 		TRUE
+	);
+
+	DrawSphere3D(
+		weapon1.GetTipPosition(), 
+		5.0f,
+		8, 
+		GetColor(255, 0, 255), 
+		GetColor(255, 0, 255), 
+		TRUE
+	);
+
+	DrawSphere3D(
+		weapon1.GetRootPosition(),
+		5.0f,
+		8,
+		GetColor(0, 255, 255),
+		GetColor(0, 255, 255),
+		TRUE
+	);
+
+	DrawLine3D(
+		weapon1.GetRootPosition(),
+		weapon1.GetTipPosition(),
+		GetColor(255, 255, 0)
+	);
+
+	DrawLine3D(
+		weapon1.GetPrevTipPosition(),
+		weapon1.GetTipPosition(),
+		GetColor(255, 0, 255)
+	);
+
+	DrawCapsule3D(
+		weapon1.GetPrevTipPosition(),
+		weapon1.GetTipPosition(),
+		40.0f,
+		8,
+		GetColor(255, 0, 255),
+		GetColor(255, 0, 255),
+		FALSE
 	);
 
 	// ===== Enemy positions =====
