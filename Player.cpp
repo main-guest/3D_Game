@@ -91,7 +91,7 @@ void Player::Init(CollisionWorld* w)
 	weapon1Data.followAttack = true;
 
 	weapon1.SetData(weapon1Data);
-	
+
 	// weapon2
 	weapon2Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
@@ -99,10 +99,10 @@ void Player::Init(CollisionWorld* w)
 
 	weapon2Data.attackAnim = attack03Anim;
 	weapon2Data.dashAnim = dash01Anim;
-	weapon2Data.attackShape = AttackShape::Sphere;
+	weapon2Data.attackShape = AttackShape::Gun;
 
 	weapon2Data.attackRadius = 10.0f;
-	weapon2Data.attackDistance = 220.0f;
+	weapon2Data.attackDistance = 600.0f;
 	weapon2Data.attackOffset = VGet(0, 115, 0);
 
 	weapon2Data.followAttack = false;
@@ -115,7 +115,7 @@ void Player::Init(CollisionWorld* w)
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
-	
+
 	ChangeAnimation(idleAnim, true);
 
 	// 初期装備
@@ -173,8 +173,25 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		break;
 	}
 
+	// ガン遅延ダメージ
+	if (gunWaitingDamage)
+	{
+		gunTimer -= dt;
+
+		if (gunTimer <= 0.0f)
+		{
+			if (gunTarget && !gunTarget->IsDead())
+			{
+				gunTarget->Damage(20);
+			}
+
+			gunTarget = nullptr;
+			gunWaitingDamage = false;
+		}
+	}
+
 	//　=====　接地保存　=====
-    prevGround = isGround;
+	prevGround = isGround;
 }
 
 void Player::Draw()
@@ -248,80 +265,96 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	switch (currentWeaponData->attackShape)
 	{
-		case AttackShape::Sphere:
+	case AttackShape::Sphere:
+	{
+		UpdateAttackPos();
+
+		// Enemyチェック
+		for (auto& enemy : enemies)
 		{
-			UpdateAttackPos();
-
-			// Enemyチェック
-			for (auto& enemy : enemies)
+			if (enemy->IsDead())
 			{
-				if (enemy->IsDead())
-				{
-					continue;
-				}
-
-				VECTOR epos = enemy->GetPos();
-
-				epos.y += enemy->GetHeight() * 0.75f;
-
-				float dx = epos.x - attackPos.x;
-				float dy = epos.y - attackPos.y;
-				float dz = epos.z - attackPos.z;
-
-				float distanceSq = dx * dx + dy * dy + dz * dz;
-
-				float radius = currentWeaponData->attackRadius;
-
-				if (distanceSq <= radius * radius)
-				{
-					enemy->Damage(20);
-
-					attackHit = true;
-					break;
-				}
+				continue;
 			}
 
-			break;
-		}
+			VECTOR epos = enemy->GetPos();
 
-		case AttackShape::Line:
-		{
-			VECTOR prevRoot = weapon1.GetPrevRootPosition();
-			VECTOR root = weapon1.GetRootPosition();
+			epos.y += enemy->GetHeight() * 0.75f;
 
-			VECTOR prevTip = weapon1.GetPrevTipPosition();
-			VECTOR tip = weapon1.GetTipPosition();
+			float dx = epos.x - attackPos.x;
+			float dy = epos.y - attackPos.y;
+			float dz = epos.z - attackPos.z;
 
-			for (auto& enemy : enemies)
+			float distanceSq = dx * dx + dy * dy + dz * dz;
+
+			float radius = currentWeaponData->attackRadius;
+
+			if (distanceSq <= radius * radius)
 			{
-				if (enemy->IsDead())
-					continue;
+				enemy->Damage(20);
 
-				VECTOR center = enemy->GetPos();
-				center.y += enemy->GetHeight() * 0.5f;
-
-				float radius = 10.0f;
-
-				bool hit =
-					LineSphereHit(prevRoot, prevTip, center, radius) ||	// 前フレームの剣
-					LineSphereHit(root, tip, center, radius) ||			// 現在フレームの剣
-					LineSphereHit(prevTip, tip, center, radius) ||		// 剣先の移動軌跡
-					LineSphereHit(prevRoot, root, center, radius);		// 剣根本の移動軌跡
-
-				if (hit)
-				{
-					enemy->Damage(20);
-
-					attackHit = true;
-					break;
-				}
+				attackHit = true;
+				break;
 			}
-
-			break;
 		}
+
+		break;
 	}
 
-	
+	case AttackShape::Line:
+	{
+		VECTOR prevRoot = weapon1.GetPrevRootPosition();
+		VECTOR root = weapon1.GetRootPosition();
+
+		VECTOR prevTip = weapon1.GetPrevTipPosition();
+		VECTOR tip = weapon1.GetTipPosition();
+
+		for (auto& enemy : enemies)
+		{
+			if (enemy->IsDead())
+				continue;
+
+			VECTOR center = enemy->GetPos();
+			center.y += enemy->GetHeight() * 0.5f;
+
+			float radius = 10.0f;
+
+			bool hit =
+				LineSphereHit(prevRoot, prevTip, center, radius) ||	// 前フレームの剣
+				LineSphereHit(root, tip, center, radius) ||			// 現在フレームの剣
+				LineSphereHit(prevTip, tip, center, radius) ||		// 剣先の移動軌跡
+				LineSphereHit(prevRoot, root, center, radius);		// 剣根本の移動軌跡
+
+			if (hit)
+			{
+				enemy->Damage(20);
+
+				attackHit = true;
+				break;
+			}
+		}
+
+		break;
+	}
+
+	case AttackShape::Gun:
+	{
+		if (!gunWaitingDamage)
+		{
+			gunTarget = FindGunTarget(enemies);
+
+			if (gunTarget)
+			{
+				gunTimer = 2.0f;
+				gunWaitingDamage = true;
+
+				attackHit = true;
+			}
+		}
+
+		break;
+	}
+	}
 }
 
 const VECTOR& Player::GetVelocity() const
@@ -398,6 +431,23 @@ void Player::DebugDraw()
 		_T("AttackActive : %d"),
 		attackActive
 	);
+
+	// ガン
+	DrawFormatString(
+		20,
+		300,
+		GetColor(255, 255, 0),
+		_T("GunTimer : %.2f"),
+		gunTimer
+	);
+
+	DrawFormatString(
+		20,
+		320,
+		GetColor(255, 255, 0),
+		_T("GunWaiting : %d"),
+		gunWaitingDamage
+	);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -447,10 +497,10 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	// 前フレームの剣
 	DrawCapsule3D(
-		weapon1.GetPrevRootPosition(), 
-		weapon1.GetPrevTipPosition(), 
-		hitRadius, 
-		8, 
+		weapon1.GetPrevRootPosition(),
+		weapon1.GetPrevTipPosition(),
+		hitRadius,
+		8,
 		GetColor(255, 255, 0),
 		GetColor(255, 255, 0), FALSE
 	);
@@ -488,6 +538,23 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 		FALSE
 	);
 
+	// 銃
+	if (gunTarget && !gunTarget->IsDead())
+	{
+		VECTOR markPos = gunTarget->GetPos();
+
+		markPos.y += gunTarget->GetHeight() + 20.0f;
+
+		DrawSphere3D(
+			markPos,
+			8.0f,
+			8,
+			GetColor(255, 0, 0),
+			GetColor(255, 0, 0),
+			TRUE
+		);
+	}
+
 	// ===== Enemy positions =====
 	for (auto& enemy : enemies)
 	{
@@ -507,6 +574,53 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 			TRUE
 		);
 	}
+}
+
+// 敵探索
+Enemy* Player::FindGunTarget(std::vector<std::unique_ptr< Enemy >>& enemies)
+{
+	Enemy* result = nullptr;
+
+	float gunRange = currentWeaponData->attackDistance;	// 射程
+
+	float nearestDistSq = gunRange * gunRange;
+
+	VECTOR forward = GetForward();
+
+	for (auto& enemy : enemies)
+	{
+		if (enemy->IsDead())
+			continue;
+
+		VECTOR center = enemy->GetPos();
+		center.y += enemy->GetHeight() * 0.5f;
+
+		VECTOR toEnemy = VSub(center, pos);
+
+		float dist = VSize(toEnemy);
+
+		if (dist > gunRange)
+			continue;
+
+		toEnemy = VNorm(toEnemy);
+
+		float dot = VDot(forward, toEnemy);
+
+		float limit = cosf(currentWeaponData->lockAngle * DX_PI_F / 180.0f);
+
+		if (dot < limit)
+			continue;
+
+		float distSq = dist * dist;
+
+		if (distSq < nearestDistSq)
+		{
+			nearestDistSq = distSq;
+			result = enemy.get();
+		}
+	}
+
+	return result;
 }
 
 void Player::UpdateInput(float dt, float cameraAngle)
@@ -600,28 +714,28 @@ void Player::UpdateInput(float dt, float cameraAngle)
 
 void Player::UpdateState()
 {
-    //　=====　JumpStart → JumpLoop　=====
-    if (currentState == AnimState::JumpStart)
-    {
-        if (jumpRequest && animTime >= jumpStartFrame)
-        {
-            velocity.y = jumpPower;
+	//　=====　JumpStart → JumpLoop　=====
+	if (currentState == AnimState::JumpStart)
+	{
+		if (jumpRequest && animTime >= jumpStartFrame)
+		{
+			velocity.y = jumpPower;
 
-            isGround = false;
+			isGround = false;
 
-            jumpRequest = false;
+			jumpRequest = false;
 
-            currentState = AnimState::JumpLoop;
+			currentState = AnimState::JumpLoop;
 
-            ChangeAnimation(jumpLoopAnim, true);
-        }
+			ChangeAnimation(jumpLoopAnim, true);
+		}
 
-        return;
-    }
+		return;
+	}
 
-    //　=====　Attack中　=====
-    if (currentState == AnimState::Attack)
-    {
+	//　=====　Attack中　=====
+	if (currentState == AnimState::Attack)
+	{
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 		// 攻撃判定ON区間
@@ -651,25 +765,25 @@ void Player::UpdateState()
 				ChangeAnimation(idleAnim, true);
 			}
 		}
-        return;
-    }
+		return;
+	}
 
-    //　=====　着地瞬間検知　=====
+	//　=====　着地瞬間検知　=====
 	bool landed = (!prevGround && isGround);
 
-    if (landed && currentState != AnimState::JumpEnd)
-    {
-        currentState = AnimState::JumpEnd;
+	if (landed && currentState != AnimState::JumpEnd)
+	{
+		currentState = AnimState::JumpEnd;
 
-        ChangeAnimation(jumpEndAnim, false);
+		ChangeAnimation(jumpEndAnim, false);
 
-        return;
-    }
+		return;
+	}
 
-    //　=====　JumpEnd終了　=====
-    if (currentState == AnimState::JumpEnd)
-    {
-        // アニメ終了判定
+	//　=====　JumpEnd終了　=====
+	if (currentState == AnimState::JumpEnd)
+	{
+		// アニメ終了判定
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 		if (animTime >= totalTime - 0.1f)
@@ -697,19 +811,19 @@ void Player::UpdateState()
 			}
 		}
 
-        return;
-    }
+		return;
+	}
 
 	//　=====　通常状態　=====
-    AnimState nextState = AnimState::Idle;
+	AnimState nextState = AnimState::Idle;
 
-    if (!isGround)
-    {
-        nextState = AnimState::JumpLoop;
-    }
-    else if (fabsf(velocity.x) > 0.1f ||
-        fabsf(velocity.z) > 0.1f)
-    {
+	if (!isGround)
+	{
+		nextState = AnimState::JumpLoop;
+	}
+	else if (fabsf(velocity.x) > 0.1f ||
+		fabsf(velocity.z) > 0.1f)
+	{
 		if (isDash)
 		{
 			nextState = AnimState::Dash;
@@ -718,30 +832,30 @@ void Player::UpdateState()
 		{
 			nextState = AnimState::Walk;
 		}
-    }
+	}
 
-    if (nextState != currentState)
-    {
-        currentState = nextState;
+	if (nextState != currentState)
+	{
+		currentState = nextState;
 
-        switch (currentState)
-        {
-        case AnimState::Idle:
-            ChangeAnimation(idleAnim, true);
-            break;
+		switch (currentState)
+		{
+		case AnimState::Idle:
+			ChangeAnimation(idleAnim, true);
+			break;
 
-        case AnimState::Walk:
-            ChangeAnimation(walkAnim, true);
-            break;
+		case AnimState::Walk:
+			ChangeAnimation(walkAnim, true);
+			break;
 
 		case AnimState::Dash:
 			// ===== 武器ごとのダッシュ =====
 			ChangeAnimation(currentWeaponData->dashAnim, true);
 			break;
 
-        case AnimState::JumpLoop:
-            ChangeAnimation(jumpLoopAnim, true);
-            break;
-        }
-    }
+		case AnimState::JumpLoop:
+			ChangeAnimation(jumpLoopAnim, true);
+			break;
+		}
+	}
 }

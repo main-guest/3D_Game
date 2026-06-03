@@ -4,7 +4,8 @@
 enum class AttackShape
 {
 	Sphere,
-	Line
+	Line,
+	Gun
 };
 
 struct WeaponData
@@ -28,4 +29,7 @@ struct WeaponData
 
 	// ===== 攻撃判定方式 =====
 	bool followAttack;
+
+	// ===== ロックオン角度 =====
+	float lockAngle = 30.0f;
 };

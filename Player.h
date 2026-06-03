@@ -44,6 +44,8 @@ public:
 
 private:
 	// 内部処理
+	Enemy* FindGunTarget(std::vector<std::unique_ptr<Enemy>>& enemies);
+
 	void UpdateInput(float dt, float cameraAngle);
 	void UpdateState();
 
@@ -56,7 +58,7 @@ private:
 
 	bool prevGround = true;
 
-	bool jumpRequest=false;
+	bool jumpRequest = false;
 
 	bool attackActive = false;
 	bool attackHit = false;
@@ -76,7 +78,7 @@ private:
 
 	// 外部参照
 	CollisionWorld* world = nullptr;
-	
+
 	// ===== 武器 =====
 	Weapon weapon1;
 	Weapon weapon2;
@@ -91,4 +93,10 @@ private:
 
 	// ===== 現在装備中データ =====
 	const WeaponData* currentWeaponData = &unarmedData;
+
+	//ガンターゲット
+	Enemy* gunTarget = nullptr;
+
+	float gunTimer = 0.0f;
+	bool gunWaitingDamage = false;
 };
