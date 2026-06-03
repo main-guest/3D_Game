@@ -286,6 +286,9 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 		case AttackShape::Line:
 		{
+			VECTOR prevRoot = weapon1.GetPrevRootPosition();
+			VECTOR root = weapon1.GetRootPosition();
+
 			VECTOR prevTip = weapon1.GetPrevTipPosition();
 			VECTOR tip = weapon1.GetTipPosition();
 
@@ -295,12 +298,17 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 					continue;
 
 				VECTOR center = enemy->GetPos();
-
 				center.y += enemy->GetHeight() * 0.5f;
 
-				float radius = 40.0f;
+				float radius = 10.0f;
 
-				if (LineSphereHit(prevTip, tip, center, radius))
+				bool hit =
+					LineSphereHit(prevRoot, prevTip, center, radius) ||	// 前フレームの剣
+					LineSphereHit(root, tip, center, radius) ||			// 現在フレームの剣
+					LineSphereHit(prevTip, tip, center, radius) ||		// 剣先の移動軌跡
+					LineSphereHit(prevRoot, root, center, radius);		// 剣根本の移動軌跡
+
+				if (hit)
 				{
 					enemy->Damage(20);
 
@@ -390,90 +398,6 @@ void Player::DebugDraw()
 		_T("AttackActive : %d"),
 		attackActive
 	);
-
-	// =========================================
-	// 剣ボーン座標デバッグ
-	// =========================================
-
-	// 右手ボーン番号取得
-	int frameIndex = MV1SearchFrame(handle, _T("mixamorig:RightHand"));
-
-	if (frameIndex >= 0)
-	{
-		// ボーン行列取得
-		MATRIX frameMat = MV1GetFrameLocalWorldMatrix(handle, frameIndex);
-
-		// 座標抽出
-		VECTOR handPos = MV1GetFramePosition(handle, frameIndex);
-
-		DrawFormatString(
-			20, 320,
-			GetColor(0, 255, 255),
-			_T("RightHand Pos : X=%.2f Y=%.2f Z=%.2f"),
-			handPos.x,
-			handPos.y,
-			handPos.z
-		);
-	}
-
-	// =========================================
-	// weapon1モデル座標
-	// =========================================
-
-	if (equipState == EquipState::Weapon1)
-	{
-		VECTOR weaponPos = MV1GetPosition(weapon1.GetHandle());
-
-		DrawFormatString(
-			20, 340,
-			GetColor(255, 128, 0),
-			_T("Weapon1 Pos : X=%.2f Y=%.2f Z=%.2f"),
-			weaponPos.x,
-			weaponPos.y,
-			weaponPos.z
-		);
-	}
-
-	// =========================================
-	// weapon2モデル座標
-	// =========================================
-
-	if (equipState == EquipState::Weapon2)
-	{
-		VECTOR weaponPos = MV1GetPosition(weapon2.GetHandle());
-
-		DrawFormatString(
-			20, 360,
-			GetColor(128, 255, 0),
-			_T("Weapon2 Pos : X=%.2f Y=%.2f Z=%.2f"),
-			weaponPos.x,
-			weaponPos.y,
-			weaponPos.z
-		);
-	}
-
-	VECTOR prevTip = weapon1.GetPrevTipPosition();
-	VECTOR tip = weapon1.GetTipPosition();
-
-	DrawFormatString(
-		20,
-		500,
-		GetColor(255, 255, 255),
-		_T("PrevTip %.1f %.1f %.1f"),
-		prevTip.x,
-		prevTip.y,
-		prevTip.z
-	);
-
-	DrawFormatString(
-		20,
-		520,
-		GetColor(255, 255, 255),
-		_T("Tip %.1f %.1f %.1f"),
-		tip.x,
-		tip.y,
-		tip.z
-	);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -519,49 +443,45 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 		FALSE
 	);
 
-	DrawSphere3D(
-		weapon1.GetDebugPos(),
-		5.0f,
-		8,
-		GetColor(0, 0, 255),
-		GetColor(0, 0, 255),
-		TRUE
-	);
+	float hitRadius = 10.0f;
 
-	DrawSphere3D(
-		weapon1.GetTipPosition(), 
-		5.0f,
+	// 前フレームの剣
+	DrawCapsule3D(
+		weapon1.GetPrevRootPosition(), 
+		weapon1.GetPrevTipPosition(), 
+		hitRadius, 
 		8, 
-		GetColor(255, 0, 255), 
-		GetColor(255, 0, 255), 
-		TRUE
+		GetColor(255, 255, 0),
+		GetColor(255, 255, 0), FALSE
 	);
 
-	DrawSphere3D(
+	// 現在フレームの剣
+	DrawCapsule3D(
 		weapon1.GetRootPosition(),
-		5.0f,
+		weapon1.GetTipPosition(),
+		hitRadius,
+		8,
+		GetColor(0, 255, 0),
+		GetColor(0, 255, 0),
+		FALSE
+	);
+
+	// 剣先の移動軌跡
+	DrawCapsule3D(
+		weapon1.GetPrevRootPosition(),
+		weapon1.GetRootPosition(),
+		hitRadius,
 		8,
 		GetColor(0, 255, 255),
 		GetColor(0, 255, 255),
-		TRUE
+		FALSE
 	);
 
-	DrawLine3D(
-		weapon1.GetRootPosition(),
-		weapon1.GetTipPosition(),
-		GetColor(255, 255, 0)
-	);
-
-	DrawLine3D(
-		weapon1.GetPrevTipPosition(),
-		weapon1.GetTipPosition(),
-		GetColor(255, 0, 255)
-	);
-
+	// 根元の移動軌跡
 	DrawCapsule3D(
 		weapon1.GetPrevTipPosition(),
 		weapon1.GetTipPosition(),
-		40.0f,
+		hitRadius,
 		8,
 		GetColor(255, 0, 255),
 		GetColor(255, 0, 255),

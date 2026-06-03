@@ -25,6 +25,9 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	// ===== 手ボーン行列取得（位置、回転、向き） =====
 	MATRIX handMat = MV1GetFrameLocalWorldMatrix(parentHandle, frame);
 
+	// デバッグ座標
+	debugPos = VGet(handMat.m[3][0], handMat.m[3][1], handMat.m[3][2]);
+
 	// ===== 武器位置オフセット =====
 	MATRIX transMat = MGetTranslate(data.posOffset);
 
@@ -52,9 +55,6 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	
 	// ===== 武器へ適用 =====
 	MV1SetMatrix(handle, weaponMat);
-
-	// デバッグ座標
-	debugPos = VGet(weaponMat.m[3][0], weaponMat.m[3][1], weaponMat.m[3][2]);
 
 	// 現在フレーム更新
 	rootPos = VTransform(VGet(0.0f, 0.0f, 0.0f), worldMatrix);
