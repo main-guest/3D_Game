@@ -77,6 +77,9 @@ void Player::Init(CollisionWorld* w)
 
 	unarmedData.followAttack = true;
 
+	unarmedData.attackStartFrame = 50.0f;
+	unarmedData.attackEndFrame = 100.0f;
+
 	// weapon1
 	weapon1Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
@@ -91,6 +94,9 @@ void Player::Init(CollisionWorld* w)
 	weapon1Data.attackOffset = VGet(0, 115, 0);
 
 	weapon1Data.followAttack = true;
+
+	weapon1Data.attackStartFrame = 30.0f;
+	weapon1Data.attackEndFrame = 80.0f;
 
 	weapon1.SetData(weapon1Data);
 
@@ -108,6 +114,9 @@ void Player::Init(CollisionWorld* w)
 	weapon2Data.attackOffset = VGet(0, 115, 0);
 
 	weapon2Data.followAttack = false;
+
+	weapon2Data.attackStartFrame = 10.0f;
+	weapon2Data.attackEndFrame = 20.0f;
 
 	weapon2.SetData(weapon2Data);
 
@@ -815,7 +824,7 @@ void Player::UpdateState()
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 		// 攻撃判定ON区間
-		if (animTime >= attackStartFrame && animTime <= attackEndFrame)
+		if (animTime >= currentWeaponData->attackStartFrame && animTime <= currentWeaponData->attackEndFrame)
 		{
 			attackActive = true;
 		}

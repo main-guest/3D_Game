@@ -75,8 +75,6 @@ private:
 	VECTOR attackPos;
 
 	const float jumpStartFrame = 55.0f;
-	const float attackStartFrame = 50.0f;
-	const float attackEndFrame = 100.0f;
 
 	// ŠO•”QÆ
 	CollisionWorld* world = nullptr;
