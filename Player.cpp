@@ -1,4 +1,5 @@
 ﻿#include <cmath>
+#include <algorithm>
 #include "Player.h"
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
@@ -180,12 +181,15 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 
 		if (gunTimer <= 0.0f)
 		{
-			if (gunTarget && !gunTarget->IsDead())
+			for (Enemy* enemy : gunTargets)
 			{
-				gunTarget->Damage(20);
+				if (enemy && !enemy->IsDead())
+				{
+					enemy->Damage(20);
+				}
 			}
 
-			gunTarget = nullptr;
+			gunTargets.clear();
 			gunWaitingDamage = false;
 		}
 	}
@@ -265,95 +269,95 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	switch (currentWeaponData->attackShape)
 	{
-	case AttackShape::Sphere:
-	{
-		UpdateAttackPos();
-
-		// Enemyチェック
-		for (auto& enemy : enemies)
+		case AttackShape::Sphere:
 		{
-			if (enemy->IsDead())
+			UpdateAttackPos();
+
+			// Enemyチェック
+			for (auto& enemy : enemies)
 			{
-				continue;
+				if (enemy->IsDead())
+				{
+					continue;
+				}
+
+				VECTOR epos = enemy->GetPos();
+
+				epos.y += enemy->GetHeight() * 0.75f;
+
+				float dx = epos.x - attackPos.x;
+				float dy = epos.y - attackPos.y;
+				float dz = epos.z - attackPos.z;
+
+				float distanceSq = dx * dx + dy * dy + dz * dz;
+
+				float radius = currentWeaponData->attackRadius;
+
+				if (distanceSq <= radius * radius)
+				{
+					enemy->Damage(20);
+
+					attackHit = true;
+					break;
+				}
 			}
 
-			VECTOR epos = enemy->GetPos();
-
-			epos.y += enemy->GetHeight() * 0.75f;
-
-			float dx = epos.x - attackPos.x;
-			float dy = epos.y - attackPos.y;
-			float dz = epos.z - attackPos.z;
-
-			float distanceSq = dx * dx + dy * dy + dz * dz;
-
-			float radius = currentWeaponData->attackRadius;
-
-			if (distanceSq <= radius * radius)
-			{
-				enemy->Damage(20);
-
-				attackHit = true;
-				break;
-			}
+			break;
 		}
 
-		break;
-	}
-
-	case AttackShape::Line:
-	{
-		VECTOR prevRoot = weapon1.GetPrevRootPosition();
-		VECTOR root = weapon1.GetRootPosition();
-
-		VECTOR prevTip = weapon1.GetPrevTipPosition();
-		VECTOR tip = weapon1.GetTipPosition();
-
-		for (auto& enemy : enemies)
+		case AttackShape::Line:
 		{
-			if (enemy->IsDead())
-				continue;
+			VECTOR prevRoot = weapon1.GetPrevRootPosition();
+			VECTOR root = weapon1.GetRootPosition();
 
-			VECTOR center = enemy->GetPos();
-			center.y += enemy->GetHeight() * 0.5f;
+			VECTOR prevTip = weapon1.GetPrevTipPosition();
+			VECTOR tip = weapon1.GetTipPosition();
 
-			float radius = 10.0f;
-
-			bool hit =
-				LineSphereHit(prevRoot, prevTip, center, radius) ||	// 前フレームの剣
-				LineSphereHit(root, tip, center, radius) ||			// 現在フレームの剣
-				LineSphereHit(prevTip, tip, center, radius) ||		// 剣先の移動軌跡
-				LineSphereHit(prevRoot, root, center, radius);		// 剣根本の移動軌跡
-
-			if (hit)
+			for (auto& enemy : enemies)
 			{
-				enemy->Damage(20);
+				if (enemy->IsDead())
+					continue;
 
-				attackHit = true;
-				break;
+				VECTOR center = enemy->GetPos();
+				center.y += enemy->GetHeight() * 0.5f;
+
+				float radius = 10.0f;
+
+				bool hit =
+					LineSphereHit(prevRoot, prevTip, center, radius) ||	// 前フレームの剣
+					LineSphereHit(root, tip, center, radius) ||			// 現在フレームの剣
+					LineSphereHit(prevTip, tip, center, radius) ||		// 剣先の移動軌跡
+					LineSphereHit(prevRoot, root, center, radius);		// 剣根本の移動軌跡
+
+				if (hit)
+				{
+					enemy->Damage(20);
+
+					attackHit = true;
+					break;
+				}
 			}
+
+			break;
 		}
 
-		break;
-	}
-
-	case AttackShape::Gun:
-	{
-		if (!gunWaitingDamage)
+		case AttackShape::Gun:
 		{
-			gunTarget = FindGunTarget(enemies);
-
-			if (gunTarget)
+			if (!gunWaitingDamage)
 			{
-				gunTimer = 2.0f;
-				gunWaitingDamage = true;
+				gunTargets = FindGunTargets(enemies);
 
-				attackHit = true;
+				if (!gunTargets.empty())
+				{
+					gunTimer = 2.0f;
+					gunWaitingDamage = true;
+
+					attackHit = true;
+				}
 			}
-		}
 
-		break;
-	}
+			break;
+		}
 	}
 }
 
@@ -538,19 +542,21 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 		FALSE
 	);
 
-	// 銃
-	if (gunTarget && !gunTarget->IsDead())
+	// 銃ターゲットマーカー
+	for (Enemy* enemy : gunTargets)
 	{
-		VECTOR markPos = gunTarget->GetPos();
+		if (!enemy || enemy->IsDead())
+			continue;
 
-		markPos.y += gunTarget->GetHeight() + 20.0f;
+		VECTOR pos = enemy->GetPos();
+		pos.y += enemy->GetHeight() + 20.0f;
 
 		DrawSphere3D(
-			markPos,
+			pos,
 			8.0f,
 			8,
-			GetColor(255, 0, 0),
-			GetColor(255, 0, 0),
+			GetColor(255,0,0),
+			GetColor(255,0,0),
 			TRUE
 		);
 	}
@@ -577,15 +583,19 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 }
 
 // 敵探索
-Enemy* Player::FindGunTarget(std::vector<std::unique_ptr< Enemy >>& enemies)
+std::vector<Enemy*> Player::FindGunTargets(std::vector<std::unique_ptr< Enemy >>& enemies)
 {
-	Enemy* result = nullptr;
+	struct Candidate
+	{
+		Enemy* enemy;
+		float score;
+	};
 
-	float gunRange = currentWeaponData->attackDistance;	// 射程
-
-	float nearestDistSq = gunRange * gunRange;
+	std::vector<Candidate> candiates;
 
 	VECTOR forward = GetForward();
+
+	float limit = cosf(currentWeaponData->lockAngle * DX_PI_F / 180.0f);
 
 	for (auto& enemy : enemies)
 	{
@@ -599,25 +609,45 @@ Enemy* Player::FindGunTarget(std::vector<std::unique_ptr< Enemy >>& enemies)
 
 		float dist = VSize(toEnemy);
 
+		// 射程
+		float gunRange = currentWeaponData->attackDistance;
+
+		// 射程外
 		if (dist > gunRange)
 			continue;
 
-		toEnemy = VNorm(toEnemy);
+		VECTOR dir = VNorm(toEnemy);
 
-		float dot = VDot(forward, toEnemy);
+		float dot = VDot(forward, dir);
 
-		float limit = cosf(currentWeaponData->lockAngle * DX_PI_F / 180.0f);
-
+		// 視界外
 		if (dot < limit)
 			continue;
 
-		float distSq = dist * dist;
+		Candidate c;
 
-		if (distSq < nearestDistSq)
+		c.enemy = enemy.get();
+
+		// 画面中央に近いほど高得点
+		c.score = dot;
+
+		candiates.push_back(c);
+	}
+
+	// 中央優先でソート
+	std::sort(candiates.begin(), candiates.end(), [](const Candidate& a, const Candidate& b)
 		{
-			nearestDistSq = distSq;
-			result = enemy.get();
+			return a.score > b.score;
 		}
+	);
+
+	std::vector<Enemy*> result;
+
+	const int MAX_LOCK = 5;
+
+	for (size_t i = 0; i < candiates.size() && i < MAX_LOCK; i++)
+	{
+		result.push_back(candiates[i].enemy);
 	}
 
 	return result;

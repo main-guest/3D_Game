@@ -44,7 +44,7 @@ public:
 
 private:
 	// 内部処理
-	Enemy* FindGunTarget(std::vector<std::unique_ptr<Enemy>>& enemies);
+	std::vector<Enemy*> FindGunTargets(std::vector<std::unique_ptr<Enemy>>& enemies);
 
 	void UpdateInput(float dt, float cameraAngle);
 	void UpdateState();
@@ -95,7 +95,7 @@ private:
 	const WeaponData* currentWeaponData = &unarmedData;
 
 	//ガンターゲット
-	Enemy* gunTarget = nullptr;
+	std::vector<Enemy*> gunTargets;
 
 	float gunTimer = 0.0f;
 	bool gunWaitingDamage = false;
