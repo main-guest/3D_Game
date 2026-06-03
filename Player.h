@@ -60,6 +60,8 @@ private:
 
 	bool jumpRequest = false;
 
+	bool dashJump = false;
+
 	bool attackActive = false;
 	bool attackHit = false;
 
@@ -67,10 +69,10 @@ private:
 	float walkSpeed = 220.0f;
 	float dashSpeed = 400.0f;
 
+	VECTOR dashJumpVelocity = VGet(0, 0, 0);
+
 	// ===== UŒ‚“–‚½‚è”»’è =====
 	VECTOR attackPos;
-
-	//float attackRadius = 40.0f;
 
 	const float jumpStartFrame = 55.0f;
 	const float attackStartFrame = 50.0f;

@@ -57,12 +57,13 @@ void Player::Init(CollisionWorld* w)
 	dash01Anim = 2;
 	dash02Anim = 3;
 	jumpStartAnim = 4;
-	jumpLoopAnim = 5;
-	jumpEndAnim = 6;
-	attack01Anim = 7;
-	attack02Anim = 8;
-	attack03Anim = 9;
-	hitAnim = 10;
+	dashJumpStartAnim = 5;
+	jumpLoopAnim = 6;
+	jumpEndAnim = 7;
+	attack01Anim = 8;
+	attack02Anim = 9;
+	attack03Anim = 10;
+	hitAnim = 11;
 
 	// ===== 武器データ設定 =====
 	// 素手
@@ -452,6 +453,15 @@ void Player::DebugDraw()
 		_T("GunWaiting : %d"),
 		gunWaitingDamage
 	);
+
+	// ダッシュジャンプ
+	DrawFormatString(
+		20,
+		380,
+		GetColor(255, 255, 255),
+		_T("dashJump : %d"),
+		dashJump
+	);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -696,17 +706,38 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	}
 
 	// ===== ジャンプ =====
-	if (CheckHitKey(KEY_INPUT_SPACE) && isGround && !jumpRequest)
+	if (CheckHitKey(KEY_INPUT_SPACE) && isGround)
 	{
-		jumpRequest = true;
-
 		currentState = AnimState::JumpStart;
-		ChangeAnimation(jumpStartAnim, false);
+
+		dashJump = isDash;
+
+		if (dashJump)
+		{
+			// ダッシュ速度保存
+			dashJumpVelocity.x = velocity.x;
+			dashJumpVelocity.y = 0.0f;
+			dashJumpVelocity.z = velocity.z;
+
+			velocity.y = jumpPower;
+			isGround = false;
+
+			ChangeAnimation(dashJumpStartAnim, false);
+		}
+		else
+		{
+			jumpRequest = true;
+
+			ChangeAnimation(jumpStartAnim, false);
+		}
 	}
 
 	// ==== 移動 ====
-	velocity.x = 0.0f;
-	velocity.z = 0.0f;
+	if (!(currentState == AnimState::JumpStart && dashJump) && !(currentState == AnimState::JumpLoop && dashJump))
+	{
+		velocity.x = 0.0f;
+		velocity.z = 0.0f;
+	}
 
 	if (currentState != AnimState::Attack && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
 	{
@@ -747,17 +778,32 @@ void Player::UpdateState()
 	//　=====　JumpStart → JumpLoop　=====
 	if (currentState == AnimState::JumpStart)
 	{
-		if (jumpRequest && animTime >= jumpStartFrame)
+		// 通常ジャンプのみ待機
+		if (!dashJump)
 		{
-			velocity.y = jumpPower;
+			if (jumpRequest && animTime >= jumpStartFrame)
+			{
+				velocity.y = jumpPower;
 
-			isGround = false;
+				isGround = false;
 
-			jumpRequest = false;
+				jumpRequest = false;
 
-			currentState = AnimState::JumpLoop;
+				currentState = AnimState::JumpLoop;
 
-			ChangeAnimation(jumpLoopAnim, true);
+				ChangeAnimation(jumpLoopAnim, true);
+			}
+		}
+		else
+		{
+			float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+			if (animTime >= totalTime)
+			{
+				currentState = AnimState::JumpLoop;
+
+				ChangeAnimation(jumpLoopAnim, true);
+			}
 		}
 
 		return;
@@ -803,6 +849,8 @@ void Player::UpdateState()
 
 	if (landed && currentState != AnimState::JumpEnd)
 	{
+		dashJump = false;
+
 		currentState = AnimState::JumpEnd;
 
 		ChangeAnimation(jumpEndAnim, false);

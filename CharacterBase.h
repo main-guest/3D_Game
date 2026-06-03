@@ -77,6 +77,7 @@ protected:
 	int dash02Anim;
 
 	int jumpStartAnim;
+	int dashJumpStartAnim;
 	int jumpLoopAnim;
 	int jumpEndAnim;
 
