@@ -1,7 +1,20 @@
 #include <cmath>
 #include "Enemy.h"
+#include "Player.h"
 #include "CollisionWorld.h"
 #include "PhysicsManager.h"
+
+const TCHAR* ToString(EnemyAIState state)
+{
+	switch (state)
+	{
+	case EnemyAIState::Idle:   return _T("Idle");
+	case EnemyAIState::Patrol: return _T("Patrol");
+	case EnemyAIState::Chase:  return _T("Chase");
+	case EnemyAIState::Attack: return _T("Attack");
+	default:                   return _T("Unknown");
+	}
+}
 
 Enemy::Enemy()
 	:jumpRequest(false)
@@ -17,7 +30,7 @@ Enemy::~Enemy()
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== 共通初期化 =====
-	CharacterBase::Init(_T("mv1model/Enemy.mv1"));
+	CharacterBase::Init(_T("mv1model/Enemy2.mv1"));
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -34,20 +47,32 @@ void Enemy::Init(VECTOR startPos)
 	// ===== アニメ番号 =====
 	idleAnim = 0;
 	walkAnim = 1;
-	jumpStartAnim = 2;
-	jumpLoopAnim = 3;
-	jumpEndAnim = 4;
-	hitAnim = 5;
+	chaseAnim = 2;
+	jumpStartAnim = 3;
+	jumpLoopAnim = 4;
+	jumpEndAnim = 5;
 	attack01Anim = 6;
+	hitAnim = 7;
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
 
 	ChangeAnimation(idleAnim, true);
+
+	aiState = EnemyAIState::Idle;
+	stateTimer = 2.0f;
 }
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 {
+	// ==== クールダウン更新 ====
+	if (attackTimer > 0.0f)
+	{
+		attackTimer -= dt;
+	}
+
+	bool isCooldown = (attackTimer > 0.0f);
+
 	// ==== ヒットストップ中は停止 ====
 	if (hitStopTimer > 0.0f)
 	{
@@ -69,43 +94,145 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 	float distance = sqrtf(dir.x * dir.x + dir.z * dir.z);
 
-	bool isMove = (velocity.x != 0 || velocity.z != 0);
-
-	velocity = VGet(0, 0, 0);
-
 	// ==== プレイヤー追跡 ====
-	if (distance < searchRange)
+	if (aiState != EnemyAIState::Attack)
 	{
-		if (distance > 0.001f)
+		if (distance <= searchRange)
 		{
-			dir.x /= distance;
-			dir.z /= distance;
+			aiState = EnemyAIState::Chase;
+		}
+	}
 
-			float sinY = sinf(characterAngle);
-			float cosY = cosf(characterAngle);
+	// ==== AI ====
+	switch (aiState)
+	{
+		case EnemyAIState::Idle:
+		{
+			velocity = VGet(0, 0, 0);
 
-			// ワールド方向
-			velocity.x = dir.x * speed;
-			velocity.z = dir.z * speed;
+			stateTimer -= dt;
 
-			isMove = true;
-
-			// ===== 回転 =====
-			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-
-			float diff = targetAngle - characterAngle;
-
-			while (diff > DX_PI)
+			if (stateTimer <= 0.0f)
 			{
-				diff -= DX_TWO_PI;
+				GeneratePatrolTarget();
+
+				aiState = EnemyAIState::Patrol;
 			}
 
-			while (diff < -DX_PI)
+			break;
+		}
+
+		case EnemyAIState::Patrol:
+		{
+			VECTOR moveDir = VSub(patrolTarget, pos);
+
+			float dist = sqrtf(moveDir.x * moveDir.x + moveDir.z * moveDir.z);
+
+			if (dist <= 20.0f)
 			{
-				diff += DX_TWO_PI;
+				aiState = EnemyAIState::Idle;
+
+				stateTimer = 2.0f;
+			}
+			else
+			{
+				moveDir.x /= dist;
+				moveDir.z /= dist;
+
+				velocity.x = moveDir.x * speed * 0.5f;
+				velocity.z = moveDir.z * speed * 0.5f;
+
+				float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
+
+				float diff = targetAngle - characterAngle;
+
+				while (diff > DX_PI)diff -= DX_TWO_PI;
+				while (diff < -DX_PI)diff += DX_TWO_PI;
+
+				characterAngle += diff * 5.0f * dt;
 			}
 
-			characterAngle += diff * 10.0f * dt;
+			break;
+		}
+			
+		case EnemyAIState::Chase:
+		{
+			if (distance > searchRange)
+			{
+				aiState = EnemyAIState::Idle;
+
+				stateTimer = 2.0f;
+
+				break;
+			}
+
+			if (distance > 0.001f)
+			{
+				dir.x /= distance;
+				dir.z /= distance;
+
+				velocity.x = dir.x * speed;
+				velocity.z = dir.z * speed;
+
+				float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+				float diff = targetAngle - characterAngle;
+
+				while (diff > DX_PI)diff -= DX_TWO_PI;
+				while (diff < -DX_PI)diff += DX_TWO_PI;
+
+				characterAngle += diff * 10.0f * dt;
+			}
+
+			if (aiState != EnemyAIState::Attack && distance <= attackRange && attackCooldown <= 0.0f)
+			{
+				aiState = EnemyAIState::Attack;
+				break;
+			}
+			else if(distance <= attackRange && attackCooldown > 0.0f)
+			{
+				aiState = EnemyAIState::Idle;
+				break;
+			}
+
+			break;
+		}
+
+		case EnemyAIState::Attack:
+		{
+			if (!attackStarted)
+			{
+				attackStarted = true;
+				attackTimer = attackCooldown;
+
+				velocity = VGet(0, 0, 0);
+
+				currentState = AnimState::Attack;
+				ChangeAnimation(attack01Anim, false);
+			}
+
+			float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+			if (animTime >= attackStartFrame && animTime <= attackEndFrame)
+			{
+				attackActive = true;
+			}
+			else
+			{
+				attackActive = false;
+			}
+
+			if (animTime >= totalTime)
+			{
+				attackStarted = false;
+				attackHit = false;
+
+				stateTimer = 0.5f;
+
+				aiState = EnemyAIState::Chase;
+			}
+
+			break;
 		}
 	}
 
@@ -129,8 +256,39 @@ void Enemy::Render()
 	MV1DrawModel(handle);
 
 	// ===== Debug =====
-
 	DebugDraw();
+}
+
+void Enemy::CheckAttackHit(Player* player)
+{
+	if (!attackActive)
+		return;
+
+	if (attackHit)
+		return;
+
+	VECTOR diff = VSub(player->GetPos(), pos);
+
+	float dist = VSize(diff);
+
+	VECTOR forward;
+
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	VECTOR dir = VNorm(diff);
+
+	float dot = VDot(forward, dir);
+
+	float limit = cosf(60.0f * DX_PI_F / 180.0f);
+
+	if (dist <= attackRange && dot >= limit)
+	{
+		player->Damage(20);
+
+		attackHit = true;
+	}
 }
 
 void Enemy::Damage(int power)
@@ -163,6 +321,18 @@ void Enemy::DebugDraw()
 	DrawSphere3D(bottom, radius, 12, GetColor(255, 0, 0), GetColor(255, 0, 0), FALSE);
 	DrawSphere3D(top, radius, 12, GetColor(255, 0, 0), GetColor(255, 0, 0), FALSE);
 	DrawLine3D(bottom, top, GetColor(0, 255, 0));
+
+	DrawFormatString(20, 20, GetColor(255, 255, 255),
+		_T("AI State: %s"), ToString(aiState));
+}
+
+void Enemy::GeneratePatrolTarget()
+{
+	float range = 300.0f;
+
+	patrolTarget.x = pos.x + (float)(GetRand((int)range * 2) - range);
+	patrolTarget.y = pos.y;
+	patrolTarget.z = pos.z + (float)(GetRand((int)range * 2) - range);
 }
 
 void Enemy::UpdateState()
@@ -175,20 +345,11 @@ void Enemy::UpdateState()
 		// アニメ終了
 		if (animTime >= totalTime)
 		{
-			if (fabsf(velocity.x) > 0.1f ||
-				fabsf(velocity.z) > 0.1f)
-			{
-				currentState = AnimState::Walk;
-				ChangeAnimation(walkAnim, true);
-			}
-			else
-			{
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-			}
-
-			return;
+			currentState = AnimState::Idle;
+			ChangeAnimation(idleAnim, true);
 		}
+
+		return;
 	}
 
 	//　=====　JumpStart → JumpLoop　=====
@@ -230,17 +391,8 @@ void Enemy::UpdateState()
 
 		if (animTime >= totalTime - 0.1f)
 		{
-			if (fabsf(velocity.x) > 0.1f ||
-				fabsf(velocity.z) > 0.1f)
-			{
-				currentState = AnimState::Walk;
-				ChangeAnimation(walkAnim, true);
-			}
-			else
-			{
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-			}
+			currentState = AnimState::Idle;
+			ChangeAnimation(idleAnim, true);
 		}
 
 		return;
@@ -252,20 +404,24 @@ void Enemy::UpdateState()
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 		// アニメ終了
+		if (animTime >= attackStartFrame && animTime <= attackEndFrame)
+		{
+			attackActive = true;
+		}
+		else
+		{
+			attackActive = false;
+		}
+
 		if (animTime >= totalTime)
 		{
+			attackHit = false;
 
-			if (fabsf(velocity.x) > 0.1f ||
-				fabsf(velocity.z) > 0.1f)
-			{
-				currentState = AnimState::Walk;
-				ChangeAnimation(walkAnim, true);
-			}
-			else
-			{
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-			}
+			aiState = EnemyAIState::Chase;
+
+			currentState = AnimState::Walk;
+
+			ChangeAnimation(chaseAnim, true);
 		}
 
 		return;
@@ -274,14 +430,23 @@ void Enemy::UpdateState()
 	//　=====　通常状態　=====
 	AnimState nextState = AnimState::Idle;
 
-	if (!isGround)
+	switch (aiState)
 	{
-		nextState = AnimState::JumpLoop;
-	}
-	else if (fabsf(velocity.x) > 0.1f ||
-		fabsf(velocity.z) > 0.1f)
-	{
+	case EnemyAIState::Idle:
+		nextState = AnimState::Idle;
+		break;
+
+	case EnemyAIState::Patrol:
 		nextState = AnimState::Walk;
+		break;
+
+	case EnemyAIState::Chase:
+		nextState = AnimState::Chase;
+		break;
+
+	case EnemyAIState::Attack:
+		nextState = AnimState::Attack;
+		break;
 	}
 
 	if (nextState != currentState)
@@ -296,6 +461,14 @@ void Enemy::UpdateState()
 
 		case AnimState::Walk:
 			ChangeAnimation(walkAnim, true);
+			break;
+
+		case AnimState::Chase:
+			ChangeAnimation(chaseAnim, true);
+			break;
+
+		case AnimState::Attack:
+			ChangeAnimation(attack01Anim, false);
 			break;
 
 		case AnimState::JumpLoop:

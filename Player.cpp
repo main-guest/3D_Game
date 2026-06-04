@@ -45,7 +45,7 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("mv1model/Player.mv1"));
+	CharacterBase::Init(_T("mv1model/Player2.mv1"));
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init(_T("mv1model/Blade.mv1"));
@@ -369,6 +369,26 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 			break;
 		}
 	}
+}
+
+void Player::Damage(int power)
+{
+	hp -= power;
+
+	isHit = true;
+
+	if (hp <= 0)
+	{
+		isDead = true;
+		return;
+	}
+
+	// ==== 怯み開始 ====
+	hitStopTimer = hitStopDuration;
+
+	// ===== アニメーション切り替え =====
+	currentState = AnimState::Hit;
+	ChangeAnimation(hitAnim, false);
 }
 
 const VECTOR& Player::GetVelocity() const

@@ -2,6 +2,15 @@
 #include "CharacterBase.h"
 
 class PhysicsManager;
+class Player;
+
+enum class EnemyAIState
+{
+	Idle,
+	Patrol,
+	Chase,
+	Attack
+};
 
 class Enemy :public CharacterBase
 {
@@ -12,6 +21,8 @@ public:
 	void Init(VECTOR startPos);
 	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
 	void Render();
+
+	void CheckAttackHit(Player* player);
 
 	void Damage(int power);
 
@@ -24,6 +35,8 @@ public:
 	bool IsDead() const { return isDead; }
 
 private:
+	void GeneratePatrolTarget();
+
 	void UpdateState();
 
 private:
@@ -31,7 +44,7 @@ private:
 	int hp = 100;
 
 	VECTOR pos;
-	VECTOR velocity;
+	VECTOR velocity = VGet(0, 0, 0);
 
 	float characterAngle = 0.0f;
 
@@ -40,9 +53,18 @@ private:
 
 	bool jumpRequest = false;
 
+	bool attackActive = false;
+	bool attackHit = false;
+
 	bool isHit = false;
 
 	bool isDead = false;
+
+	EnemyAIState aiState = EnemyAIState::Idle;
+
+	float stateTimer = 2.0f;
+
+	VECTOR patrolTarget = VGet(0, 0, 0);
 
 	// ==== 怯み（ヒットストップ）====
 	float hitStopTimer = 0.0f;
@@ -50,6 +72,15 @@ private:
 
 	// ==== AI ====
 	float searchRange = 500.0f;
+	float attackRange = 150.0f;
 
 	const float jumpStartFrame = 50.0f;
+
+	float attackStartFrame = 50.0f;
+	float attackEndFrame = 100.0f;
+
+	bool attackStarted = false;
+
+	float attackTimer = 0.0f;
+	const float attackCooldown = 3.0f;
 };

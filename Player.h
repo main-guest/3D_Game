@@ -30,6 +30,8 @@ public:
 
 	void CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies);
 
+	void Damage(int power);
+
 	void SetPos(const VECTOR& p) { pos = p; }
 
 	const VECTOR& GetVelocity() const;
@@ -50,6 +52,9 @@ private:
 	void UpdateState();
 
 private:
+	// ===== ステータス =====
+	int hp = 100;
+
 	// ===== 入力 =====
 	int oldMouse = 0;
 
@@ -65,6 +70,10 @@ private:
 	bool attackActive = false;
 	bool attackHit = false;
 
+	bool isHit = false;
+
+	bool isDead = false;
+
 	// ===== 移動速度 =====
 	float walkSpeed = 220.0f;
 	float dashSpeed = 400.0f;
@@ -75,6 +84,10 @@ private:
 	VECTOR attackPos;
 
 	const float jumpStartFrame = 55.0f;
+
+	// ==== 怯み（ヒットストップ）====
+	float hitStopTimer = 0.0f;
+	const float hitStopDuration = 2.0f;
 
 	// 外部参照
 	CollisionWorld* world = nullptr;
