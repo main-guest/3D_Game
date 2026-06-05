@@ -9,7 +9,8 @@ enum class EnemyAIState
 	Idle,
 	Patrol,
 	Chase,
-	Attack
+	Attack,
+	Cooldown
 };
 
 class Enemy :public CharacterBase
@@ -82,5 +83,5 @@ private:
 	bool attackStarted = false;
 
 	float attackTimer = 0.0f;
-	const float attackCooldown = 3.0f;
+	const float attackCooldown = 1.5f;
 };

@@ -12,6 +12,7 @@ const TCHAR* ToString(EnemyAIState state)
 	case EnemyAIState::Patrol: return _T("Patrol");
 	case EnemyAIState::Chase:  return _T("Chase");
 	case EnemyAIState::Attack: return _T("Attack");
+	case EnemyAIState::Cooldown: return _T("Cooldown");
 	default:                   return _T("Unknown");
 	}
 }
@@ -69,9 +70,12 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 	if (attackTimer > 0.0f)
 	{
 		attackTimer -= dt;
-	}
 
-	bool isCooldown = (attackTimer > 0.0f);
+		if (attackTimer < 0.0f)
+		{
+			attackTimer = 0.0f;
+		}
+	}
 
 	// ==== ヒットストップ中は停止 ====
 	if (hitStopTimer > 0.0f)
@@ -82,8 +86,6 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 		UpdateAnimation(dt);
 
-		MV1SetPosition(handle, pos);
-		MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 		return;
 	}
 
@@ -94,16 +96,16 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 	float distance = sqrtf(dir.x * dir.x + dir.z * dir.z);
 
-	// ==== プレイヤー追跡 ====
-	if (aiState != EnemyAIState::Attack)
+	if (distance > 0.0001f)
 	{
-		if (distance <= searchRange)
-		{
-			aiState = EnemyAIState::Chase;
-		}
+		dir.x /= distance;
+		dir.z /= distance;
 	}
 
-	// ==== AI ====
+	// ==== デフォルト停止 ====
+	velocity = VGet(0, 0, 0);
+
+	// ==== AI判定 ====
 	switch (aiState)
 	{
 		case EnemyAIState::Idle:
@@ -111,6 +113,12 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 			velocity = VGet(0, 0, 0);
 
 			stateTimer -= dt;
+
+			if (distance <= searchRange)
+			{
+				aiState = EnemyAIState::Chase;
+				break;
+			}
 
 			if (stateTimer <= 0.0f)
 			{
@@ -124,6 +132,13 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 		case EnemyAIState::Patrol:
 		{
+			if (distance <= searchRange)
+			{
+				aiState = EnemyAIState::Chase;
+
+				break;
+			}
+
 			VECTOR moveDir = VSub(patrolTarget, pos);
 
 			float dist = sqrtf(moveDir.x * moveDir.x + moveDir.z * moveDir.z);
@@ -133,6 +148,8 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 				aiState = EnemyAIState::Idle;
 
 				stateTimer = 2.0f;
+
+				break;
 			}
 			else
 			{
@@ -159,53 +176,52 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 		{
 			if (distance > searchRange)
 			{
-				aiState = EnemyAIState::Idle;
+				GeneratePatrolTarget();
 
-				stateTimer = 2.0f;
+				aiState = EnemyAIState::Patrol;
 
 				break;
 			}
 
-			if (distance > 0.001f)
-			{
-				dir.x /= distance;
-				dir.z /= distance;
-
-				velocity.x = dir.x * speed;
-				velocity.z = dir.z * speed;
-
-				float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-
-				float diff = targetAngle - characterAngle;
-
-				while (diff > DX_PI)diff -= DX_TWO_PI;
-				while (diff < -DX_PI)diff += DX_TWO_PI;
-
-				characterAngle += diff * 10.0f * dt;
-			}
-
-			if (aiState != EnemyAIState::Attack && distance <= attackRange && attackCooldown <= 0.0f)
+			if (distance <= attackRange)
 			{
 				aiState = EnemyAIState::Attack;
+
 				break;
 			}
-			else if(distance <= attackRange && attackCooldown > 0.0f)
-			{
-				aiState = EnemyAIState::Idle;
-				break;
-			}
+
+			velocity.x = dir.x * speed;
+			velocity.z = dir.z * speed;
+
+			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+			float diff = targetAngle - characterAngle;
+
+			while (diff > DX_PI)diff -= DX_TWO_PI;
+			while (diff < -DX_PI)diff += DX_TWO_PI;
+
+			characterAngle += diff * 10.0f * dt;
 
 			break;
 		}
 
 		case EnemyAIState::Attack:
 		{
+			velocity.x = 0.0f;
+			velocity.z = 0.0f;
+
+			// 攻撃中も常にプレイヤー方向を向く
+			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+			float diff = targetAngle - characterAngle;
+
+			while (diff > DX_PI)diff -= DX_TWO_PI;
+			while (diff < -DX_PI)diff += DX_TWO_PI;
+
+			characterAngle += diff * 10.0f * dt;
+
 			if (!attackStarted)
 			{
 				attackStarted = true;
-				attackTimer = attackCooldown;
-
-				velocity = VGet(0, 0, 0);
 
 				currentState = AnimState::Attack;
 				ChangeAnimation(attack01Anim, false);
@@ -226,10 +242,39 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 			{
 				attackStarted = false;
 				attackHit = false;
+				attackActive = false;
 
-				stateTimer = 0.5f;
+				attackTimer = attackCooldown;
 
-				aiState = EnemyAIState::Chase;
+				aiState = EnemyAIState::Cooldown;
+
+				currentState = AnimState::Idle;
+				ChangeAnimation(idleAnim, true);
+			}
+
+			break;
+		}
+
+		case EnemyAIState::Cooldown:
+		{
+			velocity = VGet(0, 0, 0);
+
+			if (attackTimer <= 0.0f)
+			{
+				if (distance <= attackRange)
+				{
+					aiState = EnemyAIState::Attack;
+				}
+				else if (distance <= searchRange)
+				{
+					aiState = EnemyAIState::Chase;
+				}
+				else
+				{
+					GeneratePatrolTarget();
+
+					aiState = EnemyAIState::Patrol;
+				}
 			}
 
 			break;
