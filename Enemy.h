@@ -63,15 +63,21 @@ private:
 
 	EnemyAIState aiState = EnemyAIState::Idle;
 
+	VECTOR attackPos = VGet(0, 0, 0);
+	float attackOffset = 170.0f;
+	float attackRadius = 50.0f;
+
+	VECTOR attackCenter;
+
+	// ==== 怯み（ヒットストップ）====
+	float hitStopTimer = 0.0f;
+	const float hitStopDuration = 1.5f;
+
+	// ==== AI ====
 	float stateTimer = 2.0f;
 
 	VECTOR patrolTarget = VGet(0, 0, 0);
 
-	// ==== 怯み（ヒットストップ）====
-	float hitStopTimer = 0.0f;
-	const float hitStopDuration = 2.0f;
-
-	// ==== AI ====
 	float searchRange = 500.0f;
 	float attackRange = 150.0f;
 

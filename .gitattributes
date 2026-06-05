@@ -51,3 +51,4 @@
 *.blend1 filter=lfs diff=lfs merge=lfs -text
 Dxlib_h/** filter=lfs diff=lfs merge=lfs -text
 Tool/** filter=lfs diff=lfs merge=lfs -text
+Texture/** filter=lfs diff=lfs merge=lfs -text

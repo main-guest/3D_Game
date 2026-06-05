@@ -58,6 +58,18 @@ void Stage::Update(float dt, VECTOR playerPos)
 	{
 		player->CheckAttackHit(enemies);
 	}
+
+	// ===== EnemyUŒ‚”»’è =====
+	if (player)
+	{
+		for (auto& enemy : enemies)
+		{
+			if (!enemy->IsDead())
+			{
+				enemy->CheckAttackHit(player);
+			}
+		}
+	}
 }
 
 void Stage::Draw()

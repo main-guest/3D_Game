@@ -15,7 +15,9 @@ enum class AnimState
 
 	Attack,
 
-	Hit
+	Hit,
+
+	Dodge
 };
 
 class CharacterBase

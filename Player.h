@@ -32,6 +32,8 @@ public:
 
 	void Damage(int power);
 
+	VECTOR GetCenterPos() const;
+
 	void SetPos(const VECTOR& p) { pos = p; }
 
 	const VECTOR& GetVelocity() const;
@@ -88,6 +90,20 @@ private:
 	// ==== 怯み（ヒットストップ）====
 	float hitStopTimer = 0.0f;
 	const float hitStopDuration = 2.0f;
+
+	// ===== ノックバック =====
+	bool isKnockback = false;
+	float knockbackTimer = 0.0f;
+	const float knockbackDuration = 0.25f;
+
+	// ===== 回避 =====
+	bool isDodge = false;
+	float dodgeTimer = 0.0f;
+	const float dodgeDuration = 0.4f;
+	float dodgeSpeed = 600.0f;
+
+	// 無敵
+	bool isInvincible = false;
 
 	// 外部参照
 	CollisionWorld* world = nullptr;

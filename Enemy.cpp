@@ -31,7 +31,7 @@ Enemy::~Enemy()
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== 共通初期化 =====
-	CharacterBase::Init(_T("mv1model/Enemy2.mv1"));
+	CharacterBase::Init(_T("mv1model/Enemy.mv1"));
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -219,6 +219,19 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 			characterAngle += diff * 10.0f * dt;
 
+			// 攻撃判定位置更新
+			VECTOR forward;
+			forward.x = -sinf(characterAngle);
+			forward.y = 0.0f;
+			forward.z = -cosf(characterAngle);
+
+			attackCenter =
+			{
+				pos.x + forward.x * attackOffset,
+				pos.y + 120.0f,
+				pos.z + forward.z * attackOffset
+			};
+
 			if (!attackStarted)
 			{
 				attackStarted = true;
@@ -312,23 +325,14 @@ void Enemy::CheckAttackHit(Player* player)
 	if (attackHit)
 		return;
 
-	VECTOR diff = VSub(player->GetPos(), pos);
+	VECTOR playerCenter = player->GetCenterPos();
+
+	VECTOR diff = VSub(playerCenter, attackCenter);
 
 	float dist = VSize(diff);
 
-	VECTOR forward;
 
-	forward.x = -sinf(characterAngle);
-	forward.y = 0.0f;
-	forward.z = -cosf(characterAngle);
-
-	VECTOR dir = VNorm(diff);
-
-	float dot = VDot(forward, dir);
-
-	float limit = cosf(60.0f * DX_PI_F / 180.0f);
-
-	if (dist <= attackRange && dot >= limit)
+	if (dist <= attackRadius)
 	{
 		player->Damage(20);
 
@@ -369,6 +373,84 @@ void Enemy::DebugDraw()
 
 	DrawFormatString(20, 20, GetColor(255, 255, 255),
 		_T("AI State: %s"), ToString(aiState));
+
+	DrawSphere3D(
+		bottom,
+		radius,
+		12,
+		GetColor(255, 0, 0),
+		GetColor(255, 0, 0),
+		FALSE);
+
+	DrawSphere3D(
+		top,
+		radius,
+		12,
+		GetColor(255, 0, 0),
+		GetColor(255, 0, 0),
+		FALSE);
+
+	DrawLine3D(
+		bottom,
+		top,
+		GetColor(0, 255, 0));
+
+	// 攻撃判定
+	if (attackActive)
+	{
+		DrawSphere3D(
+			attackCenter,
+			attackRadius,
+			16,
+			GetColor(255, 255, 0),
+			GetColor(255, 255, 0),
+			FALSE);
+	}
+
+	VECTOR forward;
+
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	VECTOR endPos =
+	{
+		pos.x + forward.x * attackRange,
+		pos.y + 20.0f,
+		pos.z + forward.z * attackRange
+	};
+
+	DrawLine3D(
+		VAdd(pos, VGet(0, 20, 0)),
+		endPos,
+		GetColor(255, 255, 0));
+
+	float leftAngle = characterAngle - DX_PI_F / 3.0f; // -60°
+	float rightAngle = characterAngle + DX_PI_F / 3.0f; // +60°
+
+	VECTOR left =
+	{
+		pos.x - sinf(leftAngle) * attackRange,
+		pos.y + 20.0f,
+		pos.z - cosf(leftAngle) * attackRange
+	};
+
+	VECTOR right =
+	{
+		pos.x - sinf(rightAngle) * attackRange,
+		pos.y + 20.0f,
+		pos.z - cosf(rightAngle) * attackRange
+	};
+
+	VECTOR center =
+	{
+		pos.x,
+		pos.y + 20.0f,
+		pos.z
+	};
+
+	DrawLine3D(center, left, GetColor(255, 0, 0));
+	DrawLine3D(center, right, GetColor(255, 0, 0));
 }
 
 void Enemy::GeneratePatrolTarget()

@@ -137,6 +137,27 @@ void Player::Init(CollisionWorld* w)
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
+	if (currentState == AnimState::Hit)
+	{
+		if (isKnockback)
+		{
+			knockbackTimer -= dt;
+
+			if (knockbackTimer <= 0.0f)
+			{
+				isKnockback = false;
+				velocity = VGet(0, velocity.y, 0);
+			}
+		}
+
+		physics.MoveCharacter(pos, velocity, radius, isGround, dt);
+
+		UpdateState();
+		UpdateAnimation(dt);
+
+		return;
+	}
+
 	//　=====　入力処理　=====
 	UpdateInput(dt, cameraAngle);
 
@@ -210,6 +231,12 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 
 void Player::Draw()
 {
+	VECTOR drawPos = pos;
+	drawPos.y -= 30.0f;
+
+	MV1SetPosition(handle, drawPos);
+	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
+
 	MV1DrawModel(handle);
 
 	//　=====　武器表示　=====
@@ -373,9 +400,18 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 void Player::Damage(int power)
 {
+	if (isInvincible)
+		return;
+
 	hp -= power;
 
-	isHit = true;
+	isKnockback = true;
+	knockbackTimer = knockbackDuration;
+
+	VECTOR back = GetForward();
+
+	velocity.x = -back.x * 350.0f;
+	velocity.z = -back.z * 350.0f;
 
 	if (hp <= 0)
 	{
@@ -389,6 +425,11 @@ void Player::Damage(int power)
 	// ===== アニメーション切り替え =====
 	currentState = AnimState::Hit;
 	ChangeAnimation(hitAnim, false);
+}
+
+VECTOR Player::GetCenterPos() const
+{
+	return VGet(pos.x, pos.y + height * 0.75f, pos.z);
 }
 
 const VECTOR& Player::GetVelocity() const
@@ -490,6 +531,14 @@ void Player::DebugDraw()
 		GetColor(255, 255, 255),
 		_T("dashJump : %d"),
 		dashJump
+	);
+
+	DrawFormatString(
+		20,
+		400,
+		GetColor(255, 255, 255),
+		_T("AnimState=%d"),
+		(int)currentState
 	);
 }
 
@@ -870,6 +919,21 @@ void Player::UpdateState()
 				ChangeAnimation(idleAnim, true);
 			}
 		}
+		return;
+	}
+
+	// ===== ノックバック中 =====
+	if (currentState == AnimState::Hit)
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// アニメ終了
+		if (animTime >= totalTime)
+		{
+			currentState = AnimState::Idle;
+			ChangeAnimation(idleAnim, true);
+		}
+
 		return;
 	}
 
