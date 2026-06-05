@@ -20,7 +20,7 @@ Camera::~Camera()
 
 void Camera::Init()
 {
-	SetCameraNearFar(10.0f, 8000.0f);
+	SetCameraNearFar(1.0f, 50000.0f);
 }
 
 void Camera::Update(VECTOR playerPos)
@@ -83,7 +83,7 @@ void Camera::Update(VECTOR playerPos)
 
 		// ÉJÉÅÉâà íu
 		cameraPos = VSub(cameraTarget, VScale(forward, distance));
-		cameraPos.y += 80.0f;
+		cameraPos.y += 20.0f;
 
 		SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
 	}

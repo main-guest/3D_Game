@@ -42,6 +42,9 @@
     <ClCompile Include="Weapon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="SkyDome.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Player.h">
@@ -69,6 +72,9 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="WeaponData.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyDome.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>

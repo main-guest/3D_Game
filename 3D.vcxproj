@@ -142,6 +142,7 @@
     <ClCompile Include="CollisionWorld.cpp" />
     <ClCompile Include="PhysicsManager.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="SkyDome.cpp" />
     <ClCompile Include="Stage.cpp" />
     <ClCompile Include="Weapon.cpp" />
   </ItemGroup>
@@ -152,6 +153,7 @@
     <ClInclude Include="CollisionWorld.h" />
     <ClInclude Include="PhysicsManager.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="SkyDome.h" />
     <ClInclude Include="Stage.h" />
     <ClInclude Include="Weapon.h" />
     <ClInclude Include="WeaponData.h" />

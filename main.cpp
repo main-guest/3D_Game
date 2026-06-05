@@ -26,6 +26,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(TRUE);
 
+	//// フォグ（霧）設定
+	//SetFogEnable(TRUE);
+	//SetFogColor(135, 206, 235);
+	//SetFogStartEnd(500.0f, 3000.0f);
+
 	SetMouseDispFlag(FALSE); // マウス非表示
 	SetDrawScreen(DX_SCREEN_BACK);
 
@@ -47,19 +52,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --- 開始時間 ---
 		LONGLONG nowTime = GetNowHiPerformanceCount();
 
-		float deltaTime = (nowTime - prevTime) / 1000000.0f;
+		float deltaTime = (float)(nowTime - prevTime) * 0.000001f;
 
 		prevTime = nowTime;
 
 		// --- 更新 ---
-		camera.Update(player.GetPos());
 		player.Update(deltaTime, camera.GetYaw(), stage.GetPhysics());
 		stage.Update(deltaTime, player.GetPos());
+		camera.Update(player.GetPos());
 
 		// --- 描画 ---
 		ClearDrawScreen();
 
-		stage.Draw();
+		stage.Draw(camera.GetPosition());
 		player.Draw();
 
 		player.DebugDraw();

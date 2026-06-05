@@ -1,10 +1,18 @@
 #include "Stage.h"
 #include "Player.h"
 
+Stage::~Stage()
+{
+	sky.Release();
+}
+
 void Stage::Init(Player* p)
 {
 	// ===== 地形 =====
 	collisionWorld.Init();
+
+	// ===== スカイドーム =====
+	sky.Init(_T("mv1Model/SkyDome.mv1"));
 
 	// ===== 物理 =====
 	physics.Init(&collisionWorld);
@@ -16,9 +24,9 @@ void Stage::Init(Player* p)
 	enemy1->Init(VGet(1000, 0, 1000));
 	enemies.push_back(std::move(enemy1));
 
-	/*auto enemy2 = std::make_unique<Enemy>();
+	auto enemy2 = std::make_unique<Enemy>();
 	enemy2->Init(VGet(-1000, 0, -1000));
-	enemies.push_back(std::move(enemy2));*/
+	enemies.push_back(std::move(enemy2));
 }
 
 void Stage::Update(float dt, VECTOR playerPos)
@@ -72,8 +80,11 @@ void Stage::Update(float dt, VECTOR playerPos)
 	}
 }
 
-void Stage::Draw()
+void Stage::Draw(VECTOR camPos)
 {
+	// ===== SkyDome描画 =====
+	sky.Draw(camPos);
+
 	// ===== Object描画 =====
 	collisionWorld.Draw();
 
