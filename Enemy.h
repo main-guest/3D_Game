@@ -64,8 +64,8 @@ private:
 	EnemyAIState aiState = EnemyAIState::Idle;
 
 	VECTOR attackPos = VGet(0, 0, 0);
-	float attackOffset = 170.0f;
-	float attackRadius = 50.0f;
+	float attackOffset = 140.0f;
+	float attackRadius = 80.0f;
 
 	VECTOR attackCenter;
 

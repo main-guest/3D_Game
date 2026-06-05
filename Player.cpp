@@ -45,7 +45,7 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("mv1model/Player2.mv1"));
+	CharacterBase::Init(_T("mv1model/Player.mv1"));
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init(_T("mv1model/Blade.mv1"));
@@ -64,6 +64,7 @@ void Player::Init(CollisionWorld* w)
 	attack02Anim = 9;
 	attack03Anim = 10;
 	hitAnim = 11;
+	dodgeAnim = 12;
 
 	// ===== 武器データ設定 =====
 	// 素手
@@ -137,6 +138,39 @@ void Player::Init(CollisionWorld* w)
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
+	if (isDodging)
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// 回避移動区間
+		if (animTime >= dodgeStartFrame && animTime <= dodgeEndFrame)
+		{
+			velocity.x = dodgeDir.x * dodgeSpeed;
+			velocity.z = dodgeDir.z * dodgeSpeed;
+		}
+		else
+		{
+			velocity.x = 0.0f;
+			velocity.z = 0.0f;
+		}
+
+		// アニメ終了
+		if (animTime >= totalTime)
+		{
+			isDodging = false;
+
+			velocity.x = 0.0f;
+			velocity.z = 0.0f;
+		}
+
+		physics.MoveCharacter(pos, velocity, radius, isGround, dt);
+
+		UpdateAnimation(dt);
+
+		return;
+	}
+
+	//　=====　ノックバック＆ヒットストップ処理　=====
 	if (currentState == AnimState::Hit)
 	{
 		if (isKnockback)
@@ -400,6 +434,9 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 void Player::Damage(int power)
 {
+	if (isDodging)
+		return;
+
 	if (isInvincible)
 		return;
 
@@ -425,6 +462,27 @@ void Player::Damage(int power)
 	// ===== アニメーション切り替え =====
 	currentState = AnimState::Hit;
 	ChangeAnimation(hitAnim, false);
+}
+
+void Player::StartDodge()
+{
+	if (isDodging)
+		return;
+
+	isDash = false;
+
+	if (!isGround)
+		return;
+
+	isDodging = true;
+
+	dodgeDir = GetForward();
+
+	currentState = AnimState::Dodge;
+
+	ChangeAnimation(dodgeAnim, false);
+
+	SetAnimSpeed(1.5f);
 }
 
 VECTOR Player::GetCenterPos() const
@@ -755,10 +813,47 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	//　=====　移動判定　=====
 	bool isMove = (moveX != 0.0f || moveZ != 0.0f);
 
-	// ===== ダッシュ入力 =====
-	isDash = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+	// ===== Shift押下状態取得 =====
+	bool shiftNow = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
 
-	// 速度切り替え
+	// 押した瞬間
+	if (shiftNow && !shiftPressed)
+	{
+		shiftPressed = true;
+		shiftHoldTimer = 0.0f;
+	}
+
+	// 押している間
+	if (shiftNow && shiftPressed)
+	{
+		shiftHoldTimer += dt;
+
+		// 長押しでダッシュ
+		if (shiftHoldTimer >= dashHoldTime)
+		{
+			isDash = true;
+		}
+	}
+
+	// 離した瞬間
+	if (!shiftNow && shiftPressed)
+	{
+		// 短押しなら回避
+		if (shiftHoldTimer < dashHoldTime)
+		{
+			// ===== 回避 =====
+			StartDodge();
+		}
+
+		// ダッシュ解除
+		isDash = false;
+
+		// Shift状態リセット
+		shiftPressed = false;
+		shiftHoldTimer = 0.0f;
+	}
+
+	// ===== 速度切り替え =====
 	speed = isDash ? dashSpeed : walkSpeed;
 
 	// ===== マウスクリック =====
@@ -919,6 +1014,25 @@ void Player::UpdateState()
 				ChangeAnimation(idleAnim, true);
 			}
 		}
+		return;
+	}
+
+	// ===== 回避中 =====
+	if (currentState == AnimState::Dodge)
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		if (animTime >= totalTime)
+		{
+			isDodging = false;
+
+			SetAnimSpeed(1.0f);
+
+			currentState = AnimState::Idle;
+
+			ChangeAnimation(idleAnim, true);
+		}
+
 		return;
 	}
 

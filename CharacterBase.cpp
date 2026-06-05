@@ -40,6 +40,9 @@ void CharacterBase::ChangeAnimation(int animIndex, bool loop)
 	// 再生時間リセット
 	animTime = 0.0f;
 
+	// デフォルト速度
+	animSpeed = 1.0f;
+
 	loopAnim = loop;
 }
 
@@ -47,7 +50,7 @@ void CharacterBase::UpdateAnimation(float dt)
 {
 	if (currentAnimAttach == -1) return;
 
-	animTime += 60.0f * dt;
+	animTime += dt + animSpeed;;
 
 	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 

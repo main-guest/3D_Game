@@ -32,6 +32,8 @@ public:
 
 	void Damage(int power);
 
+	void StartDodge();
+
 	VECTOR GetCenterPos() const;
 
 	void SetPos(const VECTOR& p) { pos = p; }
@@ -59,6 +61,13 @@ private:
 
 	// ===== “ü—Í =====
 	int oldMouse = 0;
+
+	bool shiftPressed = false;
+
+	float shiftHoldTimer = 0.0f;
+
+	// ’·‰Ÿ‚µ”»’èŠÔ]
+	const float dashHoldTime = 0.2f;
 
 	// ===== ó‘Ô =====
 	bool isDash = false;
@@ -97,10 +106,14 @@ private:
 	const float knockbackDuration = 0.25f;
 
 	// ===== ‰ñ”ğ =====
-	bool isDodge = false;
-	float dodgeTimer = 0.0f;
-	const float dodgeDuration = 0.4f;
+	bool isDodging = false;
+	
 	float dodgeSpeed = 600.0f;
+
+	float dodgeStartFrame = 34.0f;
+	float dodgeEndFrame = 71.0f;
+
+	VECTOR dodgeDir = VGet(0, 0, 0);
 
 	// –³“G
 	bool isInvincible = false;

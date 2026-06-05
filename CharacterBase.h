@@ -28,6 +28,16 @@ public:
 
 	virtual void Init(const TCHAR* modelPath);
 
+	void SetAnimSpeed(float speed)
+	{
+		animSpeed = speed;
+	}
+
+	float GetAnimSpeed() const
+	{
+		return animSpeed;
+	}
+
 	void UpdateAnimation(float dt);
 
 	// ===== Position =====
@@ -74,6 +84,9 @@ protected:
 	int currentAnimAttach;
 	float animTime;
 
+	// 現在のアニメ再生速度
+	float animSpeed = 1.0f;
+
 	int idleAnim;
 	int walkAnim;
 
@@ -92,6 +105,8 @@ protected:
 	int attack03Anim;
 
 	int hitAnim;
+
+	int dodgeAnim;
 
 	// ===== 定数 ====
 	float speed;						// 移動速度
