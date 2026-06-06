@@ -198,6 +198,38 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　物理　=====
 	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
 
+	// 現在位置取得
+	VECTOR pos = GetPos();
+	VECTOR vel = GetVelocity();
+
+	// カプセル生成
+	VECTOR pos2 = VAdd(pos, VGet(0, 140.0f, 0));
+	float radius = 50.0f;
+
+	//　=====　Ramp当たり判定　=====
+	MV1_COLL_RESULT_POLY result;
+
+	result = MV1CollCheck_Capsule(rampHandle, -1, pos, pos2, radius);
+
+	// 接地処理
+	if (result.HitFlag)
+	{
+		VECTOR hitPos = result.HitPosition();
+		VECTOR normal = result.HitNormal;
+
+		pos.y = hitPos.y;
+		vel.y = 0;
+
+		VECTOR gravityDir = VGet(0, -1, 0);
+
+		VECTOR slideDir = VSub(gravityDir, VScale(result.HitNormal, VDot(gravityDir, result.HitNormal)));
+
+		pos = VAdd(pos, VScale(slideDir, 20f));
+	}
+
+	SetPos(pos);
+	SetVelocity(vel);
+
 	//　=====　状態更新　=====
 	UpdateState();
 

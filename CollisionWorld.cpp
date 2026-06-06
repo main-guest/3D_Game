@@ -41,6 +41,7 @@ void CollisionWorld::Init()
 	groundHandle = MV1LoadModel(_T("mv1model/asphalt.mv1"));
 	wallHandle = MV1LoadModel(_T("mv1model/wall.mv1"));
 	cubeHandle = MV1LoadModel(_T("mv1model/cube.mv1"));
+	rampHandle = MV1LoadModel(_T("mv1model/cube.mv1"));
 
 	// ===== ’n–Ê =====
 	{
@@ -135,6 +136,24 @@ void CollisionWorld::Init()
 		cube.type = CollisionType::Wall;
 
 		boxes.push_back(cube);
+	}
+
+	// ==================================================
+	// Ramp
+	// ==================================================
+	{
+		Box ramp;
+
+		ramp.handle = MV1DuplicateModel(rampHandle);
+
+		ramp.pos = VGet(0, 0, 600);
+		ramp.rotation = VGet(0, 0, 0);
+
+		ramp.halfSize = VGet(200, 100, 400);
+
+		ramp.type = CollisionType::Ramp;
+
+		boxes.push_back(ramp);
 	}
 }
 

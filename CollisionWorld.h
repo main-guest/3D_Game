@@ -6,7 +6,8 @@
 enum class CollisionType
 {
 	Ground,
-	Wall
+	Wall,
+	Ramp
 };
 
 // ===== Boxç\ë¢ëÃ =====
@@ -45,10 +46,14 @@ private:
 	int groundHandle;
 	int wallHandle;
 	int cubeHandle;
+	int rampHandle;
 
 	// ===== ínñ  =====
 	VECTOR groundPos;
 
 	// ===== BoxàÍóó =====
 	std::vector<Box> boxes;
+
+	// ===== Ramp =====
+	VECTOR rampPos;
 };
