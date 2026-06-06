@@ -30,6 +30,8 @@ public:
 		return physics;
 	}
 
+	void DebugDraw();
+
 	std::vector<std::unique_ptr<Enemy>>& GetEnemies();
 
 private:

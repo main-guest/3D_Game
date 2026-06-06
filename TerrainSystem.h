@@ -1,24 +1,24 @@
-#pragma once
-#include "DxLib.h"
-
-class TerrainSystem
-{
-public:
-	void Init();
-
-	// 地面高さ取得
-	float GetGroundHeight(VECTOR pos) const;
-
-	// 法線
-	VECTOR GetGroundNormal(VECTOR pos) const;
-
-private:
-	float baseHeight = 0.0f;
-
-	// 坂の強さ
-	float slopeFactor = 0.3f;
-
-	// 階段設定
-	float stepHeight = 20.0f;
-	float stepDepth = 50.0f;
-};
+//#pragma once
+//#include "DxLib.h"
+//
+//class TerrainSystem
+//{
+//public:
+//	void Init();
+//
+//	// 地面高さ取得
+//	float GetGroundHeight(VECTOR pos) const;
+//
+//	// 法線
+//	VECTOR GetGroundNormal(VECTOR pos) const;
+//
+//private:
+//	float baseHeight = 0.0f;
+//
+//	// 坂の強さ
+//	float slopeFactor = 0.3f;
+//
+//	// 階段設定
+//	float stepHeight = 20.0f;
+//	float stepDepth = 50.0f;
+//};

@@ -66,6 +66,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		stage.Draw(camera.GetPosition());
 		player.Draw();
 
+		stage.DebugDraw();
+
 		player.DebugDraw();
 		player.DrawCapsuleDebug(stage.GetEnemies());
 

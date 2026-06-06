@@ -32,12 +32,15 @@ public:
 	void Init();
 	void Draw();
 
-	void DrawDebug();
-
 	bool CheckWallCollision(VECTOR pos, float radius) const;
-	bool CheckGroundCollision(VECTOR pos, float radius, float& groundY) const;
+	bool CheckGroundCollision(VECTOR pos, float radius, float& groundY);
 
-	//void DebugDraw();
+	int GetRampHandle() const
+	{
+		return rampHandle;
+	}
+
+	void DebugDraw();
 
 private:
 	bool SphereVsBox(VECTOR pos, float radius, const Box& box) const ;
@@ -56,4 +59,7 @@ private:
 
 	// ===== Ramp =====
 	VECTOR rampPos;
+
+	VECTOR rampHitPos;
+	bool rampHit;
 };

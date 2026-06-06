@@ -4,6 +4,8 @@ CollisionWorld::CollisionWorld()
 	:groundHandle(-1),
 	wallHandle(-1),
 	cubeHandle(-1),
+	rampHandle(-1),
+	rampHit(false),
 	groundPos(VGet(0, 0, 0))
 {
 
@@ -26,6 +28,11 @@ CollisionWorld::~CollisionWorld()
 		MV1DeleteModel(cubeHandle);
 	}
 
+	if (rampHandle != -1)
+	{
+		MV1DeleteModel(rampHandle);
+	}
+
 	for (auto& box : boxes)
 	{
 		if (box.handle != -1)
@@ -41,7 +48,7 @@ void CollisionWorld::Init()
 	groundHandle = MV1LoadModel(_T("mv1model/asphalt.mv1"));
 	wallHandle = MV1LoadModel(_T("mv1model/wall.mv1"));
 	cubeHandle = MV1LoadModel(_T("mv1model/cube.mv1"));
-	rampHandle = MV1LoadModel(_T("mv1model/cube.mv1"));
+	rampHandle = MV1LoadModel(_T("mv1model/Ramp.mv1"));
 
 	// ===== 地面 =====
 	{
@@ -141,20 +148,14 @@ void CollisionWorld::Init()
 	// ==================================================
 	// Ramp
 	// ==================================================
-	{
-		Box ramp;
+	rampPos = VGet(0, 0, 1200);
 
-		ramp.handle = MV1DuplicateModel(rampHandle);
+	// Rampモデル位置
+	MV1SetPosition(rampHandle, rampPos);
+	MV1SetRotationXYZ(rampHandle, VGet(0, 0, 0));
 
-		ramp.pos = VGet(0, 0, 600);
-		ramp.rotation = VGet(0, 0, 0);
-
-		ramp.halfSize = VGet(200, 100, 400);
-
-		ramp.type = CollisionType::Ramp;
-
-		boxes.push_back(ramp);
-	}
+	// ポリゴンコリジョン構築
+	MV1SetupCollInfo(rampHandle, -1, 8, 8, 8);
 }
 
 void CollisionWorld::Draw()
@@ -168,6 +169,17 @@ void CollisionWorld::Draw()
 
 		MV1DrawModel(box.handle);
 	}
+
+	// ===== Ramp描画 =====
+	MV1DrawModel(rampHandle);
+
+	DrawFormatString(
+		20,
+		100,
+		GetColor(255, 255, 255),
+		_T("RampHandle=%d"),
+		rampHandle
+	);
 }
 
 bool CollisionWorld::SphereVsBox(VECTOR pos, float radius, const Box& box) const
@@ -240,7 +252,7 @@ bool CollisionWorld::CheckWallCollision(VECTOR pos, float radius) const
 	return false;
 }
 
-bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groundY) const
+bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groundY)
 {
 	for (const auto& box : boxes)
 	{
@@ -270,6 +282,33 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 		}
 	}
 
+	// ===== Ramp判定 =====
+	if (rampHandle != -1)
+	{
+		VECTOR start = pos;
+
+		VECTOR end = VSub(pos, VGet(0.0f, 1000.0f, 0.0f));
+
+		MV1_COLL_RESULT_POLY result = MV1CollCheck_Line(rampHandle, -1, start, end);
+
+		if (result.HitFlag)
+		{
+			// ヒット位置を保存
+			rampHitPos = result.HitPosition;
+			rampHit = true;
+
+			DrawLine3D(
+				start,
+				end,
+				GetColor(0, 255, 0)
+			);
+
+			groundY = result.HitPosition.y;
+
+			return true;
+		}
+	}
+
 	// ===== ワールド地面 =====
 	if (pos.y - radius <= 0.0f)
 	{
@@ -279,4 +318,19 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 	}
 
 	return false;
+}
+
+void CollisionWorld::DebugDraw()
+{
+	if (rampHit)
+	{
+		DrawSphere3D(
+			rampHitPos,
+			10.0f,
+			8,
+			GetColor(255, 0, 0),
+			GetColor(255, 0, 0),
+			TRUE
+		);
+	}
 }
