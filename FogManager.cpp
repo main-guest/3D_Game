@@ -16,34 +16,42 @@ void FogManager::Init()
 
 void FogManager::Update(VECTOR camPos, VECTOR playerPos)
 {
-	float height = (playerPos.y + camPos.y) * 0.5f;
+	float camHeight = camPos.y;
+
+	// ===== 高度正規化 =====
+	float heightMask = camHeight / 800.0f;
+	if (heightMask < 0)heightMask = 0;
+	if (heightMask > 1)heightMask = 1;
+
+	// ===== 地面霧強度 =====
+	float groundFog = 1.0f - heightMask;
+	groundFog = groundFog * groundFog;
+
+	float baseStart = 800.0f;
+	float baseEnd = 4000.0f;
 
 	// ===== 天候ベースのターゲット =====
 	switch (weatherType)
 	{
 	case 0: // 晴れ
-		targetStart = 2000.0f;
-		targetEnd = 16000.0f;
+		baseStart = 2000.0f;
+		baseEnd = 16000.0f;
 		break;
 
 	case 1: // 霧
-		targetStart = 500.0f;
-		targetEnd = 2500.0f;
+		baseStart = 500.0f;
+		baseEnd = 2500.0f;
 		break;
 
 	case 2: // ダンジョン
-		targetStart = 200.0f;
-		targetEnd = 1200.0f;
+		baseStart = 200.0f;
+		baseEnd = 1200.0f;
 		break;
 	}
 
-	// ===== 高度で微調整 =====
-	float t = height / 500.0f;
-	if (t < 0)t = 0;
-	if (t > 1)t = 1;
-
-	targetStart += 300.0f * t;
-	targetEnd += 600.0f * t;
+	// ===== 層フォグ =====
+	targetStart = baseStart + (300.0f * groundFog);
+	targetEnd = baseEnd + (1500.0f * groundFog);
 
 	// ===== なめらか補間 =====
 	fogStart += (targetStart - fogStart) * 0.08f;
