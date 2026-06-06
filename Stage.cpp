@@ -105,5 +105,5 @@ std::vector<std::unique_ptr<Enemy>>& Stage::GetEnemies()
 
 void Stage::DebugDraw()
 {
-	collisionWorld.DebugDraw();
+	collisionWorld.DebugDraw(player->GetPos());
 }

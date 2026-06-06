@@ -163,7 +163,7 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 			velocity.z = 0.0f;
 		}
 
-		physics.MoveCharacter(pos, velocity, radius, isGround, dt);
+		physics.MoveCharacter(pos, velocity, state, radius, dt);
 
 		UpdateAnimation(dt);
 
@@ -184,7 +184,7 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 			}
 		}
 
-		physics.MoveCharacter(pos, velocity, radius, isGround, dt);
+		physics.MoveCharacter(pos, velocity, state, radius, dt);
 
 		UpdateState();
 		UpdateAnimation(dt);
@@ -196,7 +196,7 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	UpdateInput(dt, cameraAngle);
 
 	//　=====　物理　=====
-	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
+	physics.MoveCharacter(pos, velocity, state, radius, dt);
 
 	//　=====　状態更新　=====
 	UpdateState();
@@ -260,7 +260,7 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	}
 
 	//　=====　接地保存　=====
-	prevGround = isGround;
+	state.wasGround = state.isGround;
 }
 
 void Player::Draw()
@@ -471,7 +471,7 @@ void Player::StartDodge()
 
 	isDash = false;
 
-	if (!isGround)
+	if (!state.isGround)
 		return;
 
 	isDodging = true;
@@ -539,7 +539,7 @@ void Player::DebugDraw()
 		20, 220,
 		GetColor(0, 255, 0),
 		_T("IsGround : %d"),
-		isGround
+		state.isGround
 	);
 
 	DrawFormatString(
@@ -864,7 +864,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	oldMouse = mouse;
 
 	// ===== 攻撃 =====
-	if (leftClick && currentState != AnimState::Attack && isGround)
+	if (leftClick && currentState != AnimState::Attack && state.isGround)
 	{
 		currentState = AnimState::Attack;
 
@@ -879,7 +879,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	}
 
 	// ===== ジャンプ =====
-	if (CheckHitKey(KEY_INPUT_SPACE) && isGround)
+	if (CheckHitKey(KEY_INPUT_SPACE) && state.isGround)
 	{
 		currentState = AnimState::JumpStart;
 
@@ -893,7 +893,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 			dashJumpVelocity.z = velocity.z;
 
 			velocity.y = jumpPower;
-			isGround = false;
+			state.isGround = false;
 
 			ChangeAnimation(dashJumpStartAnim, false);
 		}
@@ -958,7 +958,7 @@ void Player::UpdateState()
 			{
 				velocity.y = jumpPower;
 
-				isGround = false;
+				state.isGround = false;
 
 				jumpRequest = false;
 
@@ -1052,7 +1052,7 @@ void Player::UpdateState()
 	}
 
 	//　=====　着地瞬間検知　=====
-	bool landed = (!prevGround && isGround);
+	bool landed = (!state.wasGround && state.isGround);
 
 	if (landed && currentState != AnimState::JumpEnd)
 	{
@@ -1099,10 +1099,13 @@ void Player::UpdateState()
 		return;
 	}
 
+	// 接地状態を保存
+	state.wasGround = state.isGround;
+
 	//　=====　通常状態　=====
 	AnimState nextState = AnimState::Idle;
 
-	if (!isGround)
+	if (!state.isGround)
 	{
 		nextState = AnimState::JumpLoop;
 	}

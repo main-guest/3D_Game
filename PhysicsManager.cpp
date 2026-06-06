@@ -1,54 +1,85 @@
 #include <cmath>
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
+#include "Player.h"
 
 void PhysicsManager::Init(CollisionWorld* w)
 {
 	world = w;
 }
 
-bool PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt)
+bool PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, CharacterState& state, float radius, float dt)
 {
+	GroundInfo groundInfo;
+
 	// ===== 重力 =====
 	velocity.y -= gravity * dt;
 
-	// ===== 移動処理 =====
-	// X方向
+	// ===== 移動量 =====
+	VECTOR move = VScale(velocity, dt);
 	VECTOR nextPos = pos;
-	nextPos.x += velocity.x * dt;
+
+	// X方向
+	nextPos = pos;
+	nextPos.x += move.x;
 
 	if (!world->CheckWallCollision(nextPos, radius))
 	{
 		pos.x = nextPos.x;
 	}
+	else
+	{
+		velocity.x = 0.0f;
+	}
 
 	// Z方向
 	nextPos = pos;
-	nextPos.z += velocity.z * dt;
+	nextPos.z += move.z;
 
 	if (!world->CheckWallCollision(nextPos, radius))
 	{
 		pos.z = nextPos.z;
 	}
+	else
+	{
+		velocity.z = 0.0f;
+	}
 
 	// Y方向
 	nextPos = pos;
-	nextPos.y += velocity.y * dt;
+	nextPos.y += move.y;
 
-	float groundY = 0.0f;
+	// 落下処理
+	pos.y = nextPos.y;
 
-	if (!world->CheckGroundCollision(nextPos, radius, groundY))
+	if (world->CheckGroundCollision(pos, radius, groundInfo))
 	{
-		pos.y = nextPos.y;
-		isGround = false;
+		pos.y = groundInfo.y + radius;
+		velocity.y = 0.0f;
+
+		// 接地安定化
+		state.groundStableTimer += dt;
+
+		if (state.groundStableTimer > 0.05f)
+		{
+			state.isGround = true;
+		}
 	}
 	else
 	{
-		pos.y = groundY + radius;
+		state.isGround = false;
+		state.groundStableTimer = 0.0f;
+	}
 
-		velocity.y = 0.0f;
+	// Rampスライド（登り補助）
+	if (state.isGround && groundInfo.isRamp)
+	{
+		float slope = 1.0f - groundInfo.normal.y;
 
-		isGround = true;
+		VECTOR slide = VScale(groundInfo.normal, -slope * 300.0f * dt);
+
+		velocity.x += slide.x;
+		velocity.z += slide.z;
 	}
 
 	return true;

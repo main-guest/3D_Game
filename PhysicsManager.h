@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "DxLib.h"
+#include "CharacterBase.h"
 
 class CollisionWorld;
 
@@ -9,7 +10,7 @@ class PhysicsManager
 public:
 	void Init(CollisionWorld* world);
 
-	bool MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt);
+	bool MoveCharacter(VECTOR& pos, VECTOR& velocity, CharacterState& state, float radius, float dt);
 
 	// ===== Capsule Collision ====
 	void ResolveCharacterCollision(VECTOR& pos, VECTOR& velocity, float radius, float height, const std::vector<VECTOR>& others, float otherHeight);

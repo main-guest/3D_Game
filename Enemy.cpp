@@ -295,7 +295,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 	}
 
 	//　=====　物理処理　=====
-	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
+	physics.MoveCharacter(pos, velocity, state, radius, dt);
 
 	UpdateState();
 
@@ -486,7 +486,7 @@ void Enemy::UpdateState()
 		{
 			velocity.y = jumpPower;
 
-			isGround = false;
+			state.isGround = false;
 
 			jumpRequest = false;
 
@@ -499,7 +499,7 @@ void Enemy::UpdateState()
 	}
 
 	//　=====　着地瞬間検知　=====
-	bool landed = (!prevGround && isGround);
+	bool landed = (!state.wasGround && state.isGround);
 
 	if (landed && currentState != AnimState::JumpEnd)
 	{

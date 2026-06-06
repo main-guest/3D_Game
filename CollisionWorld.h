@@ -23,6 +23,13 @@ struct Box
 	CollisionType type;
 };
 
+struct GroundInfo
+{
+	float y = 0.0f;
+	VECTOR normal = VGet(0, 1, 0);
+	bool isRamp = false;
+};
+
 class CollisionWorld
 {
 public:
@@ -33,14 +40,15 @@ public:
 	void Draw();
 
 	bool CheckWallCollision(VECTOR pos, float radius) const;
-	bool CheckGroundCollision(VECTOR pos, float radius, float& groundY);
+	bool CheckGroundCollision(VECTOR pos, float radius, GroundInfo& outInfo);
+	bool CheckRampCollision(VECTOR pos, float radius, VECTOR& hitPos, VECTOR& hitNormal);
 
 	int GetRampHandle() const
 	{
 		return rampHandle;
 	}
 
-	void DebugDraw();
+	void DebugDraw(VECTOR playerPos);
 
 private:
 	bool SphereVsBox(VECTOR pos, float radius, const Box& box) const ;
@@ -60,6 +68,16 @@ private:
 	// ===== Ramp =====
 	VECTOR rampPos;
 
-	VECTOR rampHitPos;
-	bool rampHit;
+	// デバッグ用
+	int debugRampHitFlag = 0;
+	VECTOR debugHitPos = VGet(0, 0, 0);
+
+	VECTOR debugNormal = VGet(0, 0, 0);
+
+	VECTOR rayStart;
+	VECTOR rayEnd;
+	bool drawRay = false;
+
+	float hit = 0;;
+	float foot = 0;
 };

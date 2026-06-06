@@ -20,6 +20,13 @@ enum class AnimState
 	Dodge
 };
 
+struct CharacterState
+{
+	bool isGround = false;
+	bool wasGround = true;
+	float groundStableTimer = 0.0f;
+};
+
 class CharacterBase
 {
 public:
@@ -27,6 +34,8 @@ public:
 	virtual ~CharacterBase();
 
 	virtual void Init(const TCHAR* modelPath);
+
+	CharacterState state;
 
 	void SetAnimSpeed(float speed)
 	{
@@ -114,6 +123,5 @@ protected:
 	const float jumpPower = 500.0f;
 	const float groundHeight = 0.0f;
 
-	bool isGround = true;
 	bool loopAnim = true;
 };

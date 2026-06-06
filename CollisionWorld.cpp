@@ -1,11 +1,11 @@
 #include "CollisionWorld.h"
+#include "Player.h"
 
 CollisionWorld::CollisionWorld()
 	:groundHandle(-1),
 	wallHandle(-1),
 	cubeHandle(-1),
 	rampHandle(-1),
-	rampHit(false),
 	groundPos(VGet(0, 0, 0))
 {
 
@@ -155,7 +155,7 @@ void CollisionWorld::Init()
 	MV1SetRotationXYZ(rampHandle, VGet(0, 0, 0));
 
 	// ポリゴンコリジョン構築
-	MV1SetupCollInfo(rampHandle, -1, 8, 8, 8);
+	MV1SetupCollInfo(rampHandle, -1, 32, 32, 32);
 }
 
 void CollisionWorld::Draw()
@@ -252,8 +252,15 @@ bool CollisionWorld::CheckWallCollision(VECTOR pos, float radius) const
 	return false;
 }
 
-bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groundY)
+bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, GroundInfo& outInfo)
 {
+	bool found = false;
+	float bestY = -FLT_MAX;
+	
+	outInfo.y = 0.0f;
+	outInfo.normal = VGet(0, 1, 0);
+	outInfo.isRamp = false;
+
 	for (const auto& box : boxes)
 	{
 		if (box.type != CollisionType::Ground && box.type != CollisionType::Wall)
@@ -278,41 +285,56 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 
 		if (insideX && insideZ && onTop) 
 		{ 
-			groundY = top; return true;
+			if (top > bestY)
+			{
+				bestY = top;
+				outInfo.normal = VGet(0, 1, 0);
+				outInfo.isRamp = false;
+				found = true;
+			}
 		}
 	}
 
-	// ===== Ramp判定 =====
+	if (found)
+	{
+		return true;
+	}
+
+	// ===== Ramp（レイ判定） =====
 	if (rampHandle != -1)
 	{
-		VECTOR start = pos;
-
+		VECTOR start = VAdd(pos, VGet(0.0f, 1000.0f, 0.0f));
 		VECTOR end = VSub(pos, VGet(0.0f, 1000.0f, 0.0f));
 
 		MV1_COLL_RESULT_POLY result = MV1CollCheck_Line(rampHandle, -1, start, end);
 
 		if (result.HitFlag)
 		{
-			// ヒット位置を保存
-			rampHitPos = result.HitPosition;
-			rampHit = true;
+			float hitY = result.HitPosition.y;
 
-			DrawLine3D(
-				start,
-				end,
-				GetColor(0, 255, 0)
-			);
+			// プレイヤーの足元
+			float footY = pos.y - radius;
 
-			groundY = result.HitPosition.y;
+			const float stepHeight = 20.0f;
 
-			return true;
+			if (footY <= hitY + stepHeight)
+			{
+				outInfo.y = hitY;
+
+				outInfo.normal = result.Normal;
+				outInfo.isRamp = true;
+
+				return true;
+			}
 		}
 	}
 
 	// ===== ワールド地面 =====
 	if (pos.y - radius <= 0.0f)
 	{
-		groundY = 0.0f;
+		outInfo.y = 0.0f;
+		outInfo.normal = VGet(0, 1, 0);
+		outInfo.isRamp = false;
 
 		return true;
 	}
@@ -320,17 +342,186 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 	return false;
 }
 
-void CollisionWorld::DebugDraw()
+bool CollisionWorld::CheckRampCollision(VECTOR pos, float radius, VECTOR& hitPos, VECTOR& hitNormal)
 {
-	if (rampHit)
+	if (rampHandle == -1)
+	{
+		return false;
+	}
+
+	// プレイヤーカプセル
+	VECTOR bottom = pos;
+	VECTOR top = VAdd(pos, VGet(0.0f, 140.0f, 0.0f));
+
+	MV1_COLL_RESULT_POLY_DIM result = MV1CollCheck_Capsule(rampHandle, -1, bottom, top, radius);
+
+	if (result.HitNum <= 0)
+	{
+		MV1CollResultPolyDimTerminate(result);
+		return false;
+	}
+
+	bool found = false;
+	float nearestDistSq = FLT_MAX;
+
+	for (int i = 0; i < result.HitNum; i++)
+	{
+		MV1_COLL_RESULT_POLY& poly = result.Dim[i];
+
+		VECTOR center = VGet(
+			(poly.Position[0].x +
+				poly.Position[1].x +
+				poly.Position[2].x) / 3.0f,
+
+			(poly.Position[0].y +
+				poly.Position[1].y +
+				poly.Position[2].x) / 3.0f,
+
+			(poly.Position[0].z +
+				poly.Position[1].z +
+				poly.Position[2].z) / 3.0f
+		);
+
+		float dx = center.x - pos.x;
+		float dy = center.y - pos.y;
+		float dz = center.z - pos.z;
+
+		float distSq =
+			dx * dx +
+			dy * dy +
+			dz * dz;
+
+		if (distSq < nearestDistSq)
+		{
+			nearestDistSq = distSq;
+
+			hitPos = center;
+			hitNormal = poly.Normal;
+
+			found = true;
+		}
+	}
+
+	MV1CollResultPolyDimTerminate(result);
+
+	return hit;
+}
+
+void CollisionWorld::DebugDraw(VECTOR playerPos)
+{
+	// ==================================================
+	// Rampヒット位置
+	// ==================================================
+	if (debugRampHitFlag)
 	{
 		DrawSphere3D(
-			rampHitPos,
-			10.0f,
+			debugHitPos,
+			20.0f,
 			8,
 			GetColor(255, 0, 0),
 			GetColor(255, 0, 0),
 			TRUE
 		);
 	}
+
+	// ==================================================
+	// プレイヤー真下Ray
+	// ==================================================
+	VECTOR start = VAdd(playerPos, VGet(0.0f, 1000.0f, 0.0f));
+	VECTOR end = VSub(playerPos, VGet(0.0f, 1000.0f, 0.0f));
+
+	DrawLine3D(
+		start,
+		end,
+		GetColor(0, 255, 0)
+	);
+
+	// ==================================================
+	// プレイヤー位置
+	// ==================================================
+	DrawSphere3D(
+		playerPos,
+		5.0f,
+		8,
+		GetColor(0, 0, 255),
+		GetColor(0, 0, 255),
+		TRUE
+	);
+
+	// ==================================================
+	// デバッグ表示
+	// ==================================================
+	DrawFormatString(
+		20,
+		420,
+		GetColor(255, 255, 255),
+		_T("FootY=%.1f HitY=%.1f Diff=%.1f"),
+		foot,
+		hit,
+		foot - hit
+	);
+
+	DrawFormatString(
+		20,
+		440,
+		GetColor(255, 255, 255),
+		_T("PlayerPos %.1f %.1f %.1f"),
+		playerPos.x,
+		playerPos.y,
+		playerPos.z
+	);
+
+	DrawFormatString(
+		20,
+		460,
+		GetColor(255, 255, 0),
+		_T("RampHit=%d"),
+		debugRampHitFlag
+	);
+
+	DrawFormatString(
+		20,
+		480,
+		GetColor(255, 255, 255),
+		_T("HitPos %.1f %.1f %.1f"),
+		debugHitPos.x,
+		debugHitPos.y,
+		debugHitPos.z
+	);
+
+	DrawFormatString(
+		20,
+		500,
+		GetColor(255, 255, 255),
+		_T("CHECK RAMP")
+	);
+
+	DrawFormatString(
+		20,
+		120,
+		GetColor(255, 255, 255),
+		_T("RampPos %.1f %.1f %.1f"),
+		rampPos.x,
+		rampPos.y,
+		rampPos.z
+	);
+
+	DrawFormatString(
+		20,
+		580,
+		GetColor(255, 255, 255),
+		_T("Normal %.2f %.2f %.2f"),
+		debugNormal.x,
+		debugNormal.y,
+		debugNormal.z
+	);
+
+	DrawSphere3D(
+		rampPos,
+		30.0f,
+		8,
+		GetColor(255, 255, 0),
+		GetColor(255, 255, 0),
+		TRUE
+	);
 }

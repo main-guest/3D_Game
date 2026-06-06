@@ -22,28 +22,30 @@ public:
 	void Update(float dt, float cameraAngle, PhysicsManager& physics);
 	void Draw();
 
+	// 状態（統一管理）
+	CharacterState state;
+
+	// 装備
 	void EquipWeapon1();
 	void EquipWeapon2();
 	void Unequip();
 
+	// 戦闘
 	void UpdateAttackPos();
-
 	void CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies);
-
 	void Damage(int power);
 
 	void StartDodge();
 
+	VECTOR GetForward() const;
 	VECTOR GetCenterPos() const;
 
 	void SetPos(const VECTOR& p) { pos = p; }
 
 	const VECTOR& GetVelocity() const;
 	VECTOR& GetVelocity();
-
 	void SetVelocity(const VECTOR& v);
 
-	VECTOR GetForward() const;
 
 	void DebugDraw();
 	void DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies);
@@ -63,7 +65,6 @@ private:
 	int oldMouse = 0;
 
 	bool shiftPressed = false;
-
 	float shiftHoldTimer = 0.0f;
 
 	// 長押し判定時間]
@@ -72,27 +73,21 @@ private:
 	// ===== 状態 =====
 	bool isDash = false;
 
-	bool prevGround = true;
+	// ===== 移動速度 =====
+	float walkSpeed = 220.0f;
+	float dashSpeed = 400.0f;
 
 	bool jumpRequest = false;
-
 	bool dashJump = false;
 
 	bool attackActive = false;
 	bool attackHit = false;
 
-	bool isHit = false;
-
-	bool isDead = false;
-
-	// ===== 移動速度 =====
-	float walkSpeed = 220.0f;
-	float dashSpeed = 400.0f;
-
-	VECTOR dashJumpVelocity = VGet(0, 0, 0);
-
 	// ===== 攻撃当たり判定 =====
 	VECTOR attackPos;
+
+	bool isHit = false;
+	bool isDead = false;
 
 	const float jumpStartFrame = 55.0f;
 
@@ -105,11 +100,11 @@ private:
 	float knockbackTimer = 0.0f;
 	const float knockbackDuration = 0.25f;
 
+	VECTOR dashJumpVelocity = VGet(0, 0, 0);
+
 	// ===== 回避 =====
 	bool isDodging = false;
-	
 	float dodgeSpeed = 600.0f;
-
 	float dodgeStartFrame = 34.0f;
 	float dodgeEndFrame = 71.0f;
 

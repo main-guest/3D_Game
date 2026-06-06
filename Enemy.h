@@ -50,8 +50,6 @@ private:
 	float characterAngle = 0.0f;
 
 	// ===== ó‘Ô =====
-	bool prevGround = true;
-
 	bool jumpRequest = false;
 
 	bool attackActive = false;
