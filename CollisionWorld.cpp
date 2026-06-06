@@ -172,14 +172,6 @@ void CollisionWorld::Draw()
 
 	// ===== Ramp•`‰æ =====
 	MV1DrawModel(rampHandle);
-
-	DrawFormatString(
-		20,
-		100,
-		GetColor(255, 255, 255),
-		_T("RampHandle=%d"),
-		rampHandle
-	);
 }
 
 bool CollisionWorld::SphereVsBox(VECTOR pos, float radius, const Box& box) const

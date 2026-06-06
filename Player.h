@@ -32,6 +32,8 @@ public:
 
 	void Damage(int power);
 
+	void IsAnimationFinished(int animIndex);
+
 	void StartDodge();
 
 	VECTOR GetCenterPos() const;
@@ -84,6 +86,7 @@ private:
 	bool isHit = false;
 
 	bool isDead = false;
+	bool isDying = false; 
 
 	// ===== ˆÚ“®‘¬“x =====
 	float walkSpeed = 220.0f;

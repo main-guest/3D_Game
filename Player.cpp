@@ -65,6 +65,7 @@ void Player::Init(CollisionWorld* w)
 	attack03Anim = 10;
 	hitAnim = 11;
 	dodgeAnim = 12;
+	deadAnim = 13;
 
 	// ===== 武器データ設定 =====
 	// 素手
@@ -138,6 +139,14 @@ void Player::Init(CollisionWorld* w)
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
+	if (isDead)
+	{
+		// ===== モデル非表示 =====
+		MV1SetVisible(handle, FALSE);
+
+		return;
+	}
+
 	if (isDodging)
 	{
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
@@ -440,6 +449,9 @@ void Player::Damage(int power)
 	if (isInvincible)
 		return;
 
+	if (isDead || isDying)
+		return;
+
 	hp -= power;
 
 	isKnockback = true;
@@ -450,9 +462,14 @@ void Player::Damage(int power)
 	velocity.x = -back.x * 350.0f;
 	velocity.z = -back.z * 350.0f;
 
+	// ==== 死亡処理 ====
 	if (hp <= 0)
 	{
-		isDead = true;
+		isDying = true;
+
+		currentState = AnimState::Dead;
+		ChangeAnimation(deadAnim, false);
+
 		return;
 	}
 
@@ -948,6 +965,22 @@ void Player::UpdateInput(float dt, float cameraAngle)
 
 void Player::UpdateState()
 {
+	// ===== 死亡 =====
+	if (currentState == AnimState::Dead)
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// アニメ終了
+		if (animTime >= totalTime)
+		{
+			animTime = totalTime;
+
+			isDead = true;
+		}
+
+		return;
+	}
+
 	//　=====　JumpStart → JumpLoop　=====
 	if (currentState == AnimState::JumpStart)
 	{

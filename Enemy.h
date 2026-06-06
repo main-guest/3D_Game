@@ -60,6 +60,7 @@ private:
 	bool isHit = false;
 
 	bool isDead = false;
+	bool isDying = false;
 
 	EnemyAIState aiState = EnemyAIState::Idle;
 

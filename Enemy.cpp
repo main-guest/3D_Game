@@ -54,6 +54,7 @@ void Enemy::Init(VECTOR startPos)
 	jumpEndAnim = 5;
 	attack01Anim = 6;
 	hitAnim = 7;
+	deadAnim = 8;
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
@@ -66,6 +67,26 @@ void Enemy::Init(VECTOR startPos)
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 {
+
+	if (isDead)
+	{
+		// ===== モデル非表示 =====
+		MV1SetVisible(handle, FALSE);
+
+		return;
+	}
+
+	// ===== 死亡アニメ中はAI停止 =====
+	if (currentState == AnimState::Dead)
+	{
+		velocity = VGet(0, 0, 0);
+
+		UpdateState();
+		UpdateAnimation(dt);
+
+		return;
+	}
+
 	// ==== クールダウン更新 ====
 	if (attackTimer > 0.0f)
 	{
@@ -348,7 +369,11 @@ void Enemy::Damage(int power)
 
 	if (hp <= 0)
 	{
-		isDead = true;
+		isDying = true;
+
+		currentState = AnimState::Dead;
+		ChangeAnimation(deadAnim, false);
+
 		return;
 	}
 
@@ -464,6 +489,22 @@ void Enemy::GeneratePatrolTarget()
 
 void Enemy::UpdateState()
 {
+	// ===== 死亡 =====
+	if (currentState == AnimState::Dead)
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// アニメ終了
+		if (animTime >= totalTime)
+		{
+			animTime = totalTime;
+
+			isDead = true;
+		}
+
+		return;
+	}
+
 	// ===== ヒットストップ中は完全固定 =====
 	if (currentState == AnimState::Hit)
 	{

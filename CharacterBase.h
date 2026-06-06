@@ -17,7 +17,9 @@ enum class AnimState
 
 	Hit,
 
-	Dodge
+	Dodge,
+
+	Dead
 };
 
 class CharacterBase
@@ -107,6 +109,8 @@ protected:
 	int hitAnim;
 
 	int dodgeAnim;
+
+	int deadAnim;
 
 	// ===== ’è” ====
 	float speed;						// ˆÚ“®‘¬“x
