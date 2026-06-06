@@ -19,6 +19,9 @@ void Stage::Init(Player* p)
 
 	player = p;
 
+	// ===== “VŒóİ’è =====
+	fog.SetWeather(0);
+
 	// ===== Enemy¶¬ =====
 	auto enemy1 = std::make_unique<Enemy>();
 	enemy1->Init(VGet(1000, 0, 1000));

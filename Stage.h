@@ -5,6 +5,7 @@
 #include "PhysicsManager.h"
 #include "Enemy.h"
 #include "SkyDome.h"
+#include "FogManager.h"
 
 class Player;
 
@@ -38,6 +39,9 @@ private:
 
 	// ===== スカイドーム =====
 	SkyDome sky;
+
+	// ===== フォグ =====
+	FogManager fog;
 
 	// ===== Player参照 =====
 	Player* player = nullptr;

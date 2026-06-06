@@ -7,6 +7,7 @@
 #include "Stage.h"
 #include "CollisionWorld.h"
 #include "PhysicsManager.h"
+#include "FogManager.h"
 
 // ===== 定数 =====
 const int SCREEN_W = 1280;
@@ -26,11 +27,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SetUseZBuffer3D(TRUE);
 	SetWriteZBuffer3D(TRUE);
 
-	//// フォグ（霧）設定
-	//SetFogEnable(TRUE);
-	//SetFogColor(135, 206, 235);
-	//SetFogStartEnd(500.0f, 3000.0f);
-
 	SetMouseDispFlag(FALSE); // マウス非表示
 	SetDrawScreen(DX_SCREEN_BACK);
 
@@ -38,10 +34,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Player player;
 	Camera camera;
 	Stage stage;
+	FogManager fog;	// フォグ（霧）設定
 
 	stage.Init(&player);
 	player.Init(&stage.GetCollisionWorld());
 	camera.Init();
+	fog.Init();
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -60,6 +58,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		player.Update(deltaTime, camera.GetYaw(), stage.GetPhysics());
 		stage.Update(deltaTime, player.GetPos());
 		camera.Update(player.GetPos());
+		fog.Update(camera.GetPosition(), player.GetPos());
 
 		// --- 描画 ---
 		ClearDrawScreen();

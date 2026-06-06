@@ -15,11 +15,7 @@ void SkyDome::Draw(VECTOR camPos)
 	SetUseZBuffer3D(FALSE);
 	SetWriteZBuffer3D(FALSE);
 
-
-	MV1SetDifColorScale(handle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
-
 	MV1DrawModel(handle);
-
 
 	SetUseLighting(TRUE);
 	SetUseZBuffer3D(TRUE);
