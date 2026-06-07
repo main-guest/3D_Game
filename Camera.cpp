@@ -4,7 +4,7 @@
 Camera::Camera()
 	:yaw(0.0f),
 	pitch(20.0f * DX_PI / 180.0f),
-	distance(100.0f),
+	distance(180.0f),
 	cameraPos(VGet(0, 0, 0)),
 	cameraTarget(VGet(0, 0, 0)),
 	sideCamera(false),
@@ -79,11 +79,11 @@ void Camera::Update(VECTOR playerPos)
 		forward.z = cosf(pitch) * cosf(yaw);
 
 		// 注視点（プレイヤーの上）
-		cameraTarget = VAdd(playerPos, VGet(0.0f, 140.0f, 0.0f));
+		cameraTarget = VAdd(playerPos, VGet(0.0f, 110.0f, 0.0f));
 
 		// カメラ位置
 		cameraPos = VSub(cameraTarget, VScale(forward, distance));
-		cameraPos.y += 20.0f;
+		cameraPos.y += 80.0f;
 
 		SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
 	}

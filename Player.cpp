@@ -139,6 +139,21 @@ void Player::Init(CollisionWorld* w)
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
+	//　=====　武器更新　=====
+	switch (equipState)
+	{
+	case EquipState::Weapon1:
+		weapon1.Update(handle, _T("mixamorig:RightHand"), characterAngle);
+		break;
+
+	case EquipState::Weapon2:
+		weapon2.Update(handle, _T("mixamorig:RightHand"), characterAngle);
+		break;
+
+	case EquipState::Unarmed:
+		break;
+	}
+
 	if (isDead)
 	{
 		// ===== モデル非表示 =====
@@ -231,21 +246,6 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	if (CheckHitKey(KEY_INPUT_3))
 	{
 		Unequip();
-	}
-
-	//　=====　武器更新　=====
-	switch (equipState)
-	{
-	case EquipState::Weapon1:
-		weapon1.Update(handle, _T("mixamorig:RightHand"), characterAngle);
-		break;
-
-	case EquipState::Weapon2:
-		weapon2.Update(handle, _T("mixamorig:RightHand"), characterAngle);
-		break;
-
-	case EquipState::Unarmed:
-		break;
 	}
 
 	// ガン遅延ダメージ

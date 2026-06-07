@@ -10,8 +10,8 @@
 #include "FogManager.h"
 
 // ===== íËêî =====
-const int SCREEN_W = 1280;
-const int SCREEN_H = 720;
+const int SCREEN_W = 1920;
+const int SCREEN_H = 1080;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
