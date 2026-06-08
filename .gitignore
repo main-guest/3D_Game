@@ -361,3 +361,57 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# =========================
+# Assets（完全除外）
+# =========================
+Assets/Animation/
+Assets/Model/
+Assets/mv1Model/
+Assets/Texture/
+
+# =========================
+# External（完全除外）
+# =========================
+External/DxLib_h/
+External/Tool/
+
+# 念のためフォルダごと除外
+Assets/
+External/
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.user
+*.VC.db
+
+# =========================
+# Build
+# =========================
+Debug/
+Release/
+x64/
+x86/
+
+# =========================
+# Intermediate
+# =========================
+*.obj
+*.pch
+*.pdb
+*.ilk
+*.log
+
+# =========================
+# Temporary
+# =========================
+*.tmp
+*.cache
+
+# =========================
+# Windows
+# =========================
+Thumbs.db
+Desktop.ini
