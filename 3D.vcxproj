@@ -18,6 +18,32 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Camera.cpp" />
+    <ClCompile Include="Source\CharacterBase.cpp" />
+    <ClCompile Include="Source\CollisionWorld.cpp" />
+    <ClCompile Include="Source\Enemy.cpp" />
+    <ClCompile Include="Source\FogManager.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\PhysicsManager.cpp" />
+    <ClCompile Include="Source\Player.cpp" />
+    <ClCompile Include="Source\SkyDome.cpp" />
+    <ClCompile Include="Source\Stage.cpp" />
+    <ClCompile Include="Source\Weapon.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Camera.h" />
+    <ClInclude Include="Source\CharacterBase.h" />
+    <ClInclude Include="Source\CollisionWorld.h" />
+    <ClInclude Include="Source\Enemy.h" />
+    <ClInclude Include="Source\FogManager.h" />
+    <ClInclude Include="Source\PhysicsManager.h" />
+    <ClInclude Include="Source\Player.h" />
+    <ClInclude Include="Source\SkyDome.h" />
+    <ClInclude Include="Source\Stage.h" />
+    <ClInclude Include="Source\Weapon.h" />
+    <ClInclude Include="Source\WeaponData.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -134,34 +160,6 @@
       <AdditionalLibraryDirectories>C:\Users\benti\Desktop\C++Game\External\Dxlib_h;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="CharacterBase.cpp" />
-    <ClCompile Include="Enemy.cpp" />
-    <ClCompile Include="FogManager.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="CollisionWorld.cpp" />
-    <ClCompile Include="PhysicsManager.cpp" />
-    <ClCompile Include="Player.cpp" />
-    <ClCompile Include="SkyDome.cpp" />
-    <ClCompile Include="Stage.cpp" />
-    <ClCompile Include="TerrainSystem.cpp" />
-    <ClCompile Include="Weapon.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="CharacterBase.h" />
-    <ClInclude Include="Enemy.h" />
-    <ClInclude Include="CollisionWorld.h" />
-    <ClInclude Include="FogManager.h" />
-    <ClInclude Include="PhysicsManager.h" />
-    <ClInclude Include="Player.h" />
-    <ClInclude Include="SkyDome.h" />
-    <ClInclude Include="Stage.h" />
-    <ClInclude Include="TerrainSystem.h" />
-    <ClInclude Include="Weapon.h" />
-    <ClInclude Include="WeaponData.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

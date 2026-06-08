@@ -31,7 +31,7 @@ Enemy::~Enemy()
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== ã§í èâä˙âª =====
-	CharacterBase::Init(_T("mv1model/Enemy.mv1"));
+	CharacterBase::Init(_T("Assets/mv1model/Enemy.mv1"));
 
 	// ===== ìñÇΩÇËîªíËÉTÉCÉY =====
 	radius = 10.0f;
@@ -50,7 +50,7 @@ void Enemy::Init(VECTOR startPos)
 	walkAnim = 1;
 	chaseAnim = 2;
 	jumpStartAnim = 3;
-	jumpLoopAnim = 4;
+	jumpRiseAnim = 4;
 	jumpEndAnim = 5;
 	attack01Anim = 6;
 	hitAnim = 7;
@@ -531,9 +531,9 @@ void Enemy::UpdateState()
 
 			jumpRequest = false;
 
-			currentState = AnimState::JumpLoop;
+			currentState = AnimState::JumpRise;
 
-			ChangeAnimation(jumpLoopAnim, true);
+			ChangeAnimation(jumpRiseAnim, true);
 		}
 
 		return;
@@ -639,8 +639,8 @@ void Enemy::UpdateState()
 			ChangeAnimation(attack01Anim, false);
 			break;
 
-		case AnimState::JumpLoop:
-			ChangeAnimation(jumpLoopAnim, true);
+		case AnimState::JumpRise:
+			ChangeAnimation(jumpRiseAnim, true);
 			break;
 		}
 	}

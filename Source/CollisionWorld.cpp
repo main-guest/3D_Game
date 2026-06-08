@@ -45,10 +45,10 @@ CollisionWorld::~CollisionWorld()
 void CollisionWorld::Init()
 {
 	// ===== ÉÇÉfÉãì«Ç›çûÇ› =====
-	groundHandle = MV1LoadModel(_T("mv1model/asphalt.mv1"));
-	wallHandle = MV1LoadModel(_T("mv1model/wall.mv1"));
-	cubeHandle = MV1LoadModel(_T("mv1model/cube.mv1"));
-	rampHandle = MV1LoadModel(_T("mv1model/Ramp.mv1"));
+	groundHandle = MV1LoadModel(_T("Assets/mv1model/asphalt.mv1"));
+	wallHandle = MV1LoadModel(_T("Assets/mv1model/wall.mv1"));
+	cubeHandle = MV1LoadModel(_T("Assets/mv1model/cube.mv1"));
+	rampHandle = MV1LoadModel(_T("Assets/mv1model/Ramp.mv1"));
 
 	// ===== ínñ  =====
 	{

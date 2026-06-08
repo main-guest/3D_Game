@@ -10,7 +10,8 @@ enum class AnimState
 	Dash,
 
 	JumpStart,
-	JumpLoop,
+	JumpRise,
+	JumpFall,
 	JumpEnd,
 
 	Attack,
@@ -83,12 +84,24 @@ protected:
 	// ===== アニメーション =====
 	AnimState currentState;
 
-	int currentAnimAttach;
-	float animTime;
+	int currentAnimIndex = -1;
+
+	float animTime = 0.0f;
 
 	// 現在のアニメ再生速度
 	float animSpeed = 1.0f;
 
+	// アニメーションブレンド
+	int currentAnimAttach = -1;
+	int prevAnimAttach = -1;
+
+	float blendTime = 0.0f;
+	float blendDuration = 0.2;
+
+	bool isBlending = false;
+	bool loopAnim = true;
+
+	// アニメーションハンドル
 	int idleAnim;
 	int walkAnim;
 
@@ -99,7 +112,8 @@ protected:
 
 	int jumpStartAnim;
 	int dashJumpStartAnim;
-	int jumpLoopAnim;
+	int jumpRiseAnim;
+	int jumpFallAnim;
 	int jumpEndAnim;
 
 	int attack01Anim;
@@ -119,5 +133,4 @@ protected:
 	const float groundHeight = 0.0f;
 
 	bool isGround = true;
-	bool loopAnim = true;
 };

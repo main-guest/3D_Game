@@ -45,11 +45,11 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("mv1model/Player.mv1"));
+	CharacterBase::Init(_T("Assets/mv1model/Player_copy2.mv1"));
 
 	// ===== 武器モデル読み込み =====
-	weapon1.Init(_T("mv1model/Blade.mv1"));
-	weapon2.Init(_T("mv1model/Gun01.mv1"));
+	weapon1.Init(_T("Assets/mv1model/Blade.mv1"));
+	weapon2.Init(_T("Assets/mv1model/Gun01.mv1"));
 
 	// ===== アニメーション番号 =====
 	idleAnim = 0;
@@ -58,14 +58,15 @@ void Player::Init(CollisionWorld* w)
 	dash02Anim = 3;
 	jumpStartAnim = 4;
 	dashJumpStartAnim = 5;
-	jumpLoopAnim = 6;
-	jumpEndAnim = 7;
-	attack01Anim = 8;
-	attack02Anim = 9;
-	attack03Anim = 10;
-	hitAnim = 11;
-	dodgeAnim = 12;
-	deadAnim = 13;
+	jumpRiseAnim = 6;
+	jumpFallAnim = 7;
+	jumpEndAnim = 8;
+	attack01Anim = 9;
+	attack02Anim = 10;
+	attack03Anim = 11;
+	hitAnim = 12;
+	dodgeAnim = 13;
+	deadAnim = 14;
 
 	// ===== 武器データ設定 =====
 	// 素手
@@ -612,9 +613,67 @@ void Player::DebugDraw()
 		20,
 		400,
 		GetColor(255, 255, 255),
-		_T("AnimState=%d"),
-		(int)currentState
-	);
+		_T("State : %d"),
+		(int)currentState);
+
+	DrawFormatString(
+		20,
+		420,
+		GetColor(255, 255, 255),
+		_T("AnimIndex : %d"),
+		currentAnimIndex);
+
+	DrawFormatString(
+		20,
+		440,
+		GetColor(255, 255, 255),
+		_T("AnimTime : %.2f"),
+		animTime);
+
+	if (currentAnimAttach != -1)
+	{
+		DrawFormatString(
+			20,
+			460,
+			GetColor(255, 255, 255),
+			_T("TotalTime : %.2f"),
+			MV1GetAttachAnimTotalTime(
+				handle,
+				currentAnimAttach));
+	}
+
+	DrawFormatString(
+		20,
+		480,
+		GetColor(255, 255, 255),
+		_T("Ground : %d"),
+		isGround);
+
+	DrawFormatString(
+		20,
+		500,
+		GetColor(255, 255, 255),
+		_T("PrevGround : %d"),
+		prevGround);
+
+	DrawFormatString(
+		20, 540,
+		GetColor(255, 255, 255),
+		_T("CurrentAttach=%d PrevAttach=%d"),
+		currentAnimAttach,
+		prevAnimAttach);
+
+	DrawFormatString(
+		20, 560,
+		GetColor(255, 255, 255),
+		_T("Blending = %d"),
+		isBlending);
+
+	DrawFormatString(
+		20, 580,
+		GetColor(255, 255, 255),
+		_T("Vy = %.2f"),
+		velocity.y);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -923,7 +982,7 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	}
 
 	// ==== 移動 ====
-	if (!(currentState == AnimState::JumpStart && dashJump) && !(currentState == AnimState::JumpLoop && dashJump))
+	if (!(currentState == AnimState::JumpStart && dashJump) && !(currentState == AnimState::JumpRise && dashJump))
 	{
 		velocity.x = 0.0f;
 		velocity.z = 0.0f;
@@ -981,7 +1040,7 @@ void Player::UpdateState()
 		return;
 	}
 
-	//　=====　JumpStart → JumpLoop　=====
+	//　=====　JumpStart → JumpRise　=====
 	if (currentState == AnimState::JumpStart)
 	{
 		// 通常ジャンプのみ待機
@@ -995,9 +1054,10 @@ void Player::UpdateState()
 
 				jumpRequest = false;
 
-				currentState = AnimState::JumpLoop;
+				currentState = AnimState::JumpRise;
 
-				ChangeAnimation(jumpLoopAnim, true);
+				// 上昇アニメ開始
+				ChangeAnimation(jumpRiseAnim, false);
 			}
 		}
 		else
@@ -1006,10 +1066,59 @@ void Player::UpdateState()
 
 			if (animTime >= totalTime)
 			{
-				currentState = AnimState::JumpLoop;
+				currentState = AnimState::JumpRise;
 
-				ChangeAnimation(jumpLoopAnim, true);
+				ChangeAnimation(jumpRiseAnim, false);
 			}
+		}
+
+		return;
+	}
+
+	//　=====　JumpRise → JumpFall　=====
+	if (currentState == AnimState::JumpRise)
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// 落下開始
+		if (velocity.y <= 0.0f)
+		{
+			currentState = AnimState::JumpFall;
+
+			ChangeAnimation(jumpFallAnim, false);
+
+			return;
+		}
+
+		// 最終フレームで停止
+		if (animTime >= totalTime)
+		{
+			animTime = totalTime;
+		}
+
+		return;
+	}
+
+	// ===== JumpFall =====
+	if (currentState == AnimState::JumpFall)
+	{
+		// 着地
+		if (!prevGround && isGround)
+		{
+			dashJump = false;
+			currentState = AnimState::JumpEnd;
+
+			ChangeAnimation(jumpEndAnim, false);
+
+			return;
+		}
+
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		// 最終フレームで停止
+		if (animTime >= totalTime)
+		{
+			animTime = totalTime;
 		}
 
 		return;
@@ -1084,27 +1193,13 @@ void Player::UpdateState()
 		return;
 	}
 
-	//　=====　着地瞬間検知　=====
-	bool landed = (!prevGround && isGround);
-
-	if (landed && currentState != AnimState::JumpEnd)
-	{
-		dashJump = false;
-
-		currentState = AnimState::JumpEnd;
-
-		ChangeAnimation(jumpEndAnim, false);
-
-		return;
-	}
-
 	//　=====　JumpEnd終了　=====
 	if (currentState == AnimState::JumpEnd)
 	{
 		// アニメ終了判定
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
-		if (animTime >= totalTime - 0.1f)
+		if (animTime >= totalTime)
 		{
 			if (fabsf(velocity.x) > 0.1f ||
 				fabsf(velocity.z) > 0.1f)
@@ -1135,11 +1230,7 @@ void Player::UpdateState()
 	//　=====　通常状態　=====
 	AnimState nextState = AnimState::Idle;
 
-	if (!isGround)
-	{
-		nextState = AnimState::JumpLoop;
-	}
-	else if (fabsf(velocity.x) > 0.1f ||
+	if (fabsf(velocity.x) > 0.1f ||
 		fabsf(velocity.z) > 0.1f)
 	{
 		if (isDash)
@@ -1169,10 +1260,6 @@ void Player::UpdateState()
 		case AnimState::Dash:
 			// ===== 武器ごとのダッシュ =====
 			ChangeAnimation(currentWeaponData->dashAnim, true);
-			break;
-
-		case AnimState::JumpLoop:
-			ChangeAnimation(jumpLoopAnim, true);
 			break;
 		}
 	}

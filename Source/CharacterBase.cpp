@@ -28,31 +28,140 @@ void CharacterBase::Init(const TCHAR* modelPath)
 
 void CharacterBase::ChangeAnimation(int animIndex, bool loop)
 {
-	if (currentAnimAttach != -1)
+
+	if (animIndex == currentAnimIndex)
+		return;
+
+	currentAnimIndex = animIndex;
+
+	// ===== ブレンド中なら強制終了 =====
+	if (isBlending)
 	{
-		// 前アニメ削除
-		MV1DetachAnim(handle, currentAnimAttach);
+		if (prevAnimAttach != -1)
+		{
+			MV1DetachAnim(handle, prevAnimAttach);
+			prevAnimAttach = -1;
+		}
+
+		isBlending = false;
 	}
 
-	// 新アニメ設定
-	currentAnimAttach = MV1AttachAnim(handle, animIndex, - 1, TRUE);
+	bool useBlend = true;
 
-	// 再生時間リセット
+	// ===== ブレンドしないアニメ =====
+	/*switch (currentState)
+	{
+	case AnimState::JumpEnd:
+		useBlend = false;
+
+		break;
+	}*/
+
+	// ===== 即切り替え =====
+	if (!useBlend)
+	{
+		if (currentAnimAttach != -1)
+		{
+			MV1DetachAnim(handle, currentAnimAttach);
+		}
+
+		currentAnimAttach = MV1AttachAnim(handle, animIndex, -1, TRUE);
+
+		animTime = 0.0f;
+
+		MV1SetAttachAnimTime(handle, currentAnimAttach, 0.0f);
+
+		MV1SetAttachAnimBlendRate(handle, currentAnimAttach, 1.0f);
+
+		animSpeed = 1.0f;
+		loopAnim = loop;
+
+		prevAnimAttach = -1;
+		isBlending = false;
+
+		return;
+	}
+
+	// ===== ブレンド切り替え =====
+	prevAnimAttach = currentAnimAttach;
+
+	currentAnimAttach = MV1AttachAnim(handle, animIndex, -1, TRUE);
+
 	animTime = 0.0f;
 
-	// デフォルト速度
+	MV1SetAttachAnimTime(handle, currentAnimAttach, 0.0f);
+
+	MV1SetAttachAnimBlendRate(handle, currentAnimAttach, 0.0f);
+
+	if (prevAnimAttach != -1)
+	{
+		MV1SetAttachAnimBlendRate(handle, prevAnimAttach, 1.0f);
+
+		blendTime = 0.0f;
+		isBlending = true;
+	}
+	else
+	{
+		MV1SetAttachAnimBlendRate(handle, currentAnimAttach, 1.0f);
+
+		isBlending = false;
+	}
+
+	// ===== 初期化 =====
+	// デフォルト再生速度
 	animSpeed = 1.0f;
 
+	// ループ設定保存
 	loopAnim = loop;
 }
 
 void CharacterBase::UpdateAnimation(float dt)
 {
-	if (currentAnimAttach == -1) return;
+	if (currentAnimAttach == -1) 
+		return;
 
-	animTime += dt + animSpeed;;
+	// ===== アニメ時間更新 =====
+	animTime += 60.0f * dt * animSpeed;
 
-	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+	float totalTime =MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (totalTime <= 0.0f)
+		return;
+
+	// ===== ブレンド更新 =====
+	if (isBlending)
+	{
+		blendTime += dt;
+
+		float rate = blendTime / blendDuration;
+
+		if (rate > 1.0f)
+		{
+			rate = 1.0f;
+		}
+
+		// 新アニメ
+		MV1SetAttachAnimBlendRate(handle, currentAnimAttach, rate);
+
+		// 旧アニメ
+		if (prevAnimAttach != -1)
+		{
+			MV1SetAttachAnimBlendRate(handle, prevAnimAttach, 1.0f - rate);
+		}
+
+		// ブレンド終了
+		if (rate >= 1.0f)
+		{
+			if (prevAnimAttach != -1)
+			{
+				MV1DetachAnim(handle, prevAnimAttach);
+
+				prevAnimAttach = false;
+			}
+
+			isBlending = false;
+		}
+	}
 
 	// ループ
 	if (animTime >= totalTime)

@@ -97,7 +97,7 @@ private:
 	// ===== 攻撃当たり判定 =====
 	VECTOR attackPos;
 
-	const float jumpStartFrame = 55.0f;
+	const float jumpStartFrame = 54.0f;
 
 	// ==== 怯み（ヒットストップ）====
 	float hitStopTimer = 0.0f;

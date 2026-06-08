@@ -12,7 +12,7 @@ void Stage::Init(Player* p)
 	collisionWorld.Init();
 
 	// ===== スカイドーム =====
-	sky.Init(_T("mv1Model/SkyDome.mv1"));
+	sky.Init(_T("Assets/mv1Model/SkyDome.mv1"));
 
 	// ===== 物理 =====
 	physics.Init(&collisionWorld);
