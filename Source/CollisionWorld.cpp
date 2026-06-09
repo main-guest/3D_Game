@@ -155,7 +155,7 @@ void CollisionWorld::Init()
 	MV1SetRotationXYZ(rampHandle, VGet(0, 0, 0));
 
 	// ポリゴンコリジョン構築
-	MV1SetupCollInfo(rampHandle, -1, 8, 8, 8);
+	MV1SetupCollInfo(rampHandle, -1, 32, 32, 32);
 }
 
 void CollisionWorld::Draw()
@@ -244,8 +244,12 @@ bool CollisionWorld::CheckWallCollision(VECTOR pos, float radius) const
 	return false;
 }
 
-bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groundY)
+bool CollisionWorld::CheckGroundCollision(VECTOR pos, VECTOR& velocity, float radius, float& groundY)
 {
+	groundY = -100000.0f;
+
+	bool hit = false;
+
 	for (const auto& box : boxes)
 	{
 		if (box.type != CollisionType::Ground && box.type != CollisionType::Wall)
@@ -265,51 +269,97 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, float radius, float& groun
 			pos.z >= box.pos.z - box.halfSize.z &&
 			pos.z <= box.pos.z + box.halfSize.z;
 
-		// ===== 上から接触しているか =====
-		bool onTop = pos.y - radius <= top && pos.y > top;
+		float footY = pos.y - radius;
 
-		if (insideX && insideZ && onTop) 
+		// ===== 上から接触しているか =====
+		if (insideX && insideZ && footY >= top -20.0f) 
 		{ 
-			groundY = top; return true;
+			if (!hit || top > groundY)
+			{
+				groundY = top;
+
+				hit = true;
+			}
+
 		}
 	}
 
 	// ===== Ramp判定 =====
 	if (rampHandle != -1)
 	{
-		VECTOR start = pos;
+		auto result =
+			MV1CollCheck_Sphere(rampHandle, -1, pos, radius + 5.0f);
 
-		VECTOR end = VSub(pos, VGet(0.0f, 1000.0f, 0.0f));
-
-		MV1_COLL_RESULT_POLY result = MV1CollCheck_Line(rampHandle, -1, start, end);
-
-		if (result.HitFlag)
+		for (int i = 0; i < result.HitNum; i++)
 		{
-			// ヒット位置を保存
-			rampHitPos = result.HitPosition;
-			rampHit = true;
+			auto& poly = result.Dim[i];
 
-			DrawLine3D(
-				start,
-				end,
-				GetColor(0, 255, 0)
-			);
+			float slopeLimit = 0.7f; // 約45度
 
-			groundY = result.HitPosition.y;
+			// =========================
+			// 床（スロープ含む）
+			// =========================
+			if (poly.Normal.y > slopeLimit)
+			{
+				HITRESULT_LINE line =
+					HitCheck_Line_Triangle(
+						VAdd(pos, VGet(0, 50, 0)),
+						VAdd(pos, VGet(0, -100, 0)),
+						poly.Position[0],
+						poly.Position[1],
+						poly.Position[2]
+					);
+
+				if (!line.HitFlag)
+					continue;
+
+				if (!hit || line.Position.y > groundY)
+				{
+					groundY = line.Position.y;
+					hit = true;
+				}
+			}
+			else
+			{
+				// =========================
+				// 壁判定（横）
+				// =========================
+
+				VECTOR toCenter = VSub(pos, poly.Position[0]);
+
+				float dist = VDot(toCenter, poly.Normal);
+
+				float penetration = radius - dist;
+
+				if (penetration > 0.0f)
+				{
+					pos = VAdd(pos, VScale(poly.Normal, penetration));
+
+					float vn = VDot(velocity, poly.Normal);
+
+					if (vn < 0.0f)
+					{
+						velocity = VSub(velocity, VScale(poly.Normal, vn));
+					}
+				}
+			}
+		}
+
+		MV1CollResultPolyDimTerminate(result);
+	}
+
+	// ===== ワールド地面 =====
+	if (!hit)
+	{
+		if (pos.y - radius <= 0.0f)
+		{
+			groundY = 0.0f;
 
 			return true;
 		}
 	}
 
-	// ===== ワールド地面 =====
-	if (pos.y - radius <= 0.0f)
-	{
-		groundY = 0.0f;
-
-		return true;
-	}
-
-	return false;
+	return hit;
 }
 
 void CollisionWorld::DebugDraw()

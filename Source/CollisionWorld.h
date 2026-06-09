@@ -33,7 +33,7 @@ public:
 	void Draw();
 
 	bool CheckWallCollision(VECTOR pos, float radius) const;
-	bool CheckGroundCollision(VECTOR pos, float radius, float& groundY);
+	bool CheckGroundCollision(VECTOR pos, VECTOR& velocity, float radius, float& groundY);
 
 	int GetRampHandle() const
 	{

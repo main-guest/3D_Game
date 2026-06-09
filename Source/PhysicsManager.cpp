@@ -10,7 +10,7 @@ void PhysicsManager::Init(CollisionWorld* w)
 bool PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, bool& isGround, float dt)
 {
 	// ===== d—Í =====
-	velocity.y -= gravity * dt;
+	velocity.y += gravity * dt;
 
 	// ===== ˆÚ“®ˆ— =====
 	// X•ûŒü
@@ -37,16 +37,28 @@ bool PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, 
 
 	float groundY = 0.0f;
 
-	if (!world->CheckGroundCollision(nextPos, radius, groundY))
+	if (world->CheckGroundCollision(nextPos, velocity, radius, groundY))
 	{
-		pos.y = nextPos.y;
-		isGround = false;
+		float footY = nextPos.y - radius;
+
+		if (footY <= groundY + 5.0f)
+		{
+			pos.y = groundY + radius;
+
+			velocity.y = 0.0f;
+
+			isGround = true;
+		}
+		else
+		{
+			pos.y = nextPos.y;
+
+			isGround = false;
+		}
 	}
 	else
 	{
-		pos.y = groundY + radius;
-
-		velocity.y = 0.0f;
+		pos.y = nextPos.y;
 
 		isGround = true;
 	}

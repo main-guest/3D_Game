@@ -25,5 +25,5 @@ private:
 private:
 	CollisionWorld* world = nullptr;
 
-	float gravity = 1200.0f;
+	float gravity = -1200.0f;
 };

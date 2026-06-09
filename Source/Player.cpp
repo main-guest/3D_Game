@@ -45,7 +45,7 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("Assets/mv1model/Player_copy2.mv1"));
+	CharacterBase::Init(_T("Assets/mv1model/Player.mv1"));
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init(_T("Assets/mv1model/Blade.mv1"));
@@ -400,7 +400,7 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 					continue;
 
 				VECTOR center = enemy->GetPos();
-				center.y += enemy->GetHeight() * 0.5f;
+				center.y += enemy->GetHeight() * 0.75f;
 
 				float radius = 10.0f;
 
@@ -1243,6 +1243,11 @@ void Player::UpdateState()
 		}
 	}
 
+	if (velocity.y < 0.0f)
+	{
+		nextState = AnimState::JumpFall;
+	}
+
 	if (nextState != currentState)
 	{
 		currentState = nextState;
@@ -1260,6 +1265,10 @@ void Player::UpdateState()
 		case AnimState::Dash:
 			// ===== 武器ごとのダッシュ =====
 			ChangeAnimation(currentWeaponData->dashAnim, true);
+			break;
+
+		case AnimState::JumpFall:
+			ChangeAnimation(jumpFallAnim, false);
 			break;
 		}
 	}
