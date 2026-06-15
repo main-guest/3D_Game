@@ -20,6 +20,8 @@ bool PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, 
 	if (!world->CheckWallCollision(nextPos, radius))
 	{
 		pos.x = nextPos.x;
+
+		world->CheckRampWallCollision(pos, velocity, radius);
 	}
 
 	// Z•ûŒü
@@ -29,6 +31,8 @@ bool PhysicsManager::MoveCharacter(VECTOR& pos, VECTOR& velocity, float radius, 
 	if (!world->CheckWallCollision(nextPos, radius))
 	{
 		pos.z = nextPos.z;
+
+		world->CheckRampWallCollision(pos, velocity, radius);
 	}
 
 	// Y•ûŒü

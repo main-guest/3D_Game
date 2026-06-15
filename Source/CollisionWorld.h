@@ -33,7 +33,8 @@ public:
 	void Draw();
 
 	bool CheckWallCollision(VECTOR pos, float radius) const;
-	bool CheckGroundCollision(VECTOR pos, VECTOR& velocity, float radius, float& groundY);
+	bool CheckGroundCollision(VECTOR& pos, VECTOR& velocity, float radius, float& groundY);
+	bool CheckRampWallCollision(VECTOR& pos, VECTOR& velocity, float radius);
 
 	int GetRampHandle() const
 	{
@@ -62,4 +63,21 @@ private:
 
 	VECTOR rampHitPos;
 	bool rampHit;
+
+	// Ramp壁デバッグ
+	bool rampDebugHit = false;
+
+	VECTOR rampTri[3];
+
+	VECTOR rampNormal;
+
+	float rampNormalY = 0.0f;
+
+	int rampHitNum = 0;
+
+	int rampType = 0;
+	// 0 = なし
+	// 1 = 床
+	// 2 = 壁
+	// 3 = 急斜面
 };

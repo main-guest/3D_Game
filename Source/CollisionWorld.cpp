@@ -244,7 +244,7 @@ bool CollisionWorld::CheckWallCollision(VECTOR pos, float radius) const
 	return false;
 }
 
-bool CollisionWorld::CheckGroundCollision(VECTOR pos, VECTOR& velocity, float radius, float& groundY)
+bool CollisionWorld::CheckGroundCollision(VECTOR& pos, VECTOR& velocity, float radius, float& groundY)
 {
 	groundY = -100000.0f;
 
@@ -362,6 +362,85 @@ bool CollisionWorld::CheckGroundCollision(VECTOR pos, VECTOR& velocity, float ra
 	return hit;
 }
 
+bool CollisionWorld::CheckRampWallCollision(VECTOR& pos, VECTOR& velocity, float radius)
+{
+	if (rampHandle == -1)
+	{
+		return false;
+	}
+
+	bool hit = false;
+
+	auto result = MV1CollCheck_Sphere(rampHandle, -1, pos, radius + 5.0f);
+
+	const float slopeLimit = 0.7f;
+
+	const float wallLimit = 0.2f;
+
+	rampDebugHit = false;
+	rampHitNum = result.HitNum;
+
+	for (int i = 0; i < result.HitNum; i++)
+	{
+		auto& poly = result.Dim[i];
+
+		if (!poly.HitFlag)
+			continue;
+
+		rampDebugHit = true;
+
+		rampTri[0] = poly.Position[0];
+		rampTri[1] = poly.Position[1];
+		rampTri[2] = poly.Position[2];
+
+		rampHitPos = poly.HitPosition;
+		rampNormal = poly.Normal;
+		rampNormalY = poly.Normal.y;
+
+		// ===== ° =====
+		if (poly.Normal.y > slopeLimit)
+		{
+			rampType = 1;
+			continue;
+		}
+
+		// ===== •Ç =====
+		if (fabsf(poly.Normal.y) < wallLimit)
+		{
+			rampType = 2;
+
+			VECTOR diff = VSub(pos, poly.HitPosition);
+
+			float len = VSize(diff);
+
+			if (len < radius)
+			{
+				VECTOR push = VScale(VNorm(diff), radius - len + 0.5f);
+
+				pos = VAdd(pos, push);
+
+				float vn = VDot(velocity, VNorm(diff));
+
+				if (vn < 0.0f)
+				{
+					velocity = VSub(velocity, VScale(VNorm(diff), vn));
+				}
+
+				hit = true;
+			}
+
+			continue;
+		}
+
+		// ===== ‹}ŽÎ–Ê =====
+		rampType = 3;
+	}
+
+	MV1CollResultPolyDimTerminate(result);
+
+	return hit;
+}
+
 void CollisionWorld::DebugDraw()
 {
 	if (rampHit)
@@ -375,4 +454,56 @@ void CollisionWorld::DebugDraw()
 			TRUE
 		);
 	}
+
+	// ÚGˆÊ’u
+	DrawSphere3D(
+		rampHitPos,
+		5.0f,
+		8,
+		GetColor(255, 0, 0),
+		GetColor(255, 0, 0),
+		TRUE);
+
+	// ŽOŠpŒ`
+	DrawLine3D(rampTri[0], rampTri[1], GetColor(255, 255, 0));
+	DrawLine3D(rampTri[1], rampTri[2], GetColor(255, 255, 0));
+	DrawLine3D(rampTri[2], rampTri[0], GetColor(255, 255, 0));
+
+	// –@ü
+	DrawLine3D(
+		rampHitPos,
+		VAdd(rampHitPos, VScale(rampNormal, 30.0f)),
+		GetColor(0, 255, 0));
+
+	DrawFormatString(
+		20,
+		600,
+		GetColor(255, 255, 255),
+		_T("HitNum : %d"),
+		rampHitNum);
+
+	DrawFormatString(
+		20,
+		620,
+		GetColor(255, 255, 255),
+		_T("NormalY : %.2f"),
+		rampNormalY);
+
+	const TCHAR* type = _T("None");
+
+	if (rampType == 1)
+		type = _T("Floor");
+
+	if (rampType == 2)
+		type = _T("Wall");
+
+	if (rampType == 3)
+		type = _T("Steep");
+
+	DrawFormatString(
+		20,
+		640,
+		GetColor(255, 255, 255),
+		_T("Type : %s"),
+		type);
 }
