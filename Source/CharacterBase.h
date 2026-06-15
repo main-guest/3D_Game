@@ -116,9 +116,12 @@ protected:
 	int jumpFallAnim;
 	int jumpEndAnim;
 
-	int attack01Anim;
-	int attack02Anim;
-	int attack03Anim;
+	int handAttackAnim;
+	int gunAttackAnim;
+	int swordAttack01Anim;
+	int swordAttack02Anim;
+	int swordAttack03Anim;
+	int swordAttack04Anim;
 
 	int hitAnim;
 

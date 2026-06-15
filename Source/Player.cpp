@@ -45,7 +45,7 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("Assets/mv1model/Player.mv1"));
+	CharacterBase::Init(_T("Assets/mv1model/Player2.mv1"));
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init(_T("Assets/mv1model/Blade.mv1"));
@@ -61,16 +61,33 @@ void Player::Init(CollisionWorld* w)
 	jumpRiseAnim = 6;
 	jumpFallAnim = 7;
 	jumpEndAnim = 8;
-	attack01Anim = 9;
-	attack02Anim = 10;
-	attack03Anim = 11;
-	hitAnim = 12;
-	dodgeAnim = 13;
-	deadAnim = 14;
+	handAttackAnim = 9; 
+	gunAttackAnim = 10; 
+	swordAttack01Anim = 11; 
+	swordAttack02Anim = 12; 
+	swordAttack03Anim = 13; 
+	swordAttack04Anim = 14;
+	hitAnim = 15;
+	dodgeAnim = 16;
+	deadAnim = 17;
 
 	// ===== 武器データ設定 =====
 	// 素手
-	unarmedData.attackAnim = attack01Anim;
+	for (int i = 0; i < WeaponData::MaxCombo; i++)
+	{
+		unarmedData.attackAnim[i] = handAttackAnim;
+
+		unarmedData.attackStartFrame[i] = 50.0f;
+		unarmedData.attackEndFrame[i] = 100.0f;
+
+		unarmedData.comboAcceptStartFrame[i] = 0.0f;
+		unarmedData.comboAcceptEndFrame[i] = 0.0f;
+
+		unarmedData.comboCancelFrame[i] = 0.0f;
+	}
+
+	unarmedData.comboCount = 1;
+
 	unarmedData.dashAnim = dash01Anim;
 
 	unarmedData.attackShape = AttackShape::Sphere;
@@ -80,15 +97,18 @@ void Player::Init(CollisionWorld* w)
 
 	unarmedData.followAttack = true;
 
-	unarmedData.attackStartFrame = 50.0f;
-	unarmedData.attackEndFrame = 100.0f;
-
-	// weapon1
+	// weapon1（剣）
 	weapon1Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
 	weapon1Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
 
-	weapon1Data.attackAnim = attack02Anim;
+	weapon1Data.attackAnim[0] = swordAttack01Anim;
+	weapon1Data.attackAnim[1] = swordAttack02Anim;
+	weapon1Data.attackAnim[2] = swordAttack03Anim;
+	weapon1Data.attackAnim[3] = swordAttack04Anim;
+
+	weapon1Data.comboCount = 4;
+
 	weapon1Data.dashAnim = dash02Anim;
 
 	weapon1Data.attackShape = AttackShape::Line;
@@ -98,17 +118,60 @@ void Player::Init(CollisionWorld* w)
 
 	weapon1Data.followAttack = true;
 
-	weapon1Data.attackStartFrame = 30.0f;
-	weapon1Data.attackEndFrame = 80.0f;
+	// 攻撃コンボ　攻撃開始・終了フレーム
+	weapon1Data.attackStartFrame[0] = 30.0f;
+	weapon1Data.attackEndFrame[0] = 57.0f;
+
+	weapon1Data.attackStartFrame[1] = 3.0f;
+	weapon1Data.attackEndFrame[1] = 29.0f;
+
+	weapon1Data.attackStartFrame[2] = 41.0f;
+	weapon1Data.attackEndFrame[2] = 73.0f;
+
+	weapon1Data.attackStartFrame[3] = 46.0f;
+	weapon1Data.attackEndFrame[3] = 85.0f;
+
+	// 攻撃コンボ　受付フレーム
+	weapon1Data.comboAcceptStartFrame[0] = 43.0f;
+	weapon1Data.comboAcceptEndFrame[0] = 65.0f;
+
+	weapon1Data.comboAcceptStartFrame[1] = 20.0f;
+	weapon1Data.comboAcceptEndFrame[1] = 44.0f;
+
+	weapon1Data.comboAcceptStartFrame[2] = 47.0f;
+	weapon1Data.comboAcceptEndFrame[2] = 97.0f;
+
+	weapon1Data.comboAcceptStartFrame[3] = 0.0f;
+	weapon1Data.comboAcceptEndFrame[3] = 0.0f;
+
+	// 攻撃コンボ　コンボキャンセルフレーム
+	weapon1Data.comboCancelFrame[0] = 53.0f;
+	weapon1Data.comboCancelFrame[1] = 36.0f;
+	weapon1Data.comboCancelFrame[2] = 73.0f;
+	weapon1Data.comboCancelFrame[3] = 999.0f;
 
 	weapon1.SetData(weapon1Data);
 
-	// weapon2
+	// weapon2（銃）
 	weapon2Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
 	weapon2Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
 
-	weapon2Data.attackAnim = attack03Anim;
+	for (int i = 0; i < WeaponData::MaxCombo; i++)
+	{
+		weapon2Data.attackAnim[i] = gunAttackAnim;
+
+		weapon2Data.attackStartFrame[i] = 10.0f;
+		weapon2Data.attackEndFrame[i] = 20.0f;
+
+		weapon2Data.comboAcceptStartFrame[i] = 0.0f;
+		weapon2Data.comboAcceptEndFrame[i] = 0.0f;
+
+		weapon2Data.comboCancelFrame[i] = 0.0f;
+	}
+
+	weapon2Data.comboCount = 1;
+
 	weapon2Data.dashAnim = dash01Anim;
 	weapon2Data.attackShape = AttackShape::Gun;
 
@@ -117,9 +180,6 @@ void Player::Init(CollisionWorld* w)
 	weapon2Data.attackOffset = VGet(0, 115, 0);
 
 	weapon2Data.followAttack = false;
-
-	weapon2Data.attackStartFrame = 10.0f;
-	weapon2Data.attackEndFrame = 20.0f;
 
 	weapon2.SetData(weapon2Data);
 
@@ -674,6 +734,28 @@ void Player::DebugDraw()
 		GetColor(255, 255, 255),
 		_T("Vy = %.2f"),
 		velocity.y);
+
+	DrawFormatString(
+		1100,
+		20,
+		GetColor(255, 255, 255),
+		_T("Combo : %d"),
+		comboStep + 1);
+
+	DrawFormatString(
+		1100,
+		40,
+		GetColor(255, 255, 255),
+		_T("ComboNext : %d"),
+		comboNext);
+
+	DrawFormatString(
+		1100,
+		60,
+		GetColor(255, 255, 255),
+		_T("ComboWindow : %d"),
+		animTime >= currentWeaponData->comboAcceptStartFrame[comboStep] &&
+		animTime <= currentWeaponData->comboAcceptEndFrame[comboStep]);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -940,17 +1022,32 @@ void Player::UpdateInput(float dt, float cameraAngle)
 	oldMouse = mouse;
 
 	// ===== 攻撃 =====
-	if (leftClick && currentState != AnimState::Attack && isGround)
+	if (leftClick)
 	{
-		currentState = AnimState::Attack;
-
-		// ===== 武器ごとの攻撃アニメ =====
-		ChangeAnimation(currentWeaponData->attackAnim, false);
-
-		// ===== 固定型当たり判定 =====
-		if (!currentWeaponData->followAttack)
+		// 攻撃開始
+		if (currentState != AnimState::Attack && isGround)
 		{
-			UpdateAttackPos();
+			comboStep = 0;
+			comboNext = false;
+
+			currentState = AnimState::Attack;
+
+			// ===== 武器ごとの攻撃アニメ =====
+			ChangeAnimation(currentWeaponData->attackAnim[comboStep], false);
+
+			// ===== 固定型当たり判定 =====
+			if (!currentWeaponData->followAttack)
+			{
+				UpdateAttackPos();
+			}
+		}
+		else if (currentState == AnimState::Attack)  // コンボ予約
+		{
+			if (animTime >= currentWeaponData->comboAcceptStartFrame[comboStep] &&
+				animTime <= currentWeaponData->comboAcceptEndFrame[comboStep])
+			{
+				comboNext = true;
+			}
 		}
 	}
 
@@ -1130,7 +1227,8 @@ void Player::UpdateState()
 		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 		// 攻撃判定ON区間
-		if (animTime >= currentWeaponData->attackStartFrame && animTime <= currentWeaponData->attackEndFrame)
+		if (animTime >= currentWeaponData->attackStartFrame[comboStep] && 
+			animTime <= currentWeaponData->attackEndFrame[comboStep])
 		{
 			attackActive = true;
 		}
@@ -1139,10 +1237,30 @@ void Player::UpdateState()
 			attackActive = false;
 		}
 
-		// アニメ終了
+		// ===== 次段コンボ =====
+		// キャンセル可能になったら
+		if (comboNext &&
+			comboStep + 1 < currentWeaponData->comboCount &&
+			animTime >= currentWeaponData->comboCancelFrame[comboStep])
+		{
+			comboStep++;
+			comboNext = false;
+
+			attackHit = false;
+
+			ChangeAnimation(currentWeaponData->attackAnim[comboStep], false);
+
+			return;
+		}
+
+		// ===== コンボ終了 =====
 		if (animTime >= totalTime)
 		{
+			comboStep = 0;
+			comboNext = false;
+
 			attackHit = false;
+			attackActive = false;
 
 			if (fabsf(velocity.x) > 0.1f ||
 				fabsf(velocity.z) > 0.1f)
@@ -1156,6 +1274,7 @@ void Player::UpdateState()
 				ChangeAnimation(idleAnim, true);
 			}
 		}
+
 		return;
 	}
 

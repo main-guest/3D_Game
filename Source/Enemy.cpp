@@ -52,7 +52,7 @@ void Enemy::Init(VECTOR startPos)
 	jumpStartAnim = 3;
 	jumpRiseAnim = 4;
 	jumpEndAnim = 5;
-	attack01Anim = 6;
+	handAttackAnim = 6;
 	hitAnim = 7;
 	deadAnim = 8;
 
@@ -258,7 +258,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 				attackStarted = true;
 
 				currentState = AnimState::Attack;
-				ChangeAnimation(attack01Anim, false);
+				ChangeAnimation(handAttackAnim, false);
 			}
 
 			float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
@@ -636,7 +636,7 @@ void Enemy::UpdateState()
 			break;
 
 		case AnimState::Attack:
-			ChangeAnimation(attack01Anim, false);
+			ChangeAnimation(handAttackAnim, false);
 			break;
 
 		case AnimState::JumpRise:

@@ -10,11 +10,17 @@ enum class AttackShape
 
 struct WeaponData
 {
+	// ===== 最大コンボ数 =====
+	static constexpr int MaxCombo = 4;
+
 	// ===== 使用アニメ =====
-	int attackAnim;
+	int attackAnim[MaxCombo];
 	int dashAnim;
 
 	AttackShape attackShape;
+
+	// ===== 攻撃段数 =====
+	int comboCount = 1;
 
 	// ===== 攻撃判定 =====
 	float attackRadius;
@@ -35,6 +41,13 @@ struct WeaponData
 	float lockAngle = 30.0f;
 
 	// ===== 判定開始・終了フレーム =====
-	float attackStartFrame;
-	float attackEndFrame;
+	float attackStartFrame[MaxCombo];
+	float attackEndFrame[MaxCombo];
+
+	// ===== コンボ受付時間 =====
+	float comboAcceptStartFrame[MaxCombo];
+	float comboAcceptEndFrame[MaxCombo];
+
+	// ===== コンボキャンセル開始フレーム =====
+	float comboCancelFrame[MaxCombo];
 };

@@ -97,6 +97,11 @@ private:
 	// ===== 攻撃当たり判定 =====
 	VECTOR attackPos;
 
+	// ===== 攻撃コンボ =====
+	int comboStep = 0;          // 現在のコンボ段数
+	bool comboNext = false;     // 次段予約
+	float comboTimer = 0.0f;    // 現在の攻撃時間
+
 	// ===== ジャンプ開始フレーム =====
 	const float jumpStartFrame = 54.0f;
 
