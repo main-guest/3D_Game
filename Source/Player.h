@@ -119,8 +119,8 @@ private:
 	
 	float dodgeSpeed = 600.0f;
 
-	float dodgeStartFrame = 34.0f;
-	float dodgeEndFrame = 71.0f;
+	float dodgeStartFrame = 0.0f;
+	float dodgeEndFrame = 47.0f;
 
 	VECTOR dodgeDir = VGet(0, 0, 0);
 
