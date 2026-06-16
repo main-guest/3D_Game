@@ -4,6 +4,7 @@
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
 #include "Enemy.h"
+#include "Collision.h"
 
 namespace
 {
@@ -45,7 +46,7 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("Assets/mv1model/Player2.mv1"));
+	CharacterBase::Init(_T("Assets/mv1model/Player.mv1"));
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init(_T("Assets/mv1model/Blade.mv1"));
@@ -459,16 +460,18 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 				if (enemy->IsDead())
 					continue;
 
-				VECTOR center = enemy->GetPos();
-				center.y += enemy->GetHeight() * 0.75f;
+				VECTOR bottom = enemy->GetPos();
 
-				float radius = 10.0f;
+				VECTOR top = bottom;
+				top.y += enemy->GetHeight();
+
+				float radius = enemy->GetRadius();
 
 				bool hit =
-					LineSphereHit(prevRoot, prevTip, center, radius) ||	// 前フレームの剣
-					LineSphereHit(root, tip, center, radius) ||			// 現在フレームの剣
-					LineSphereHit(prevTip, tip, center, radius) ||		// 剣先の移動軌跡
-					LineSphereHit(prevRoot, root, center, radius);		// 剣根本の移動軌跡
+					LineCapsuleHit(prevRoot, prevTip, bottom, top, radius) ||
+					LineCapsuleHit(root, tip, bottom, top, radius) ||
+					LineCapsuleHit(prevTip, tip, bottom, top, radius) ||
+					LineCapsuleHit(prevRoot, root, bottom, top, radius);
 
 				if (hit)
 				{

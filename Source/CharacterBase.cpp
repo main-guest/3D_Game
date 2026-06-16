@@ -29,7 +29,8 @@ void CharacterBase::Init(const TCHAR* modelPath)
 void CharacterBase::ChangeAnimation(int animIndex, bool loop)
 {
 
-	if (animIndex == currentAnimIndex)
+	if (animIndex == currentAnimIndex &&
+		currentState != AnimState::Hit)
 		return;
 
 	currentAnimIndex = animIndex;

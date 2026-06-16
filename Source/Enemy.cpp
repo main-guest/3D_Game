@@ -363,6 +363,9 @@ void Enemy::CheckAttackHit(Player* player)
 
 void Enemy::Damage(int power)
 {
+	if (isDead)
+		return;
+
 	hp -= power;
 
 	isHit = true;

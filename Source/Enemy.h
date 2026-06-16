@@ -31,8 +31,6 @@ public:
 
 	VECTOR GetPos() const { return pos; }
 
-	float GetHeight() const { return height; }
-
 	bool IsDead() const { return isDead; }
 
 private:
