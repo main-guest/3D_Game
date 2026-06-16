@@ -46,7 +46,7 @@ void Player::Init(CollisionWorld* w)
 	world = w;
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("Assets/mv1model/Player2.mv1"));
+	CharacterBase::Init(_T("Assets/mv1model/Player.mv1"));
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init(_T("Assets/mv1model/Blade.mv1"));

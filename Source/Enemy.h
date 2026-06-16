@@ -36,6 +36,8 @@ public:
 private:
 	void GeneratePatrolTarget();
 
+	void ResetAttackState();
+
 	void UpdateState();
 
 private:

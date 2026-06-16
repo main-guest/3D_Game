@@ -274,11 +274,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 			if (animTime >= totalTime)
 			{
-				attackStarted = false;
-				attackHit = false;
-				attackActive = false;
-
-				attackTimer = attackCooldown;
+				ResetAttackState();
 
 				aiState = EnemyAIState::Cooldown;
 
@@ -366,11 +362,7 @@ void Enemy::Damage(int power)
 	if (isDead)
 		return;
 
-	attackStarted = false;
-	attackHit = false;
-	attackActive = false;
-
-	attackTimer = attackCooldown;
+	ResetAttackState();
 
 	hp -= power;
 
@@ -494,6 +486,15 @@ void Enemy::GeneratePatrolTarget()
 	patrolTarget.x = pos.x + (float)(GetRand((int)range * 2) - range);
 	patrolTarget.y = pos.y;
 	patrolTarget.z = pos.z + (float)(GetRand((int)range * 2) - range);
+}
+
+void Enemy::ResetAttackState()
+{
+	attackStarted = false;
+	attackHit = false;
+	attackActive = false;
+
+	attackTimer = attackCooldown;
 }
 
 void Enemy::UpdateState()
