@@ -366,6 +366,12 @@ void Enemy::Damage(int power)
 	if (isDead)
 		return;
 
+	attackStarted = false;
+	attackHit = false;
+	attackActive = false;
+
+	attackTimer = attackCooldown;
+
 	hp -= power;
 
 	isHit = true;
