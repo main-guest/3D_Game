@@ -1,10 +1,13 @@
 ﻿#include <cmath>
 #include <algorithm>
+#include <limits>
+#include <cfloat>
 #include "Player.h"
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
 #include "Enemy.h"
 #include "Collision.h"
+#include "Stage.h"
 
 namespace
 {
@@ -41,16 +44,19 @@ namespace
 	}
 }
 
-void Player::Init(CollisionWorld* w)
+void Player::Init(CollisionWorld* w, Stage* s)
 {
 	world = w;
+	stage = s;
+
+	GetMousePoint(&prevMouseX, &prevMouseY);
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init(_T("Assets/mv1model/Player.mv1"));
+	CharacterBase::Init("Assets/mv1model/Player.mv1");
 
 	// ===== 武器モデル読み込み =====
-	weapon1.Init(_T("Assets/mv1model/Blade.mv1"));
-	weapon2.Init(_T("Assets/mv1model/Gun01.mv1"));
+	weapon1.Init("Assets/mv1model/Blade.mv1");
+	weapon2.Init("Assets/mv1model/Gun01.mv1");
 
 	// ===== アニメーション番号 =====
 	idleAnim = 0;
@@ -205,11 +211,11 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	switch (equipState)
 	{
 	case EquipState::Weapon1:
-		weapon1.Update(handle, _T("mixamorig:RightHand"), characterAngle);
+		weapon1.Update(handle, "mixamorig:RightHand", characterAngle);
 		break;
 
 	case EquipState::Weapon2:
-		weapon2.Update(handle, _T("mixamorig:RightHand"), characterAngle);
+		weapon2.Update(handle, "mixamorig:RightHand", characterAngle);
 		break;
 
 	case EquipState::Unarmed:
@@ -279,7 +285,7 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	}
 
 	//　=====　入力処理　=====
-	UpdateInput(dt, cameraAngle);
+	UpdateInput(dt, cameraAngle, stage->GetEnemies());
 
 	//　=====　物理　=====
 	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
@@ -566,6 +572,60 @@ void Player::StartDodge()
 	SetAnimSpeed(1.5f);
 }
 
+void Player::LockOn(std::vector<std::unique_ptr<Enemy>>& enemies)
+{
+	lockOnTarget = nullptr;
+
+	float nearestDistSq = FLT_MAX;
+
+	for (auto& enemy : enemies)
+	{
+		if (enemy->IsDead())
+			continue;
+
+		VECTOR diff = VSub(enemy->GetCenterPos(), GetCenterPos());
+
+		// Yは無視
+		diff.y = 0.0f;
+
+		float distSq = VDot(diff, diff);
+
+		if (distSq > lockOnDistance * lockOnDistance)
+			continue;
+
+		if (distSq < nearestDistSq)
+		{
+			nearestDistSq = distSq;
+			lockOnTarget = enemy.get();
+		}
+	}
+
+	isLockOn = (lockOnTarget != nullptr);
+}
+
+void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool right)
+{
+	if (!lockOnTarget)
+		return;
+
+	VECTOR playerPos = GetCenterPos();
+
+	VECTOR current = VSub(lockOnTarget->GetCenterPos(), playerPos);
+
+	current.y = 0.0f;
+
+	current = VNorm(current);
+
+	Enemy* best = nullptr;
+
+	float bestAngle = DX_PI;
+
+	for (auto& enemy : enemies)
+	{
+		if(enemy)
+	}
+}
+
 VECTOR Player::GetCenterPos() const
 {
 	return VGet(pos.x, pos.y + height * 0.75f, pos.z);
@@ -603,7 +663,7 @@ void Player::DebugDraw()
 	DrawFormatString(
 		20, 180,
 		GetColor(255, 255, 255),
-		_T("Player Pos : X=%.2f Y=%.2f Z=%.2f"),
+		"Player Pos : X=%.2f Y=%.2f Z=%.2f",
 		pos.x, pos.y, pos.z
 	);
 
@@ -611,7 +671,7 @@ void Player::DebugDraw()
 	DrawFormatString(
 		20, 200,
 		GetColor(255, 255, 0),
-		_T("Velocity   : X=%.2f Y=%.2f Z=%.2f"),
+		"Velocity   : X=%.2f Y=%.2f Z=%.2f",
 		velocity.x, velocity.y, velocity.z
 	);
 
@@ -619,21 +679,21 @@ void Player::DebugDraw()
 	DrawFormatString(
 		20, 220,
 		GetColor(0, 255, 0),
-		_T("IsGround : %d"),
+		"IsGround : %d",
 		isGround
 	);
 
 	DrawFormatString(
 		20, 240,
 		GetColor(255, 255, 255),
-		_T("AttackRadius : %.2f"),
+		"AttackRadius : %.2f",
 		currentWeaponData->attackRadius
 	);
 
 	DrawFormatString(
 		20, 260,
 		GetColor(255, 255, 255),
-		_T("AttackPos : %.2f %.2f %.2f"),
+		"AttackPos : %.2f %.2f %.2f",
 		attackPos.x,
 		attackPos.y,
 		attackPos.z
@@ -642,7 +702,7 @@ void Player::DebugDraw()
 	DrawFormatString(
 		20, 280,
 		GetColor(255, 255, 255),
-		_T("AttackActive : %d"),
+		"AttackActive : %d",
 		attackActive
 	);
 
@@ -651,7 +711,7 @@ void Player::DebugDraw()
 		20,
 		300,
 		GetColor(255, 255, 0),
-		_T("GunTimer : %.2f"),
+		"GunTimer : %.2f",
 		gunTimer
 	);
 
@@ -659,7 +719,7 @@ void Player::DebugDraw()
 		20,
 		320,
 		GetColor(255, 255, 0),
-		_T("GunWaiting : %d"),
+		"GunWaiting : %d",
 		gunWaitingDamage
 	);
 
@@ -668,7 +728,7 @@ void Player::DebugDraw()
 		20,
 		380,
 		GetColor(255, 255, 255),
-		_T("dashJump : %d"),
+		"dashJump : %d",
 		dashJump
 	);
 
@@ -676,21 +736,21 @@ void Player::DebugDraw()
 		20,
 		400,
 		GetColor(255, 255, 255),
-		_T("State : %d"),
+		"State : %d",
 		(int)currentState);
 
 	DrawFormatString(
 		20,
 		420,
 		GetColor(255, 255, 255),
-		_T("AnimIndex : %d"),
+		"AnimIndex : %d",
 		currentAnimIndex);
 
 	DrawFormatString(
 		20,
 		440,
 		GetColor(255, 255, 255),
-		_T("AnimTime : %.2f"),
+		"AnimTime : %.2f",
 		animTime);
 
 	if (currentAnimAttach != -1)
@@ -699,7 +759,7 @@ void Player::DebugDraw()
 			20,
 			460,
 			GetColor(255, 255, 255),
-			_T("TotalTime : %.2f"),
+			"TotalTime : %.2f",
 			MV1GetAttachAnimTotalTime(
 				handle,
 				currentAnimAttach));
@@ -709,54 +769,54 @@ void Player::DebugDraw()
 		20,
 		480,
 		GetColor(255, 255, 255),
-		_T("Ground : %d"),
+		"Ground : %d",
 		isGround);
 
 	DrawFormatString(
 		20,
 		500,
 		GetColor(255, 255, 255),
-		_T("PrevGround : %d"),
+		"PrevGround : %d",
 		prevGround);
 
 	DrawFormatString(
 		20, 540,
 		GetColor(255, 255, 255),
-		_T("CurrentAttach=%d PrevAttach=%d"),
+		"CurrentAttach=%d PrevAttach=%d",
 		currentAnimAttach,
 		prevAnimAttach);
 
 	DrawFormatString(
 		20, 560,
 		GetColor(255, 255, 255),
-		_T("Blending = %d"),
+		"Blending = %d",
 		isBlending);
 
 	DrawFormatString(
 		20, 580,
 		GetColor(255, 255, 255),
-		_T("Vy = %.2f"),
+		"Vy = %.2f",
 		velocity.y);
 
 	DrawFormatString(
 		1100,
 		20,
 		GetColor(255, 255, 255),
-		_T("Combo : %d"),
+		"Combo : %d",
 		comboStep + 1);
 
 	DrawFormatString(
 		1100,
 		40,
 		GetColor(255, 255, 255),
-		_T("ComboNext : %d"),
+		"ComboNext : %d",
 		comboNext);
 
 	DrawFormatString(
 		1100,
 		60,
 		GetColor(255, 255, 255),
-		_T("ComboWindow : %d"),
+		"ComboWindow : %d",
 		animTime >= currentWeaponData->comboAcceptStartFrame[comboStep] &&
 		animTime <= currentWeaponData->comboAcceptEndFrame[comboStep]);
 }
@@ -960,7 +1020,7 @@ std::vector<Enemy*> Player::FindGunTargets(std::vector<std::unique_ptr< Enemy >>
 	return result;
 }
 
-void Player::UpdateInput(float dt, float cameraAngle)
+void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies)
 {
 	float moveX = 0.0f;
 	float moveZ = 0.0f;
@@ -973,6 +1033,62 @@ void Player::UpdateInput(float dt, float cameraAngle)
 
 	//　=====　移動判定　=====
 	bool isMove = (moveX != 0.0f || moveZ != 0.0f);
+
+	// ===== ロックオン =====
+	bool qNow = CheckHitKey(KEY_INPUT_Q);
+
+	if (qNow && !oldQ)
+	{
+		if (!isLockOn)
+		{
+			LockOn(enemies);
+		}
+		else
+		{
+			isLockOn = false;
+			lockOnTarget = nullptr;
+		}
+	}
+
+	oldQ = qNow;
+
+	// マウス移動量取得
+	int mouseX, mouseY;
+	GetMousePoint(&mouseX, &mouseY);
+
+	int dx = mouseX - prevMouseX;
+	int dy = mouseY - prevMouseY;
+
+	prevMouseX = mouseX;
+	prevMouseY = mouseY;
+
+	// マウス左右でターゲット切替
+	if (isLockOn)
+	{
+		int dx = 0;
+		int dy = 0;
+
+		if (dx > switchThreshold && canSwitchTarget)
+		{
+			// 右のEnemy
+			SwitchLockTarget(enemies, true);
+
+			canSwitchTarget = false;
+		}
+		else if (dx < -switchThreshold && canSwitchTarget)
+		{
+			// 左のEnemy
+			SwitchLockTarget(enemies, false);
+
+			canSwitchTarget = false;
+		}
+
+		// マウスが止まったら再度切替可能
+		if (abs(dx) < 5)
+		{
+			canSwitchTarget = true;
+		}
+	}
 
 	// ===== Shift押下状態取得 =====
 	bool shiftNow = CheckHitKey(KEY_INPUT_LSHIFT) != 0;

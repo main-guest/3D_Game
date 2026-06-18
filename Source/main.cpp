@@ -37,7 +37,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	FogManager fog;	// フォグ（霧）設定
 
 	stage.Init(&player);
-	player.Init(&stage.GetCollisionWorld());
+	player.Init(&stage.GetCollisionWorld(), &stage);
 	camera.Init();
 	fog.Init();
 
@@ -73,8 +73,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		// デバッグ表示
 		VECTOR camPos = camera.GetPosition();
-		DrawFormatString(20, 360, GetColor(255, 255, 255), _T("CamPos: X=%.2f Y=%.2f Z=%.2f"), camPos.x, camPos.y, camPos.z);
-		DrawFormatString(20, 340, GetColor(255, 255, 255), _T("deltaTime : %.4f"), deltaTime);
+		DrawFormatString(20, 360, GetColor(255, 255, 255), "CamPos: X=%.2f Y=%.2f Z=%.2f", camPos.x, camPos.y, camPos.z);
+		DrawFormatString(20, 340, GetColor(255, 255, 255), "deltaTime : %.4f", deltaTime);
 
 		ScreenFlip();
 

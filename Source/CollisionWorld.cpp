@@ -45,10 +45,10 @@ CollisionWorld::~CollisionWorld()
 void CollisionWorld::Init()
 {
 	// ===== ÉÇÉfÉãì«Ç›çûÇ› =====
-	groundHandle = MV1LoadModel(_T("Assets/mv1model/asphalt.mv1"));
-	wallHandle = MV1LoadModel(_T("Assets/mv1model/wall.mv1"));
-	cubeHandle = MV1LoadModel(_T("Assets/mv1model/cube.mv1"));
-	rampHandle = MV1LoadModel(_T("Assets/mv1model/Ramp.mv1"));
+	groundHandle = MV1LoadModel("Assets/mv1model/asphalt.mv1");
+	wallHandle = MV1LoadModel("Assets/mv1model/wall.mv1");
+	cubeHandle = MV1LoadModel("Assets/mv1model/cube.mv1");
+	rampHandle = MV1LoadModel("Assets/mv1model/Ramp.mv1");
 
 	// ===== ínñ  =====
 	{
@@ -479,31 +479,31 @@ void CollisionWorld::DebugDraw()
 		20,
 		600,
 		GetColor(255, 255, 255),
-		_T("HitNum : %d"),
+		"HitNum : %d",
 		rampHitNum);
 
 	DrawFormatString(
 		20,
 		620,
 		GetColor(255, 255, 255),
-		_T("NormalY : %.2f"),
+		"NormalY : %.2f",
 		rampNormalY);
 
-	const TCHAR* type = _T("None");
+	const TCHAR* type = "None";
 
 	if (rampType == 1)
-		type = _T("Floor");
+		type = "Floor";
 
 	if (rampType == 2)
-		type = _T("Wall");
+		type = "Wall";
 
 	if (rampType == 3)
-		type = _T("Steep");
+		type = "Steep";
 
 	DrawFormatString(
 		20,
 		640,
 		GetColor(255, 255, 255),
-		_T("Type : %s"),
+		"Type : %s",
 		type);
 }

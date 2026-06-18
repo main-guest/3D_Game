@@ -7,6 +7,7 @@
 class PhysicsManager;
 class CollisionWorld;
 class Enemy;
+class Stage;
 
 enum class EquipState
 {
@@ -18,7 +19,7 @@ enum class EquipState
 class Player : public CharacterBase
 {
 public:
-	void Init(CollisionWorld* w);
+	void Init(CollisionWorld* w, Stage* s);
 	void Update(float dt, float cameraAngle, PhysicsManager& physics);
 	void Draw();
 
@@ -32,9 +33,22 @@ public:
 
 	void Damage(int power);
 
-	void IsAnimationFinished(int animIndex);
+	//void IsAnimationFinished(int animIndex);
 
 	void StartDodge();
+
+	void LockOn(std::vector<std::unique_ptr<Enemy>>& enemies);
+	void SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool right);
+
+	Enemy* GetLockOnTarget() const
+	{
+		return lockOnTarget;
+	}
+
+	bool IsLockOn() const
+	{
+		return isLockOn;
+	}
 
 	VECTOR GetCenterPos() const;
 
@@ -54,7 +68,7 @@ private:
 	// 内部処理
 	std::vector<Enemy*> FindGunTargets(std::vector<std::unique_ptr<Enemy>>& enemies);
 
-	void UpdateInput(float dt, float cameraAngle);
+	void UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies);
 	void UpdateState();
 
 private:
@@ -129,6 +143,7 @@ private:
 
 	// 外部参照
 	CollisionWorld* world = nullptr;
+	Stage* stage = nullptr;
 
 	// ===== 武器 =====
 	Weapon weapon1;
@@ -150,4 +165,21 @@ private:
 
 	float gunTimer = 0.0f;
 	bool gunWaitingDamage = false;
+
+	// ===== ロックオン =====
+	Enemy* lockOnTarget = nullptr;
+	bool isLockOn = false;
+
+	int oldQ = 0;
+
+	// マウス位置
+	int prevMouseX = 0;
+	int prevMouseY = 0;
+
+	// ターゲット切替
+	bool canSwitchTarget = true;
+	const int switchThreshold = 80;
+
+	// ロックオン距離
+	float lockOnDistance = 800.0f;
 };

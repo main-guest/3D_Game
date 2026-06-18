@@ -27,6 +27,8 @@ public:
 
 	void Damage(int power);
 
+	VECTOR GetCenterPos() const;
+
 	void DebugDraw();
 
 	VECTOR GetPos() const { return pos; }

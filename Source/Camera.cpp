@@ -46,13 +46,13 @@ void Camera::Update(VECTOR playerPos)
 	int centerX = w / 2;
 	int centerY = h / 2;
 
-	int dx = mouseX - centerX;
-	int dy = mouseY - centerY;
+	mouseDeltaX = mouseX - centerX;
+	mouseDeltaY = mouseY - centerY;
 
 	float sensi = 0.001f;
 
-	yaw += dx * sensi;
-	pitch += dy * sensi;
+	yaw += mouseDeltaX * sensi;
+	pitch += mouseDeltaY * sensi;
 
 	// ã‰º§ŒÀ
 	if (pitch > 1.2f)pitch = 1.2f;

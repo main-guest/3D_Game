@@ -13,6 +13,9 @@ public:
 
 	float GetYaw() const { return yaw; }
 
+	int GetMouseDeltaX() const { return mouseDeltaX; }
+	int GetMouseDeltaY() const { return mouseDeltaY; }
+
 	VECTOR GetPosition() const { return cameraPos; }
 
 private:
@@ -27,4 +30,7 @@ private:
 
 	bool sideCamera;
 	int oldF1;
+
+	int mouseDeltaX = 0;
+	int mouseDeltaY = 0;
 };

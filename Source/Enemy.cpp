@@ -8,12 +8,12 @@ const TCHAR* ToString(EnemyAIState state)
 {
 	switch (state)
 	{
-	case EnemyAIState::Idle:   return _T("Idle");
-	case EnemyAIState::Patrol: return _T("Patrol");
-	case EnemyAIState::Chase:  return _T("Chase");
-	case EnemyAIState::Attack: return _T("Attack");
-	case EnemyAIState::Cooldown: return _T("Cooldown");
-	default:                   return _T("Unknown");
+	case EnemyAIState::Idle:   return "Idle";
+	case EnemyAIState::Patrol: return "Patrol";
+	case EnemyAIState::Chase:  return "Chase";
+	case EnemyAIState::Attack: return "Attack";
+	case EnemyAIState::Cooldown: return "Cooldown";
+	default:                   return "Unknown";
 	}
 }
 
@@ -31,7 +31,7 @@ Enemy::~Enemy()
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== ã§í èâä˙âª =====
-	CharacterBase::Init(_T("Assets/mv1model/Enemy.mv1"));
+	CharacterBase::Init("Assets/mv1model/Enemy.mv1");
 
 	// ===== ìñÇΩÇËîªíËÉTÉCÉY =====
 	radius = 10.0f;
@@ -386,6 +386,11 @@ void Enemy::Damage(int power)
 	ChangeAnimation(hitAnim, false);
 }
 
+VECTOR Enemy::GetCenterPos() const
+{
+	return VGet(pos.x, pos.y + height * 0.75f, pos.z);
+}
+
 void Enemy::DebugDraw()
 {
 	float h = height;
@@ -398,7 +403,7 @@ void Enemy::DebugDraw()
 	DrawLine3D(bottom, top, GetColor(0, 255, 0));
 
 	DrawFormatString(20, 20, GetColor(255, 255, 255),
-		_T("AI State: %s"), ToString(aiState));
+		"AI State: %s", ToString(aiState));
 
 	DrawSphere3D(
 		bottom,
