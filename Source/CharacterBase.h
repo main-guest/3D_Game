@@ -103,12 +103,18 @@ protected:
 
 	// アニメーションハンドル
 	int idleAnim;
-	int walkAnim;
+
+	int walk_fAnim;
+	int walk_bAnim;
+	int walk_rAnim;
+	int walk_lAnim;
 
 	int chaseAnim;
 
-	int dash01Anim;
-	int dash02Anim;
+	int dash_f01Anim;
+	int dash_f02Anim;
+	int dash_rAnim;
+	int dash_lAnim;
 
 	int jumpStartAnim;
 	int dashJumpStartAnim;
@@ -125,7 +131,10 @@ protected:
 
 	int hitAnim;
 
-	int dodgeAnim;
+	int dodge_fAnim;
+	int dodge_bAnim;
+	int dodge_rAnim;
+	int dodge_lAnim;
 
 	int deadAnim;
 

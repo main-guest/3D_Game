@@ -8,6 +8,16 @@ enum class AttackShape
 	Gun
 };
 
+enum class MoveDirection
+{
+	Front = 0,
+	Back,
+	Right,
+	Left,
+
+	Count
+};
+
 struct WeaponData
 {
 	// ===== 最大コンボ数 =====
@@ -16,6 +26,17 @@ struct WeaponData
 	// ===== 使用アニメ =====
 	int attackAnim[MaxCombo];
 	int dashAnim;
+
+	// ===== ロックオン歩き =====
+	int lockWalkAnim[(int)MoveDirection::Count];
+
+	// ===== ロックオンダッシュ =====
+	int lockDashFrontAnim;
+	int lockDashRightAnim;
+	int lockDashLeftAnim;
+
+	// ===== ロックオン回避 =====
+	int lockDodgeAnim[(int)MoveDirection::Count];
 
 	AttackShape attackShape;
 

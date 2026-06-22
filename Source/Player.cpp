@@ -54,7 +54,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	GetMousePoint(&prevMouseX, &prevMouseY);
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init("Assets/mv1model/Player.mv1");
+	CharacterBase::Init("Assets/mv1model/Player2.mv1");
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init("Assets/mv1model/Blade.mv1");
@@ -62,26 +62,52 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	// ===== アニメーション番号 =====
 	idleAnim = 0;
-	walkAnim = 1;
-	dash01Anim = 2;
-	dash02Anim = 3;
-	jumpStartAnim = 4;
-	dashJumpStartAnim = 5;
-	jumpRiseAnim = 6;
-	jumpFallAnim = 7;
-	jumpEndAnim = 8;
-	handAttackAnim = 9; 
-	gunAttackAnim = 10; 
-	swordAttack01Anim = 11; 
-	swordAttack02Anim = 12; 
-	swordAttack03Anim = 13; 
-	swordAttack04Anim = 14;
-	hitAnim = 15;
-	dodgeAnim = 16;
-	deadAnim = 17;
+	walk_fAnim = 1;
+	walk_bAnim = 2;
+	walk_rAnim = 3;
+	walk_lAnim = 4;
+
+	dash_f01Anim = 5;
+	dash_f02Anim = 6;
+	dash_rAnim = 7;
+	dash_lAnim = 8;
+
+	jumpStartAnim = 9;
+	dashJumpStartAnim = 10;
+	jumpRiseAnim = 11;
+	jumpFallAnim = 12;
+	jumpEndAnim = 13;
+	handAttackAnim = 14; 
+	gunAttackAnim = 15; 
+	swordAttack01Anim = 16; 
+	swordAttack02Anim = 17; 
+	swordAttack03Anim = 18; 
+	swordAttack04Anim = 19;
+	hitAnim = 20;
+
+	dodge_fAnim = 21;
+	dodge_bAnim = 22;
+	dodge_rAnim = 23;
+	dodge_lAnim = 24;
+
+	deadAnim = 25;
 
 	// ===== 武器データ設定 =====
 	// 素手
+	unarmedData.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
+	unarmedData.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
+	unarmedData.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
+	unarmedData.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
+
+	unarmedData.lockDashFrontAnim = dash_f01Anim;
+	unarmedData.lockDashRightAnim = dash_rAnim;
+	unarmedData.lockDashLeftAnim = dash_lAnim;
+
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Back] = dodge_bAnim;
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Right] = dodge_rAnim;
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Left] = dodge_lAnim;
+
 	for (int i = 0; i < WeaponData::MaxCombo; i++)
 	{
 		unarmedData.attackAnim[i] = handAttackAnim;
@@ -97,7 +123,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	unarmedData.comboCount = 1;
 
-	unarmedData.dashAnim = dash01Anim;
+	unarmedData.dashAnim = dash_f01Anim;
 
 	unarmedData.attackShape = AttackShape::Sphere;
 	unarmedData.attackRadius = 40.0f;
@@ -116,9 +142,23 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	weapon1Data.attackAnim[2] = swordAttack03Anim;
 	weapon1Data.attackAnim[3] = swordAttack04Anim;
 
+	weapon1Data.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
+	weapon1Data.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
+	weapon1Data.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
+	weapon1Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
+
+	weapon1Data.lockDashFrontAnim = dash_f02Anim;
+	weapon1Data.lockDashRightAnim = dash_rAnim;
+	weapon1Data.lockDashLeftAnim = dash_lAnim;
+
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_bAnim;
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_rAnim;
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_lAnim;
+
 	weapon1Data.comboCount = 4;
 
-	weapon1Data.dashAnim = dash02Anim;
+	weapon1Data.dashAnim = dash_f02Anim;
 
 	weapon1Data.attackShape = AttackShape::Line;
 	weapon1Data.attackRadius = 20.0f;
@@ -166,6 +206,20 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	weapon2Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
 
+	weapon2Data.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
+	weapon2Data.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
+	weapon2Data.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
+	weapon2Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
+
+	weapon2Data.lockDashFrontAnim = dash_f01Anim;
+	weapon2Data.lockDashRightAnim = dash_rAnim;
+	weapon2Data.lockDashLeftAnim = dash_lAnim;
+
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_bAnim;
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_rAnim;
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_lAnim;
+
 	for (int i = 0; i < WeaponData::MaxCombo; i++)
 	{
 		weapon2Data.attackAnim[i] = gunAttackAnim;
@@ -181,7 +235,8 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	weapon2Data.comboCount = 1;
 
-	weapon2Data.dashAnim = dash01Anim;
+	weapon2Data.dashAnim = dash_f01Anim;
+
 	weapon2Data.attackShape = AttackShape::Gun;
 
 	weapon2Data.attackRadius = 10.0f;
@@ -584,11 +639,32 @@ void Player::StartDodge()
 
 	isDodging = true;
 
-	dodgeDir = GetForward();
-
 	currentState = AnimState::Dodge;
 
-	ChangeAnimation(dodgeAnim, false);
+	if (isLockOn)
+	{
+		dodgeDir = GetLockMoveVector();
+
+		// 入力が無ければ前回避
+		if (VSize(dodgeDir) < 0.01f)
+		{
+			dodgeDir = GetForward();
+		}
+		else
+		{
+			dodgeDir = GetForward();
+		}
+
+		MoveDirection dir = GetLockMoveDirection();
+
+		ChangeAnimation(currentWeaponData->lockDodgeAnim[(int)dir], false);
+	}
+	else
+	{
+		dodgeDir = GetForward();
+
+		ChangeAnimation(dodge_fAnim, false);
+	}
 
 	SetAnimSpeed(1.5f);
 }
@@ -1103,19 +1179,96 @@ std::vector<Enemy*> Player::FindGunTargets(std::vector<std::unique_ptr< Enemy >>
 	return result;
 }
 
+MoveDirection Player::GetLockMoveDirection() const
+{
+	// 入力なし
+	if (fabsf(inputMoveX) < 0.01f &&
+		fabsf(inputMoveZ) < 0.01f)
+	{
+		return MoveDirection::Front;
+	}
+
+	// 前後優先
+	if (fabsf(inputMoveZ) >= fabsf(inputMoveX))
+	{
+		if (inputMoveZ > 0.0f)
+		{
+			return MoveDirection::Front;
+		}
+		else
+		{
+			return MoveDirection::Back;
+		}
+	}
+	else
+	{
+		if (inputMoveX > 0.0f)
+		{
+			return MoveDirection::Right;
+		}
+		else
+		{
+			return MoveDirection::Left;
+		}
+	}
+}
+
+VECTOR Player::GetLockMoveVector() const
+{
+	// Player前方向
+	VECTOR forward = GetForward();
+	forward.y = 0.0f;
+
+	if (VSize(forward) > 0.001f)
+	{
+		forward = VNorm(forward);
+	}
+
+	// Player右方向
+	VECTOR right;
+	right.x = forward.z;
+	right.y = 0.0f;
+	right.z = -forward.x;
+
+	VECTOR moveDir = VGet(0, 0, 0);
+
+	if (CheckHitKey(KEY_INPUT_W))
+	{
+		moveDir = forward;
+	}
+	else if (CheckHitKey(KEY_INPUT_S))
+	{
+		moveDir = VScale(forward, -1.0f);
+	}
+	else if (CheckHitKey(KEY_INPUT_A))
+	{
+		moveDir = VScale(right, -1.0f);
+	}
+	else if (CheckHitKey(KEY_INPUT_D))
+	{
+		moveDir = right;
+	}
+	else
+	{
+		moveDir = VGet(0, 0, 0);
+	}
+
+	return moveDir;
+}
+
 void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies)
 {
-	float moveX = 0.0f;
-	float moveZ = 0.0f;
+	inputMoveX = 0.0f;
+	inputMoveZ = 0.0f;
 
 	//　=====　入力　=====	
-	if (CheckHitKey(KEY_INPUT_W)) moveZ += 1.0f;
-	if (CheckHitKey(KEY_INPUT_S)) moveZ -= 1.0f;
-	if (CheckHitKey(KEY_INPUT_D)) moveX += 1.0f;
-	if (CheckHitKey(KEY_INPUT_A)) moveX -= 1.0f;
+	if (CheckHitKey(KEY_INPUT_W)) inputMoveZ += 1.0f;
+	if (CheckHitKey(KEY_INPUT_S)) inputMoveZ -= 1.0f;
+	if (CheckHitKey(KEY_INPUT_D)) inputMoveX += 1.0f;
+	if (CheckHitKey(KEY_INPUT_A)) inputMoveX -= 1.0f;
 
 	//　=====　移動判定　=====
-	bool isMove = (moveX != 0.0f || moveZ != 0.0f);
+	bool isMove = (inputMoveX != 0.0f || inputMoveZ != 0.0f);
 
 	// ===== ロックオン =====
 	bool qNow = CheckHitKey(KEY_INPUT_Q);
@@ -1292,12 +1445,12 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	if (currentState != AnimState::Attack && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
 	{
 		//　正規化
-		float len = sqrtf(moveX * moveX + moveZ * moveZ);
+		float len = sqrtf(inputMoveX * inputMoveX + inputMoveZ * inputMoveZ);
 
 		if (len > 0.001f)
 		{
-			moveX /= len;
-			moveZ /= len;
+			inputMoveX /= len;
+			inputMoveZ /= len;
 		}
 
 		//　=====　カメラ基準変換　=====
@@ -1306,8 +1459,8 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 
 		VECTOR dir;
 
-		dir.x = moveX * cosY + moveZ * sinY;
-		dir.z = moveZ * cosY - moveX * sinY;
+		dir.x = inputMoveX * cosY + inputMoveZ * sinY;
+		dir.z = inputMoveZ * cosY - inputMoveX * sinY;
 
 		velocity.x = dir.x * speed;
 		velocity.z = dir.z * speed;
@@ -1338,12 +1491,12 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	else if (isMove)
 	{
 		// 通常は移動方向を向く
-		float len = sqrtf(moveX * moveX + moveZ * moveZ);
+		float len = sqrtf(inputMoveX * inputMoveX + inputMoveZ * inputMoveZ);
 
 		if (len > 0.001f)
 		{
-			moveX /= len;
-			moveZ /= len;
+			inputMoveX /= len;
+			inputMoveZ /= len;
 		}
 
 		float sinY = sinf(cameraAngle);
@@ -1351,8 +1504,8 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 
 		VECTOR dir;
 
-		dir.x = moveX * cosY + moveZ * sinY;
-		dir.z = moveZ * cosY - moveX * sinY;
+		dir.x = inputMoveX * cosY + inputMoveZ * sinY;
+		dir.z = inputMoveZ * cosY - inputMoveX * sinY;
 
 		float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
 
@@ -1512,7 +1665,7 @@ void Player::UpdateState()
 				fabsf(velocity.z) > 0.1f)
 			{
 				currentState = AnimState::Walk;
-				ChangeAnimation(walkAnim, true);
+				ChangeAnimation(walk_fAnim, true);
 			}
 			else
 			{
@@ -1579,7 +1732,7 @@ void Player::UpdateState()
 				else
 				{
 					currentState = AnimState::Walk;
-					ChangeAnimation(walkAnim, true);
+					ChangeAnimation(walk_fAnim, true);
 				}
 			}
 			else
@@ -1624,12 +1777,43 @@ void Player::UpdateState()
 			break;
 
 		case AnimState::Walk:
-			ChangeAnimation(walkAnim, true);
+			if (isLockOn)
+			{
+				MoveDirection dir = GetLockMoveDirection();
+
+				ChangeAnimation(currentWeaponData->lockWalkAnim[(int)dir], true);
+			}
+			else
+			{
+				ChangeAnimation(walk_fAnim, true);
+			}
 			break;
 
 		case AnimState::Dash:
 			// ===== 武器ごとのダッシュ =====
-			ChangeAnimation(currentWeaponData->dashAnim, true);
+			if (isLockOn)
+			{
+				MoveDirection dir = GetLockMoveDirection();
+
+				switch (dir)
+				{
+				case MoveDirection::Front:
+				case MoveDirection::Back:
+					ChangeAnimation(currentWeaponData->lockDashFrontAnim, true);
+					break;
+
+				case MoveDirection::Right:
+					ChangeAnimation(currentWeaponData->lockDashRightAnim, true);
+					break;
+
+				case MoveDirection::Left:
+					ChangeAnimation(currentWeaponData->lockDashLeftAnim, true);
+				}
+			}
+			else
+			{
+				ChangeAnimation(currentWeaponData->dashAnim, true);
+			}
 			break;
 
 		case AnimState::JumpFall:

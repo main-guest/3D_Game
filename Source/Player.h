@@ -34,8 +34,6 @@ public:
 
 	void Damage(int power);
 
-	//void IsAnimationFinished(int animIndex);
-
 	void StartDodge();
 
 	void LockOn(std::vector<std::unique_ptr<Enemy>>& enemies);
@@ -69,6 +67,9 @@ private:
 	// “à•”ˆ—
 	std::vector<Enemy*> FindGunTargets(std::vector<std::unique_ptr<Enemy>>& enemies);
 
+	MoveDirection GetLockMoveDirection() const;
+
+	VECTOR GetLockMoveVector() const;
 	void UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies);
 	void UpdateState();
 
@@ -82,6 +83,10 @@ private:
 	bool shiftPressed = false;
 
 	float shiftHoldTimer = 0.0f;
+
+	// “ü—Í•ûŒü
+	float inputMoveX = 0.0f;
+	float inputMoveZ = 0.0f;
 
 	// ’·‰Ÿ‚µ”»’èŠÔ]
 	const float dashHoldTime = 0.2f;

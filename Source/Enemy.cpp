@@ -47,7 +47,7 @@ void Enemy::Init(VECTOR startPos)
 
 	// ===== ÉAÉjÉÅî‘çÜ =====
 	idleAnim = 0;
-	walkAnim = 1;
+	walk_fAnim = 1;
 	chaseAnim = 2;
 	jumpStartAnim = 3;
 	jumpRiseAnim = 4;
@@ -643,7 +643,7 @@ void Enemy::UpdateState()
 			break;
 
 		case AnimState::Walk:
-			ChangeAnimation(walkAnim, true);
+			ChangeAnimation(walk_fAnim, true);
 			break;
 
 		case AnimState::Chase:
