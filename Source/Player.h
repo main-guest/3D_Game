@@ -8,6 +8,7 @@ class PhysicsManager;
 class CollisionWorld;
 class Enemy;
 class Stage;
+class Camera;
 
 enum class EquipState
 {
@@ -19,7 +20,7 @@ enum class EquipState
 class Player : public CharacterBase
 {
 public:
-	void Init(CollisionWorld* w, Stage* s);
+	void Init(CollisionWorld* w, Stage* s, Camera* c);
 	void Update(float dt, float cameraAngle, PhysicsManager& physics);
 	void Draw();
 
@@ -144,6 +145,7 @@ private:
 	// ŠO•”QÆ
 	CollisionWorld* world = nullptr;
 	Stage* stage = nullptr;
+	Camera* camera;
 
 	// ===== •Ší =====
 	Weapon weapon1;

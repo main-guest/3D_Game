@@ -37,7 +37,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	FogManager fog;	// フォグ（霧）設定
 
 	stage.Init(&player);
-	player.Init(&stage.GetCollisionWorld(), &stage);
+	player.Init(&stage.GetCollisionWorld(), &stage, &camera);
 	camera.Init();
 	fog.Init();
 
@@ -57,7 +57,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --- 更新 ---
 		player.Update(deltaTime, camera.GetYaw(), stage.GetPhysics());
 		stage.Update(deltaTime, player.GetPos());
-		camera.Update(player.GetPos());
+		camera.Update(deltaTime, player.GetPos());
 		fog.Update(camera.GetPosition(), player.GetPos());
 
 		// --- 描画 ---

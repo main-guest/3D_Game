@@ -8,6 +8,7 @@
 #include "Enemy.h"
 #include "Collision.h"
 #include "Stage.h"
+#include "Camera.h"
 
 namespace
 {
@@ -44,10 +45,11 @@ namespace
 	}
 }
 
-void Player::Init(CollisionWorld* w, Stage* s)
+void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 {
 	world = w;
 	stage = s;
+	camera = c;
 
 	GetMousePoint(&prevMouseX, &prevMouseY);
 
@@ -228,6 +230,25 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		MV1SetVisible(handle, FALSE);
 
 		return;
+	}
+
+	if (isLockOn && lockOnTarget)
+	{
+		if (lockOnTarget->IsDead())
+		{
+			isLockOn = false;
+			lockOnTarget = nullptr;
+		}
+
+		VECTOR diff = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
+
+		diff.y = 0.0f;
+
+		if (VSize(diff) > lockOnDistance)
+		{
+			isLockOn = false;
+			lockOnTarget = nullptr;
+		}
 	}
 
 	if (isDodging)
@@ -601,6 +622,11 @@ void Player::LockOn(std::vector<std::unique_ptr<Enemy>>& enemies)
 	}
 
 	isLockOn = (lockOnTarget != nullptr);
+
+	if (camera)
+	{
+		camera->SetLockTarget(lockOnTarget);
+	}
 }
 
 void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool right)
@@ -622,7 +648,64 @@ void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool
 
 	for (auto& enemy : enemies)
 	{
-		if(enemy)
+		if (enemy.get() == lockOnTarget)
+			continue;
+
+		if (enemy->IsDead())
+			continue;
+
+		VECTOR dir = VSub(enemy->GetCenterPos(), playerPos);
+
+		dir.y = 0.0f;
+
+		float dist = VSize(dir);
+
+		if (dist > lockOnDistance)
+			continue;
+
+		dir = VNorm(dir);
+
+		float angleCurrent = atan2f(current.x, current.z);
+
+		float angleNew = atan2f(dir.x, dir.z);
+
+		float diff = angleNew - angleCurrent;
+
+		while (diff > DX_PI)
+			diff -= DX_TWO_PI;
+
+		while (diff < -DX_PI)
+			diff += DX_TWO_PI;
+
+		if (right)
+		{
+			if (diff <= 0.0f)
+				continue;
+		}
+		else
+		{
+			if (diff >= 0.0f)
+				continue;
+		}
+
+		float absDiff = fabsf(diff);
+
+		if (absDiff < bestAngle)
+		{
+			bestAngle = absDiff;
+
+			best = enemy.get();
+		}
+	}
+
+	if (best)
+	{
+		lockOnTarget = best;
+
+		if (camera)
+		{
+			camera->SetLockTarget(lockOnTarget);
+		}
 	}
 }
 
@@ -1047,6 +1130,11 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 		{
 			isLockOn = false;
 			lockOnTarget = nullptr;
+
+			if (camera)
+			{
+				camera->ClearLockTarget();
+			}
 		}
 	}
 
@@ -1065,9 +1153,6 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	// マウス左右でターゲット切替
 	if (isLockOn)
 	{
-		int dx = 0;
-		int dy = 0;
-
 		if (dx > switchThreshold && canSwitchTarget)
 		{
 			// 右のEnemy
@@ -1208,6 +1293,7 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	{
 		//　正規化
 		float len = sqrtf(moveX * moveX + moveZ * moveZ);
+
 		if (len > 0.001f)
 		{
 			moveX /= len;
@@ -1225,8 +1311,49 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 
 		velocity.x = dir.x * speed;
 		velocity.z = dir.z * speed;
+	}
 
-		//　=====　回転　=====
+	//　=====　回転　=====
+	if (isLockOn && lockOnTarget != nullptr)
+	{
+		// ロックオン中はEnemy方向を向く
+		VECTOR dir = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
+
+		dir.y = 0.0f;
+
+		if (VSize(dir) > 0.001f)
+		{
+			dir = VNorm(dir);
+
+			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+			float diff = targetAngle - characterAngle;
+
+			while (diff > DX_PI)diff -= DX_TWO_PI;
+			while (diff < -DX_PI)diff += DX_TWO_PI;
+
+			characterAngle += diff * 10.0f * dt;
+		}
+	}
+	else if (isMove)
+	{
+		// 通常は移動方向を向く
+		float len = sqrtf(moveX * moveX + moveZ * moveZ);
+
+		if (len > 0.001f)
+		{
+			moveX /= len;
+			moveZ /= len;
+		}
+
+		float sinY = sinf(cameraAngle);
+		float cosY = cosf(cameraAngle);
+
+		VECTOR dir;
+
+		dir.x = moveX * cosY + moveZ * sinY;
+		dir.z = moveZ * cosY - moveX * sinY;
+
 		float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
 
 		float diff = targetAngle - characterAngle;

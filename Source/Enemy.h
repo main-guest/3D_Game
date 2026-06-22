@@ -81,7 +81,7 @@ private:
 
 	VECTOR patrolTarget = VGet(0, 0, 0);
 
-	float searchRange = 500.0f;
+	float searchRange = 100.0f;
 	float attackRange = 150.0f;
 
 	const float jumpStartFrame = 50.0f;
