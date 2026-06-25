@@ -78,19 +78,18 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	jumpFallAnim = 12;
 	jumpEndAnim = 13;
 	handAttackAnim = 14; 
-	gunAttackAnim = 15; 
-	swordAttack01Anim = 16; 
-	swordAttack02Anim = 17; 
-	swordAttack03Anim = 18; 
-	swordAttack04Anim = 19;
+	swordAttack01Anim = 15; 
+	swordAttack02Anim = 16; 
+	swordAttack03Anim = 17; 
+	swordAttack04Anim = 18;
+	gunAttackAnim = 19; 
 	hitAnim = 20;
 
 	dodge_fAnim = 21;
-	dodge_bAnim = 22;
-	dodge_rAnim = 23;
-	dodge_lAnim = 24;
+	dodge_b01Anim = 22;
+	dodge_b02Anim = 23;
 
-	deadAnim = 25;
+	deadAnim = 24;
 
 	// ===== 武器データ設定 =====
 	// 素手
@@ -104,9 +103,9 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	unarmedData.lockDashLeftAnim = dash_lAnim;
 
 	unarmedData.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
-	unarmedData.lockDodgeAnim[(int)MoveDirection::Back] = dodge_bAnim;
-	unarmedData.lockDodgeAnim[(int)MoveDirection::Right] = dodge_rAnim;
-	unarmedData.lockDodgeAnim[(int)MoveDirection::Left] = dodge_lAnim;
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
+	unarmedData.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
 
 	for (int i = 0; i < WeaponData::MaxCombo; i++)
 	{
@@ -152,9 +151,9 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	weapon1Data.lockDashLeftAnim = dash_lAnim;
 
 	weapon1Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_bAnim;
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_rAnim;
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_lAnim;
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
+	weapon1Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
 
 	weapon1Data.comboCount = 4;
 
@@ -216,9 +215,9 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	weapon2Data.lockDashLeftAnim = dash_lAnim;
 
 	weapon2Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_bAnim;
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_rAnim;
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_lAnim;
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
+	weapon2Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
 
 	for (int i = 0; i < WeaponData::MaxCombo; i++)
 	{
@@ -313,8 +312,8 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		// 回避移動区間
 		if (animTime >= dodgeStartFrame && animTime <= dodgeEndFrame)
 		{
-			velocity.x = dodgeDir.x * dodgeSpeed;
-			velocity.z = dodgeDir.z * dodgeSpeed;
+			velocity.x = dodgeMoveDir.x * dodgeSpeed;
+			velocity.z = dodgeMoveDir.z * dodgeSpeed;
 		}
 		else
 		{
@@ -627,43 +626,95 @@ void Player::Damage(int power)
 	ChangeAnimation(hitAnim, false);
 }
 
-void Player::StartDodge()
+void Player::StartDodge(float cameraAngle)
 {
 	if (isDodging)
 		return;
 
-	isDash = false;
-
 	if (!isGround)
 		return;
+
+	isDash = false;
 
 	isDodging = true;
 
 	currentState = AnimState::Dodge;
 
+	// ===== 回避方向保存 =====
+	dodgeDirection = GetLockMoveDirection();
+
 	if (isLockOn)
 	{
-		dodgeDir = GetLockMoveVector();
+		dodgeMoveDir = GetLockMoveVector();
 
-		// 入力が無ければ前回避
-		if (VSize(dodgeDir) < 0.01f)
+		switch (dodgeDirection)
 		{
-			dodgeDir = GetForward();
-		}
-		else
+		case MoveDirection::None:
+			dodgeMoveDir = VScale(GetForward(), -1.0f);
+			ChangeAnimation(dodge_b02Anim, false);
+			break;
+
+		case MoveDirection::Front:
+			ChangeAnimation(dodge_fAnim, false);
+			break;
+
+		case MoveDirection::Left:
 		{
-			dodgeDir = GetForward();
+			VECTOR f = GetForward();
+
+			VECTOR left;
+			left.x = -f.z;
+			left.y = 0.0f;
+			left.z = f.x;
+
+			dodgeMoveDir = VNorm(left);
+
+			ChangeAnimation(dodge_fAnim, false);
 		}
+		break;
 
-		MoveDirection dir = GetLockMoveDirection();
+		case MoveDirection::Right:
+		{
+			VECTOR f = GetForward();
 
-		ChangeAnimation(currentWeaponData->lockDodgeAnim[(int)dir], false);
+			VECTOR right;
+			right.x = f.z;
+			right.y = 0.0f;
+			right.z = -f.x;
+
+			dodgeMoveDir = VNorm(right);
+
+			ChangeAnimation(dodge_fAnim, false);
+		}
+		break;
+
+		case MoveDirection::Back:
+			ChangeAnimation(dodge_b01Anim, false);
+			break;
+		}
 	}
 	else
 	{
-		dodgeDir = GetForward();
+		bool noInput =
+			fabsf(inputMoveX) < 0.01f &&
+			fabsf(inputMoveZ) < 0.01f;
 
-		ChangeAnimation(dodge_fAnim, false);
+		if (noInput)
+		{
+			dodgeMoveDir = VScale(GetForward(), -1.0f);
+
+			ChangeAnimation(dodge_b02Anim, false);
+		}
+		else
+		{
+			dodgeMoveDir = GetFreeMoveVector(cameraAngle);
+
+			float targetAngle = atan2f(dodgeMoveDir.x, dodgeMoveDir.z) + DX_PI;
+
+			characterAngle = targetAngle;
+
+			ChangeAnimation(dodge_fAnim, false);
+		}
 	}
 
 	SetAnimSpeed(1.5f);
@@ -978,6 +1029,14 @@ void Player::DebugDraw()
 		"ComboWindow : %d",
 		animTime >= currentWeaponData->comboAcceptStartFrame[comboStep] &&
 		animTime <= currentWeaponData->comboAcceptEndFrame[comboStep]);
+
+	DrawFormatString(
+		900,
+		80,
+		GetColor(255, 255, 255),
+		"DodgeDir X = % .2f Z = % .2f",
+		dodgeMoveDir.x,
+		dodgeMoveDir.z);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -1185,7 +1244,7 @@ MoveDirection Player::GetLockMoveDirection() const
 	if (fabsf(inputMoveX) < 0.01f &&
 		fabsf(inputMoveZ) < 0.01f)
 	{
-		return MoveDirection::Front;
+		return MoveDirection::None;
 	}
 
 	// 前後優先
@@ -1254,6 +1313,30 @@ VECTOR Player::GetLockMoveVector() const
 	}
 
 	return moveDir;
+}
+
+VECTOR Player::GetFreeMoveVector(float cameraAngle)
+{
+	VECTOR dir = VGet(0, 0, 0);
+
+	float x = inputMoveX;
+	float z = inputMoveZ;
+
+	float len = sqrtf(x * x + z * z);
+
+	if (len > 0.001f)
+	{
+		x /= len;
+		z /= len;
+	}
+
+	float sinY = sinf(cameraAngle);
+	float cosY = cosf(cameraAngle);
+
+	dir.x = x * cosY + z * sinY;
+	dir.z = z * cosY - x * sinY;
+
+	return dir;
 }
 
 void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -1344,9 +1427,12 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 		shiftHoldTimer += dt;
 
 		// 長押しでダッシュ
-		if (shiftHoldTimer >= dashHoldTime)
+		if (shiftHoldTimer >= dashHoldTime && !isDash)
 		{
 			isDash = true;
+
+			dashDirection = GetLockMoveDirection();
+			dashMoveDir = GetLockMoveVector();
 		}
 	}
 
@@ -1357,7 +1443,7 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 		if (shiftHoldTimer < dashHoldTime)
 		{
 			// ===== 回避 =====
-			StartDodge();
+			StartDodge(cameraAngle);
 		}
 
 		// ダッシュ解除
@@ -1469,24 +1555,47 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	//　=====　回転　=====
 	if (isLockOn && lockOnTarget != nullptr)
 	{
-		// ロックオン中はEnemy方向を向く
-		VECTOR dir = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
+		bool backDash =
+			isDash && dashDirection == MoveDirection::Back;
 
-		dir.y = 0.0f;
-
-		if (VSize(dir) > 0.001f)
+		if (backDash)
 		{
-			dir = VNorm(dir);
+			VECTOR moveDir = dashMoveDir;
 
-			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+			if (VSize(moveDir) > 0.001f)
+			{
+				float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
 
-			float diff = targetAngle - characterAngle;
+				float diff = targetAngle - characterAngle;
 
-			while (diff > DX_PI)diff -= DX_TWO_PI;
-			while (diff < -DX_PI)diff += DX_TWO_PI;
+				while (diff > DX_PI)diff -= DX_TWO_PI;
+				while (diff < -DX_PI)diff += DX_TWO_PI;
 
-			characterAngle += diff * 10.0f * dt;
+				characterAngle += diff * 12.0f * dt;
+			}
 		}
+		else
+		{
+			// Enemy方向を向く
+			VECTOR dir = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
+
+			dir.y = 0.0f;
+
+			if (VSize(dir) > 0.001f)
+			{
+				dir = VNorm(dir);
+
+				float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+				float diff = targetAngle - characterAngle;
+
+				while (diff > DX_PI)diff -= DX_TWO_PI;
+				while (diff < -DX_PI)diff += DX_TWO_PI;
+
+				characterAngle += diff * 10.0f * dt;
+			}
+		}
+
 	}
 	else if (isMove)
 	{
@@ -1533,6 +1642,12 @@ void Player::UpdateState()
 			isDead = true;
 		}
 
+		return;
+	}
+
+	// ===== 回避中 =====
+	if (isDodging)
+	{
 		return;
 	}
 
@@ -1691,6 +1806,71 @@ void Player::UpdateState()
 			currentState = AnimState::Idle;
 
 			ChangeAnimation(idleAnim, true);
+		}
+
+		return;
+	}
+
+	// ===== ロックオン移動 =====
+	if (isLockOn)
+	{
+		MoveDirection dir = GetLockMoveDirection();
+
+		// 毎フレーム方向更新
+		if (dir != currentDirection)
+		{
+			currentDirection = dir;
+
+			if (isDash)
+			{
+				switch (dir)
+				{
+				case MoveDirection::Front:
+					ChangeAnimation(dash_f01Anim, true);
+					break;
+
+				case MoveDirection::Back:
+					ChangeAnimation(dash_f01Anim, true);
+					break;
+
+				case MoveDirection::Left:
+					ChangeAnimation(dash_lAnim, true);
+					break;
+
+				case MoveDirection::Right:
+					ChangeAnimation(dash_rAnim, true);
+					break;
+
+				case MoveDirection::None:
+					ChangeAnimation(idleAnim, true);
+					break;
+				}
+			}
+			else
+			{
+				switch (dir)
+				{
+				case MoveDirection::Front:
+					ChangeAnimation(walk_fAnim, true);
+					break;
+
+				case MoveDirection::Back:
+					ChangeAnimation(walk_bAnim, true);
+					break;
+
+				case MoveDirection::Left:
+					ChangeAnimation(walk_lAnim, true);
+					break;
+
+				case MoveDirection::Right:
+					ChangeAnimation(walk_rAnim, true);
+					break;
+
+				case MoveDirection::None:
+					ChangeAnimation(idleAnim, true);
+					break;
+				}
+			}
 		}
 
 		return;

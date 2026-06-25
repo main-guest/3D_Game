@@ -10,7 +10,8 @@ enum class AttackShape
 
 enum class MoveDirection
 {
-	Front = 0,
+	None,
+	Front,
 	Back,
 	Right,
 	Left,

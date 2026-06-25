@@ -132,9 +132,8 @@ protected:
 	int hitAnim;
 
 	int dodge_fAnim;
-	int dodge_bAnim;
-	int dodge_rAnim;
-	int dodge_lAnim;
+	int dodge_b01Anim;
+	int dodge_b02Anim;
 
 	int deadAnim;
 

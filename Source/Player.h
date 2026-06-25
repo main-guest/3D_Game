@@ -34,7 +34,7 @@ public:
 
 	void Damage(int power);
 
-	void StartDodge();
+	void StartDodge(float cameraAngle);
 
 	void LockOn(std::vector<std::unique_ptr<Enemy>>& enemies);
 	void SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool right);
@@ -70,6 +70,9 @@ private:
 	MoveDirection GetLockMoveDirection() const;
 
 	VECTOR GetLockMoveVector() const;
+
+	VECTOR GetFreeMoveVector(float cameraAngle);
+
 	void UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies);
 	void UpdateState();
 
@@ -143,6 +146,14 @@ private:
 	float dodgeEndFrame = 47.0f;
 
 	VECTOR dodgeDir = VGet(0, 0, 0);
+
+	// ===== •ûŒü =====
+	MoveDirection dodgeDirection = MoveDirection::None;
+	MoveDirection dashDirection = MoveDirection::None;
+	MoveDirection currentDirection = MoveDirection::None;
+
+	VECTOR dodgeMoveDir = VGet(0, 0, 0);
+	VECTOR dashMoveDir = VGet(0, 0, 0);
 
 	// –³“G
 	bool isInvincible = false;
