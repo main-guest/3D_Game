@@ -1556,11 +1556,11 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	if (isLockOn && lockOnTarget != nullptr)
 	{
 		bool backDash =
-			isDash && dashDirection == MoveDirection::Back;
+			isDash && GetLockMoveDirection() == MoveDirection::Back;
 
 		if (backDash)
 		{
-			VECTOR moveDir = dashMoveDir;
+			VECTOR moveDir = GetLockMoveVector();
 
 			if (VSize(moveDir) > 0.001f)
 			{
