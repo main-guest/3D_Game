@@ -1,22 +1,12 @@
 #pragma once
 #include "DxLib.h"
+#include "MoveDirection.h"
 
 enum class AttackShape
 {
 	Sphere,
 	Line,
 	Gun
-};
-
-enum class MoveDirection
-{
-	None,
-	Front,
-	Back,
-	Right,
-	Left,
-
-	Count
 };
 
 struct WeaponData

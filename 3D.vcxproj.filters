@@ -89,5 +89,8 @@
     <ClInclude Include="Source\Collision.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Source\MoveDirection.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

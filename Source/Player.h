@@ -3,6 +3,7 @@
 #include <memory>
 #include "CharacterBase.h"
 #include "Weapon.h"
+#include "MoveDirection.h"
 
 class PhysicsManager;
 class CollisionWorld;
@@ -65,13 +66,45 @@ public:
 
 private:
 	// 内部処理
-	std::vector<Enemy*> FindGunTargets(std::vector<std::unique_ptr<Enemy>>& enemies);
 
-	MoveDirection GetLockMoveDirection() const;
+	// Enemy基準の前・右ベクトルを更新
+	void UpdateEnemyBasis();
 
 	VECTOR GetLockMoveVector() const;
 
-	VECTOR GetFreeMoveVector(float cameraAngle);
+	VECTOR GetFreeMoveVector(float cameraAngle) const;
+
+	MoveDirection GetLockMoveDirection() const;
+
+	// ロックオン／ロックオフに応じて回転処理を振り分け
+	void UpdateRotation(float dt);
+
+	// ロックオン時はEnemy基準、ロックオフ時はカメラ基準の移動ベクトルを更新
+	void UpdateMoveVector(float cameraAngle);
+
+	// ロックオン中の向きを制御（通常はEnemy方向、後ろダッシュ時のみ移動方向）
+	void UpdateLockOnMove(float dt);
+
+	// ロックオフ中は移動方向へ向きを補間
+	void UpdateFreeMove(float dt);
+
+	// ロックオン中の歩き・ダッシュアニメーションを方向に応じて更新
+	void UpdateLockOnAnimation();
+
+	// ロックオフ中のIdle／Walk／Dashアニメーションを更新
+	void UpdateFreeAnimation();
+
+	bool UpdateDead();
+
+	bool UpdateDodge();
+
+	bool UpdateJump();
+
+	bool UpdateAttack();
+
+	bool UpdateHit();
+
+	std::vector<Enemy*> FindGunTargets(std::vector<std::unique_ptr<Enemy>>& enemies);
 
 	void UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies);
 	void UpdateState();
@@ -106,7 +139,7 @@ private:
 	bool attackActive = false;
 	bool attackHit = false;
 
-	bool isHit = false;
+	//bool isHit = false;
 
 	bool isDead = false;
 	bool isDying = false; 
@@ -123,7 +156,7 @@ private:
 	// ===== 攻撃コンボ =====
 	int comboStep = 0;          // 現在のコンボ段数
 	bool comboNext = false;     // 次段予約
-	float comboTimer = 0.0f;    // 現在の攻撃時間
+	//float comboTimer = 0.0f;    // 現在の攻撃時間
 
 	// ===== ジャンプ開始フレーム =====
 	const float jumpStartFrame = 54.0f;
@@ -145,15 +178,7 @@ private:
 	float dodgeStartFrame = 0.0f;
 	float dodgeEndFrame = 47.0f;
 
-	VECTOR dodgeDir = VGet(0, 0, 0);
-
-	// ===== 方向 =====
-	MoveDirection dodgeDirection = MoveDirection::None;
-	MoveDirection dashDirection = MoveDirection::None;
-	MoveDirection currentDirection = MoveDirection::None;
-
-	VECTOR dodgeMoveDir = VGet(0, 0, 0);
-	VECTOR dashMoveDir = VGet(0, 0, 0);
+	//VECTOR dodgeDir = VGet(0, 0, 0);
 
 	// 無敵
 	bool isInvincible = false;
@@ -185,10 +210,29 @@ private:
 	bool gunWaitingDamage = false;
 
 	// ===== ロックオン =====
+	// 方向
+	MoveDirection currentDirection = MoveDirection::None;
+	MoveDirection dashDirection = MoveDirection::None;
+	MoveDirection dodgeDirection = MoveDirection::None;
+
 	Enemy* lockOnTarget = nullptr;
 	bool isLockOn = false;
 
 	int oldQ = 0;
+
+	// ダッシュ開始時保存
+	bool backDashRotate = false;
+	VECTOR dashMoveDir = VGet(0, 0, 0);
+
+	// 回避開始時保存
+	VECTOR dodgeMoveDir = VGet(0, 0, 0);
+
+	// 毎フレーム移動方向
+	VECTOR moveVector = VGet(0, 0, 0);
+
+	// Enemy基準ベクトル
+	VECTOR enemyForward = VGet(0, 0, 1);
+	VECTOR enemyRight = VGet(1, 0, 0);
 
 	// マウス位置
 	int prevMouseX = 0;

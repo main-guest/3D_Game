@@ -1167,6 +1167,554 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 	}
 }
 
+void Player::UpdateEnemyBasis()
+{
+	if (!isLockOn || lockOnTarget == nullptr)
+		return;
+
+	enemyForward = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
+	enemyForward.y = 0.0f;
+
+	if (VSize(enemyForward) < 0.001f)
+		return;
+
+	enemyForward = VNorm(enemyForward);
+
+	// Enemy基準右方向
+	enemyRight.x = enemyForward.z;
+	enemyRight.y = 0.0f;
+	enemyRight.z = -enemyForward.x;
+}
+
+VECTOR Player::GetLockMoveVector() const
+{
+	VECTOR move = VGet(0, 0, 0);
+
+	if (CheckHitKey(KEY_INPUT_W))
+		move = VAdd(move, enemyForward);
+
+	if (CheckHitKey(KEY_INPUT_S))
+		move = VSub(move, enemyForward);
+
+	if (CheckHitKey(KEY_INPUT_D))
+		move = VAdd(move, enemyRight);
+
+	if (CheckHitKey(KEY_INPUT_A))
+		move = VSub(move, enemyRight);
+
+	if (VSize(move) > 0.001f)
+		move = VNorm(move);
+
+	return move;
+}
+
+VECTOR Player::GetFreeMoveVector(float cameraAngle) const
+{
+	VECTOR move = VGet(0, 0, 0);
+
+	float sinY = sinf(cameraAngle);
+	float cosY = cosf(cameraAngle);
+
+	if (CheckHitKey(KEY_INPUT_W))
+	{
+		move.x += sinY;
+		move.z += cosY;
+	}
+
+	if (CheckHitKey(KEY_INPUT_S))
+	{
+		move.x -= sinY;
+		move.z -= cosY;
+	}
+
+	if (CheckHitKey(KEY_INPUT_D))
+	{
+		move.x += cosY;
+		move.z -= sinY;
+	}
+
+	if (CheckHitKey(KEY_INPUT_A))
+	{
+		move.x -= cosY;
+		move.z += sinY;
+	}
+
+	if (VSize(move) > 0.001f)
+	{
+		move = VNorm(move);
+	}
+
+	return move;
+}
+
+MoveDirection Player::GetLockMoveDirection() const
+{
+	bool w = CheckHitKey(KEY_INPUT_W);
+	bool s = CheckHitKey(KEY_INPUT_S);
+	bool a = CheckHitKey(KEY_INPUT_A);
+	bool d = CheckHitKey(KEY_INPUT_D);
+
+	if (!w && !s && !a && !d)
+		return MoveDirection::None;
+
+	// 前後優先
+	if (w)
+		return MoveDirection::Front;
+
+	if (s)
+		return MoveDirection::Back;
+
+	if (a)
+		return MoveDirection::Left;
+
+	if (d)
+		return MoveDirection::Right;
+
+	return MoveDirection::None;
+}
+
+void Player::UpdateRotation(float dt)
+{
+	if (isLockOn)
+	{
+		UpdateLockOnMove(dt);
+	}
+	else
+	{
+		UpdateFreeMove(dt);
+	}
+}
+
+void Player::UpdateMoveVector(float cameraAngle)
+{
+	if (isLockOn)
+	{
+		moveVector = GetLockMoveVector();
+	}
+	else
+	{
+		moveVector = GetFreeMoveVector(cameraAngle);
+	}
+}
+
+void Player::UpdateLockOnMove(float dt)
+{
+	if (lockOnTarget == nullptr)
+		return;
+
+	// ===== Sダッシュのみ移動方向を向く =====
+	if (isDash && dashDirection == MoveDirection::Back)
+	{
+		if (VSize(dashMoveDir) > 0.001f)
+		{
+			float target = atan2f(dashMoveDir.x, dashMoveDir.z) + DX_PI;
+
+			float diff = target - characterAngle;
+
+			while (diff > DX_PI)diff -= DX_TWO_PI;
+			while (diff < -DX_PI)diff += DX_TWO_PI;
+
+			characterAngle += diff * 12.0f * dt;
+		}
+
+		return;
+	}
+
+	// ===== Enemy方向を向く =====
+	VECTOR dir = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
+
+	dir.y = 0;
+
+	if (VSize(dir) < 0.001f)
+		return;
+
+	dir = VNorm(dir);
+
+	float target = atan2f(dir.x, dir.z) + DX_PI;
+
+	float diff = target - characterAngle;
+
+	while (diff > DX_PI)diff -= DX_TWO_PI;
+	while (diff < -DX_PI)diff += DX_TWO_PI;
+
+	characterAngle += diff * 10.0f * dt;
+}
+
+void Player::UpdateFreeMove(float dt)
+{
+	if (VSize(moveVector) < 0.001f)
+		return;
+
+	float target = atan2f(moveVector.x, moveVector.z) + DX_PI;
+
+	float diff = target - characterAngle;
+
+	while (diff > DX_PI)diff -= DX_TWO_PI;
+	while (diff < -DX_PI)diff += DX_TWO_PI;
+
+	characterAngle += diff * 10.0f * dt;
+}
+
+void Player::UpdateLockOnAnimation()
+{
+	MoveDirection dir = GetLockMoveDirection();
+
+	if (dir == currentDirection)
+		return;
+
+	currentDirection = dir;
+
+	if (isDash)
+	{
+		switch (dir)
+		{
+		case MoveDirection::Front:
+		case MoveDirection::Back:
+			ChangeAnimation(currentWeaponData->lockDashFrontAnim, true);
+			break;
+
+		case MoveDirection::Left:
+			ChangeAnimation(currentWeaponData->lockDashLeftAnim, true);
+			break;
+
+		case MoveDirection::Right:
+			ChangeAnimation(currentWeaponData->lockDashRightAnim, true);
+			break;
+
+		case MoveDirection::None:
+			ChangeAnimation(idleAnim, true);
+			break;
+		}
+	}
+	else
+	{
+		switch (dir)
+		{
+		case MoveDirection::Front:
+			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Front], true);
+			break;
+
+		case MoveDirection::Back:
+			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Back], true);
+			break;
+
+		case MoveDirection::Left:
+			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Left], true);
+			break;
+
+		case MoveDirection::Right:
+			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Right], true);
+			break;
+
+		case MoveDirection::None:
+			ChangeAnimation(idleAnim, true);
+			break;
+		}
+	}
+}
+
+void Player::UpdateFreeAnimation()
+{
+	if (fabsf(velocity.x) < 0.1f &&
+		fabsf(velocity.z) < 0.1f)
+	{
+		if (currentState != AnimState::Idle)
+		{
+			currentState = AnimState::Idle;
+			ChangeAnimation(idleAnim, true);
+		}
+
+		return;
+	}
+
+	if (isDash)
+	{
+		if (currentState != AnimState::Dash)
+		{
+			currentState = AnimState::Dash;
+			ChangeAnimation(currentWeaponData->dashAnim, true);
+		}
+	}
+	else
+	{
+		if (currentState != AnimState::Walk)
+		{
+			currentState = AnimState::Walk;
+			ChangeAnimation(walk_fAnim, true);
+		}
+	}
+}
+
+bool Player::UpdateDead()
+{
+	if (currentState != AnimState::Dead)
+		return false;
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (animTime >= totalTime)
+	{
+		animTime = totalTime;
+		isDead = true;
+	}
+
+	return true;
+}
+
+bool Player::UpdateDodge()
+{
+	if (currentState != AnimState::Dodge)
+		return false;
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (animTime >= totalTime)
+	{
+		isDodging = false;
+
+		SetAnimSpeed(1.0f);
+
+		currentState = AnimState::Idle;
+
+		ChangeAnimation(idleAnim, true);
+	}
+
+	return true;
+}
+
+bool Player::UpdateJump()
+{
+	// ===== 共通：落下開始 =====
+	if (!isGround &&
+		velocity.y < 0.0f &&
+		currentState != AnimState::JumpStart &&
+		currentState != AnimState::JumpFall &&
+		currentState != AnimState::JumpEnd)
+	{
+		currentState = AnimState::JumpFall;
+		ChangeAnimation(jumpFallAnim, false);
+
+		return true;
+	}
+
+	switch (currentState)
+	{
+	case AnimState::JumpStart:
+	{
+		// 通常ジャンプのみ待機
+		if (!dashJump)
+		{
+			if (jumpRequest &&
+				animTime >= jumpStartFrame)
+			{
+				velocity.y = jumpPower;
+
+				isGround = false;
+
+				jumpRequest = false;
+
+				currentState = AnimState::JumpRise;
+
+				ChangeAnimation(jumpRiseAnim, false);
+			}
+		}
+		else
+		{
+			float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+			if (animTime >= totalTime)
+			{
+				currentState = AnimState::JumpRise;
+
+				ChangeAnimation(jumpRiseAnim, false);
+
+			}
+		}
+
+		return true;
+	}
+
+	case AnimState::JumpRise:
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		if (velocity.y <= 0)
+		{
+			currentState = AnimState::JumpFall;
+
+			ChangeAnimation(jumpFallAnim, false);
+
+			return true;
+		}
+
+		if (animTime >= totalTime)
+		{
+			animTime = totalTime;
+		}
+
+		return true;
+	}
+
+	case AnimState::JumpFall:
+	{
+		if (!prevGround && isGround)
+		{
+			// ===== ダッシュジャンプ =====
+			if (dashJump)
+			{
+				dashJump = false;
+
+				bool isMove =
+					fabsf(velocity.x) > 0.1f ||
+					fabsf(velocity.z) > 0.1f;
+
+				if (isMove)
+				{
+					if (isDash)
+					{
+						currentState = AnimState::Dash;
+
+						if (isLockOn)
+						{
+							UpdateLockOnAnimation();
+						}
+						else
+						{
+							ChangeAnimation(currentWeaponData->dashAnim, true);
+						}
+					}
+					else
+					{
+						currentState = AnimState::Walk;
+
+						if (isLockOn)
+						{
+							UpdateLockOnAnimation();
+						}
+						else
+						{
+							ChangeAnimation(walk_fAnim, true);
+						}
+					}
+				}
+				else
+				{
+					currentState = AnimState::Idle;
+
+					ChangeAnimation(idleAnim, true);
+				}
+
+				return true;
+			}
+
+			currentState = AnimState::JumpEnd;
+
+			ChangeAnimation(jumpEndAnim, false);
+
+			return true;
+		}
+
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		if (animTime >= totalTime)
+		{
+			animTime = totalTime;
+		}
+
+		return true;
+	}
+
+	case AnimState::JumpEnd:
+	{
+		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+		if (animTime >= totalTime)
+		{
+			if (fabsf(velocity.x) > 0.1f ||
+				fabsf(velocity.z) > 0.1f)
+			{
+				currentState = isDash ? AnimState::Dash : AnimState::Walk;
+			}
+			else
+			{
+				currentState = AnimState::Idle;
+			}
+		}
+
+		return true;
+	}
+
+	default:
+		return false;
+	}
+}
+
+bool Player::UpdateAttack()
+{
+	if (currentState != AnimState::Attack)
+		return false;
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	// 攻撃判定ON区間
+	attackActive =
+		animTime >= currentWeaponData->attackStartFrame[comboStep] &&
+		animTime <= currentWeaponData->attackEndFrame[comboStep];
+
+	// ===== 次段コンボ =====
+		// キャンセル可能になったら
+	if (comboNext &&
+		comboStep + 1 < currentWeaponData->comboCount &&
+		animTime >= currentWeaponData->comboCancelFrame[comboStep])
+	{
+		comboStep++;
+
+		comboNext = false;
+
+		attackHit = false;
+
+		ChangeAnimation(currentWeaponData->attackAnim[comboStep], false);
+
+		return true;
+	}
+
+	// コンボ終了
+	if (animTime >= totalTime)
+	{
+		comboStep = 0;
+
+		comboNext = false;
+
+		attackHit = false;
+
+		attackActive = false;
+
+		currentState =
+			(fabsf(velocity.x) > 0.1f ||
+				fabsf(velocity.z) > 0.1f)
+			? AnimState::Walk : AnimState::Idle;
+	}
+
+	return true;
+}
+
+bool Player::UpdateHit()
+{
+	if (currentState != AnimState::Hit)
+		return false;
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (animTime >= totalTime)
+	{
+		currentState = AnimState::Idle;
+
+		ChangeAnimation(idleAnim, true);
+	}
+
+	return true;
+}
+
 // 敵探索
 std::vector<Enemy*> Player::FindGunTargets(std::vector<std::unique_ptr< Enemy >>& enemies)
 {
@@ -1238,144 +1786,54 @@ std::vector<Enemy*> Player::FindGunTargets(std::vector<std::unique_ptr< Enemy >>
 	return result;
 }
 
-MoveDirection Player::GetLockMoveDirection() const
-{
-	// 入力なし
-	if (fabsf(inputMoveX) < 0.01f &&
-		fabsf(inputMoveZ) < 0.01f)
-	{
-		return MoveDirection::None;
-	}
-
-	// 前後優先
-	if (fabsf(inputMoveZ) >= fabsf(inputMoveX))
-	{
-		if (inputMoveZ > 0.0f)
-		{
-			return MoveDirection::Front;
-		}
-		else
-		{
-			return MoveDirection::Back;
-		}
-	}
-	else
-	{
-		if (inputMoveX > 0.0f)
-		{
-			return MoveDirection::Right;
-		}
-		else
-		{
-			return MoveDirection::Left;
-		}
-	}
-}
-
-VECTOR Player::GetLockMoveVector() const
-{
-	// Player前方向
-	VECTOR forward = GetForward();
-	forward.y = 0.0f;
-
-	if (VSize(forward) > 0.001f)
-	{
-		forward = VNorm(forward);
-	}
-
-	// Player右方向
-	VECTOR right;
-	right.x = forward.z;
-	right.y = 0.0f;
-	right.z = -forward.x;
-
-	VECTOR moveDir = VGet(0, 0, 0);
-
-	if (CheckHitKey(KEY_INPUT_W))
-	{
-		moveDir = forward;
-	}
-	else if (CheckHitKey(KEY_INPUT_S))
-	{
-		moveDir = VScale(forward, -1.0f);
-	}
-	else if (CheckHitKey(KEY_INPUT_A))
-	{
-		moveDir = VScale(right, -1.0f);
-	}
-	else if (CheckHitKey(KEY_INPUT_D))
-	{
-		moveDir = right;
-	}
-	else
-	{
-		moveDir = VGet(0, 0, 0);
-	}
-
-	return moveDir;
-}
-
-VECTOR Player::GetFreeMoveVector(float cameraAngle)
-{
-	VECTOR dir = VGet(0, 0, 0);
-
-	float x = inputMoveX;
-	float z = inputMoveZ;
-
-	float len = sqrtf(x * x + z * z);
-
-	if (len > 0.001f)
-	{
-		x /= len;
-		z /= len;
-	}
-
-	float sinY = sinf(cameraAngle);
-	float cosY = cosf(cameraAngle);
-
-	dir.x = x * cosY + z * sinY;
-	dir.z = z * cosY - x * sinY;
-
-	return dir;
-}
-
 void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies)
 {
+	//　=====　入力取得　=====
 	inputMoveX = 0.0f;
 	inputMoveZ = 0.0f;
 
-	//　=====　入力　=====	
 	if (CheckHitKey(KEY_INPUT_W)) inputMoveZ += 1.0f;
 	if (CheckHitKey(KEY_INPUT_S)) inputMoveZ -= 1.0f;
 	if (CheckHitKey(KEY_INPUT_D)) inputMoveX += 1.0f;
 	if (CheckHitKey(KEY_INPUT_A)) inputMoveX -= 1.0f;
 
 	//　=====　移動判定　=====
-	bool isMove = (inputMoveX != 0.0f || inputMoveZ != 0.0f);
+	bool isMove =
+		fabsf(inputMoveX) > 0.01f ||
+		fabsf(inputMoveZ) > 0.01f;
 
 	// ===== ロックオン =====
 	bool qNow = CheckHitKey(KEY_INPUT_Q);
 
 	if (qNow && !oldQ)
 	{
-		if (!isLockOn)
-		{
-			LockOn(enemies);
-		}
-		else
+		if (isLockOn)
 		{
 			isLockOn = false;
 			lockOnTarget = nullptr;
+
+			currentDirection = MoveDirection::None;
 
 			if (camera)
 			{
 				camera->ClearLockTarget();
 			}
 		}
+		else
+		{
+			LockOn(enemies);
+		}
 	}
 
 	oldQ = qNow;
 
+	// Enemy基準更新
+	UpdateEnemyBasis();
+
+	// 移動方向更新
+	UpdateMoveVector(cameraAngle);
+
+	// ===== ロックオンターゲット切り替え =====
 	// マウス移動量取得
 	int mouseX, mouseY;
 	GetMousePoint(&mouseX, &mouseY);
@@ -1412,7 +1870,7 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	}
 
 	// ===== Shift押下状態取得 =====
-	bool shiftNow = CheckHitKey(KEY_INPUT_LSHIFT) != 0;
+	bool shiftNow = CheckHitKey(KEY_INPUT_LSHIFT);
 
 	// 押した瞬間
 	if (shiftNow && !shiftPressed)
@@ -1432,7 +1890,7 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 			isDash = true;
 
 			dashDirection = GetLockMoveDirection();
-			dashMoveDir = GetLockMoveVector();
+			dashMoveDir = moveVector;
 		}
 	}
 
@@ -1522,483 +1980,45 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	}
 
 	// ==== 移動 ====
-	if (!(currentState == AnimState::JumpStart && dashJump) && !(currentState == AnimState::JumpRise && dashJump))
+	velocity.x = 0.0f;
+	velocity.z = 0.0f;
+
+	if (!isDodging &&
+		currentState != AnimState::Attack &&
+		currentState != AnimState::JumpStart &&
+		currentState != AnimState::JumpEnd)
 	{
-		velocity.x = 0.0f;
-		velocity.z = 0.0f;
-	}
-
-	if (currentState != AnimState::Attack && currentState != AnimState::JumpStart && currentState != AnimState::JumpEnd && isMove)
-	{
-		//　正規化
-		float len = sqrtf(inputMoveX * inputMoveX + inputMoveZ * inputMoveZ);
-
-		if (len > 0.001f)
-		{
-			inputMoveX /= len;
-			inputMoveZ /= len;
-		}
-
-		//　=====　カメラ基準変換　=====
-		float sinY = sinf(cameraAngle);
-		float cosY = cosf(cameraAngle);
-
-		VECTOR dir;
-
-		dir.x = inputMoveX * cosY + inputMoveZ * sinY;
-		dir.z = inputMoveZ * cosY - inputMoveX * sinY;
-
-		velocity.x = dir.x * speed;
-		velocity.z = dir.z * speed;
+		velocity.x = moveVector.x * speed;
+		velocity.z = moveVector.z * speed;
 	}
 
 	//　=====　回転　=====
-	if (isLockOn && lockOnTarget != nullptr)
+	if (currentState != AnimState::Attack &&
+		currentState != AnimState::JumpStart &&
+		currentState != AnimState::JumpEnd)
 	{
-		bool backDash =
-			isDash && GetLockMoveDirection() == MoveDirection::Back;
-
-		if (backDash)
-		{
-			VECTOR moveDir = GetLockMoveVector();
-
-			if (VSize(moveDir) > 0.001f)
-			{
-				float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
-
-				float diff = targetAngle - characterAngle;
-
-				while (diff > DX_PI)diff -= DX_TWO_PI;
-				while (diff < -DX_PI)diff += DX_TWO_PI;
-
-				characterAngle += diff * 12.0f * dt;
-			}
-		}
-		else
-		{
-			// Enemy方向を向く
-			VECTOR dir = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
-
-			dir.y = 0.0f;
-
-			if (VSize(dir) > 0.001f)
-			{
-				dir = VNorm(dir);
-
-				float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-
-				float diff = targetAngle - characterAngle;
-
-				while (diff > DX_PI)diff -= DX_TWO_PI;
-				while (diff < -DX_PI)diff += DX_TWO_PI;
-
-				characterAngle += diff * 10.0f * dt;
-			}
-		}
-
-	}
-	else if (isMove)
-	{
-		// 通常は移動方向を向く
-		float len = sqrtf(inputMoveX * inputMoveX + inputMoveZ * inputMoveZ);
-
-		if (len > 0.001f)
-		{
-			inputMoveX /= len;
-			inputMoveZ /= len;
-		}
-
-		float sinY = sinf(cameraAngle);
-		float cosY = cosf(cameraAngle);
-
-		VECTOR dir;
-
-		dir.x = inputMoveX * cosY + inputMoveZ * sinY;
-		dir.z = inputMoveZ * cosY - inputMoveX * sinY;
-
-		float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-
-		float diff = targetAngle - characterAngle;
-
-		while (diff > DX_PI)diff -= DX_TWO_PI;
-		while (diff < -DX_PI)diff += DX_TWO_PI;
-
-		characterAngle += diff * 10.0f * dt;
+		UpdateRotation(dt);
 	}
 }
 
 void Player::UpdateState()
 {
-	// ===== 死亡 =====
-	if (currentState == AnimState::Dead)
-	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+	if (UpdateDead()) return;
 
-		// アニメ終了
-		if (animTime >= totalTime)
-		{
-			animTime = totalTime;
+	if (UpdateDodge()) return;
 
-			isDead = true;
-		}
+	if (UpdateJump()) return;
 
-		return;
-	}
+	if (UpdateAttack()) return;
 
-	// ===== 回避中 =====
-	if (isDodging)
-	{
-		return;
-	}
+	if (UpdateHit()) return;
 
-	//　=====　JumpStart → JumpRise　=====
-	if (currentState == AnimState::JumpStart)
-	{
-		// 通常ジャンプのみ待機
-		if (!dashJump)
-		{
-			if (jumpRequest && animTime >= jumpStartFrame)
-			{
-				velocity.y = jumpPower;
-
-				isGround = false;
-
-				jumpRequest = false;
-
-				currentState = AnimState::JumpRise;
-
-				// 上昇アニメ開始
-				ChangeAnimation(jumpRiseAnim, false);
-			}
-		}
-		else
-		{
-			float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-			if (animTime >= totalTime)
-			{
-				currentState = AnimState::JumpRise;
-
-				ChangeAnimation(jumpRiseAnim, false);
-			}
-		}
-
-		return;
-	}
-
-	//　=====　JumpRise → JumpFall　=====
-	if (currentState == AnimState::JumpRise)
-	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		// 落下開始
-		if (velocity.y <= 0.0f)
-		{
-			currentState = AnimState::JumpFall;
-
-			ChangeAnimation(jumpFallAnim, false);
-
-			return;
-		}
-
-		// 最終フレームで停止
-		if (animTime >= totalTime)
-		{
-			animTime = totalTime;
-		}
-
-		return;
-	}
-
-	// ===== JumpFall =====
-	if (currentState == AnimState::JumpFall)
-	{
-		// 着地
-		if (!prevGround && isGround)
-		{
-			dashJump = false;
-			currentState = AnimState::JumpEnd;
-
-			ChangeAnimation(jumpEndAnim, false);
-
-			return;
-		}
-
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		// 最終フレームで停止
-		if (animTime >= totalTime)
-		{
-			animTime = totalTime;
-		}
-
-		return;
-	}
-
-	//　=====　Attack中　=====
-	if (currentState == AnimState::Attack)
-	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		// 攻撃判定ON区間
-		if (animTime >= currentWeaponData->attackStartFrame[comboStep] && 
-			animTime <= currentWeaponData->attackEndFrame[comboStep])
-		{
-			attackActive = true;
-		}
-		else
-		{
-			attackActive = false;
-		}
-
-		// ===== 次段コンボ =====
-		// キャンセル可能になったら
-		if (comboNext &&
-			comboStep + 1 < currentWeaponData->comboCount &&
-			animTime >= currentWeaponData->comboCancelFrame[comboStep])
-		{
-			comboStep++;
-			comboNext = false;
-
-			attackHit = false;
-
-			ChangeAnimation(currentWeaponData->attackAnim[comboStep], false);
-
-			return;
-		}
-
-		// ===== コンボ終了 =====
-		if (animTime >= totalTime)
-		{
-			comboStep = 0;
-			comboNext = false;
-
-			attackHit = false;
-			attackActive = false;
-
-			if (fabsf(velocity.x) > 0.1f ||
-				fabsf(velocity.z) > 0.1f)
-			{
-				currentState = AnimState::Walk;
-				ChangeAnimation(walk_fAnim, true);
-			}
-			else
-			{
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-			}
-		}
-
-		return;
-	}
-
-	// ===== 回避中 =====
-	if (currentState == AnimState::Dodge)
-	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		if (animTime >= totalTime)
-		{
-			isDodging = false;
-
-			SetAnimSpeed(1.0f);
-
-			currentState = AnimState::Idle;
-
-			ChangeAnimation(idleAnim, true);
-		}
-
-		return;
-	}
-
-	// ===== ロックオン移動 =====
 	if (isLockOn)
 	{
-		MoveDirection dir = GetLockMoveDirection();
-
-		// 毎フレーム方向更新
-		if (dir != currentDirection)
-		{
-			currentDirection = dir;
-
-			if (isDash)
-			{
-				switch (dir)
-				{
-				case MoveDirection::Front:
-					ChangeAnimation(dash_f01Anim, true);
-					break;
-
-				case MoveDirection::Back:
-					ChangeAnimation(dash_f01Anim, true);
-					break;
-
-				case MoveDirection::Left:
-					ChangeAnimation(dash_lAnim, true);
-					break;
-
-				case MoveDirection::Right:
-					ChangeAnimation(dash_rAnim, true);
-					break;
-
-				case MoveDirection::None:
-					ChangeAnimation(idleAnim, true);
-					break;
-				}
-			}
-			else
-			{
-				switch (dir)
-				{
-				case MoveDirection::Front:
-					ChangeAnimation(walk_fAnim, true);
-					break;
-
-				case MoveDirection::Back:
-					ChangeAnimation(walk_bAnim, true);
-					break;
-
-				case MoveDirection::Left:
-					ChangeAnimation(walk_lAnim, true);
-					break;
-
-				case MoveDirection::Right:
-					ChangeAnimation(walk_rAnim, true);
-					break;
-
-				case MoveDirection::None:
-					ChangeAnimation(idleAnim, true);
-					break;
-				}
-			}
-		}
-
-		return;
+		UpdateLockOnAnimation();
 	}
-
-	// ===== ノックバック中 =====
-	if (currentState == AnimState::Hit)
+	else
 	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		// アニメ終了
-		if (animTime >= totalTime)
-		{
-			currentState = AnimState::Idle;
-			ChangeAnimation(idleAnim, true);
-		}
-
-		return;
-	}
-
-	//　=====　JumpEnd終了　=====
-	if (currentState == AnimState::JumpEnd)
-	{
-		// アニメ終了判定
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		if (animTime >= totalTime)
-		{
-			if (fabsf(velocity.x) > 0.1f ||
-				fabsf(velocity.z) > 0.1f)
-			{
-				if (isDash)
-				{
-					currentState = AnimState::Dash;
-
-					// ===== 武器ごとのダッシュ =====
-					ChangeAnimation(currentWeaponData->dashAnim, true);
-				}
-				else
-				{
-					currentState = AnimState::Walk;
-					ChangeAnimation(walk_fAnim, true);
-				}
-			}
-			else
-			{
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-			}
-		}
-
-		return;
-	}
-
-	//　=====　通常状態　=====
-	AnimState nextState = AnimState::Idle;
-
-	if (fabsf(velocity.x) > 0.1f ||
-		fabsf(velocity.z) > 0.1f)
-	{
-		if (isDash)
-		{
-			nextState = AnimState::Dash;
-		}
-		else
-		{
-			nextState = AnimState::Walk;
-		}
-	}
-
-	if (velocity.y < 0.0f)
-	{
-		nextState = AnimState::JumpFall;
-	}
-
-	if (nextState != currentState)
-	{
-		currentState = nextState;
-
-		switch (currentState)
-		{
-		case AnimState::Idle:
-			ChangeAnimation(idleAnim, true);
-			break;
-
-		case AnimState::Walk:
-			if (isLockOn)
-			{
-				MoveDirection dir = GetLockMoveDirection();
-
-				ChangeAnimation(currentWeaponData->lockWalkAnim[(int)dir], true);
-			}
-			else
-			{
-				ChangeAnimation(walk_fAnim, true);
-			}
-			break;
-
-		case AnimState::Dash:
-			// ===== 武器ごとのダッシュ =====
-			if (isLockOn)
-			{
-				MoveDirection dir = GetLockMoveDirection();
-
-				switch (dir)
-				{
-				case MoveDirection::Front:
-				case MoveDirection::Back:
-					ChangeAnimation(currentWeaponData->lockDashFrontAnim, true);
-					break;
-
-				case MoveDirection::Right:
-					ChangeAnimation(currentWeaponData->lockDashRightAnim, true);
-					break;
-
-				case MoveDirection::Left:
-					ChangeAnimation(currentWeaponData->lockDashLeftAnim, true);
-				}
-			}
-			else
-			{
-				ChangeAnimation(currentWeaponData->dashAnim, true);
-			}
-			break;
-
-		case AnimState::JumpFall:
-			ChangeAnimation(jumpFallAnim, false);
-			break;
-		}
+		UpdateFreeAnimation();
 	}
 }
