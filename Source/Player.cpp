@@ -54,7 +54,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	GetMousePoint(&prevMouseX, &prevMouseY);
 
 	// ===== モデル読み込み =====
-	CharacterBase::Init("Assets/mv1model/Player2.mv1");
+	CharacterBase::Init("Assets/mv1model/Player.mv1");
 
 	// ===== 武器モデル読み込み =====
 	weapon1.Init("Assets/mv1model/Blade.mv1");
@@ -69,27 +69,28 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	dash_f01Anim = 5;
 	dash_f02Anim = 6;
-	dash_rAnim = 7;
-	dash_lAnim = 8;
+	dash_bAnim = 7;
+	dash_rAnim = 8;
+	dash_lAnim = 9;
 
-	jumpStartAnim = 9;
-	dashJumpStartAnim = 10;
-	jumpRiseAnim = 11;
-	jumpFallAnim = 12;
-	jumpEndAnim = 13;
-	handAttackAnim = 14; 
-	swordAttack01Anim = 15; 
-	swordAttack02Anim = 16; 
-	swordAttack03Anim = 17; 
-	swordAttack04Anim = 18;
-	gunAttackAnim = 19; 
-	hitAnim = 20;
+	jumpStartAnim = 10;
+	dashJumpStartAnim = 11;
+	jumpRiseAnim = 12;
+	jumpFallAnim = 13;
+	jumpEndAnim = 14;
+	handAttackAnim = 15; 
+	swordAttack01Anim = 16; 
+	swordAttack02Anim = 17; 
+	swordAttack03Anim = 18; 
+	swordAttack04Anim = 19;
+	gunAttackAnim = 20; 
+	hitAnim = 21;
 
-	dodge_fAnim = 21;
-	dodge_b01Anim = 22;
-	dodge_b02Anim = 23;
+	dodge_fAnim = 22;
+	dodge_b01Anim = 23;
+	dodge_b02Anim = 24;
 
-	deadAnim = 24;
+	deadAnim = 25;
 
 	// ===== 武器データ設定 =====
 	// 素手
@@ -99,6 +100,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	unarmedData.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
 
 	unarmedData.lockDashFrontAnim = dash_f01Anim;
+	unarmedData.lockDashBackAnim = dash_bAnim;
 	unarmedData.lockDashRightAnim = dash_rAnim;
 	unarmedData.lockDashLeftAnim = dash_lAnim;
 
@@ -147,6 +149,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	weapon1Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
 
 	weapon1Data.lockDashFrontAnim = dash_f02Anim;
+	weapon1Data.lockDashBackAnim = dash_bAnim;
 	weapon1Data.lockDashRightAnim = dash_rAnim;
 	weapon1Data.lockDashLeftAnim = dash_lAnim;
 
@@ -211,6 +214,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	weapon2Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
 
 	weapon2Data.lockDashFrontAnim = dash_f01Anim;
+	weapon2Data.lockDashBackAnim = dash_bAnim;
 	weapon2Data.lockDashRightAnim = dash_rAnim;
 	weapon2Data.lockDashLeftAnim = dash_lAnim;
 
@@ -1275,7 +1279,7 @@ MoveDirection Player::GetLockMoveDirection() const
 
 void Player::UpdateRotation(float dt)
 {
-	if (isLockOn)
+	if (isLockOn && lockOnTarget)
 	{
 		UpdateLockOnMove(dt);
 	}
@@ -1301,24 +1305,6 @@ void Player::UpdateLockOnMove(float dt)
 {
 	if (lockOnTarget == nullptr)
 		return;
-
-	// ===== Sダッシュのみ移動方向を向く =====
-	if (isDash && dashDirection == MoveDirection::Back)
-	{
-		if (VSize(dashMoveDir) > 0.001f)
-		{
-			float target = atan2f(dashMoveDir.x, dashMoveDir.z) + DX_PI;
-
-			float diff = target - characterAngle;
-
-			while (diff > DX_PI)diff -= DX_TWO_PI;
-			while (diff < -DX_PI)diff += DX_TWO_PI;
-
-			characterAngle += diff * 12.0f * dt;
-		}
-
-		return;
-	}
 
 	// ===== Enemy方向を向く =====
 	VECTOR dir = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
@@ -1359,18 +1345,26 @@ void Player::UpdateLockOnAnimation()
 {
 	MoveDirection dir = GetLockMoveDirection();
 
-	if (dir == currentDirection)
+	bool needUpdate =
+		(dir != currentDirection) ||
+		(prevDash != isDash);
+
+	if (!needUpdate)
 		return;
 
 	currentDirection = dir;
+	prevDash = isDash;
 
 	if (isDash)
 	{
 		switch (dir)
 		{
 		case MoveDirection::Front:
-		case MoveDirection::Back:
 			ChangeAnimation(currentWeaponData->lockDashFrontAnim, true);
+			break;
+
+		case MoveDirection::Back:
+			ChangeAnimation(currentWeaponData->lockDashBackAnim, true);
 			break;
 
 		case MoveDirection::Left:
@@ -1474,9 +1468,19 @@ bool Player::UpdateDodge()
 
 		SetAnimSpeed(1.0f);
 
-		currentState = AnimState::Idle;
+		bool isMove =
+			fabsf(moveVector.x) > 0.1f ||
+			fabsf(moveVector.z) > 0.1f;
 
-		ChangeAnimation(idleAnim, true);
+		if (isMove)
+		{
+			currentState = isDash ?
+				AnimState::Dash : AnimState::Walk;
+		}
+		else
+		{
+			currentState = AnimState::Idle;
+		}
 	}
 
 	return true;
@@ -1888,9 +1892,6 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 		if (shiftHoldTimer >= dashHoldTime && !isDash)
 		{
 			isDash = true;
-
-			dashDirection = GetLockMoveDirection();
-			dashMoveDir = moveVector;
 		}
 	}
 

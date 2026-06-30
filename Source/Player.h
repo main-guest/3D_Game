@@ -130,6 +130,8 @@ private:
 	// ===== 状態 =====
 	bool isDash = false;
 
+	bool prevDash = false;
+
 	bool prevGround = true;
 
 	bool jumpRequest = false;
@@ -138,8 +140,6 @@ private:
 
 	bool attackActive = false;
 	bool attackHit = false;
-
-	//bool isHit = false;
 
 	bool isDead = false;
 	bool isDying = false; 
@@ -156,7 +156,6 @@ private:
 	// ===== 攻撃コンボ =====
 	int comboStep = 0;          // 現在のコンボ段数
 	bool comboNext = false;     // 次段予約
-	//float comboTimer = 0.0f;    // 現在の攻撃時間
 
 	// ===== ジャンプ開始フレーム =====
 	const float jumpStartFrame = 54.0f;
@@ -177,8 +176,6 @@ private:
 
 	float dodgeStartFrame = 0.0f;
 	float dodgeEndFrame = 47.0f;
-
-	//VECTOR dodgeDir = VGet(0, 0, 0);
 
 	// 無敵
 	bool isInvincible = false;
@@ -212,17 +209,12 @@ private:
 	// ===== ロックオン =====
 	// 方向
 	MoveDirection currentDirection = MoveDirection::None;
-	MoveDirection dashDirection = MoveDirection::None;
 	MoveDirection dodgeDirection = MoveDirection::None;
 
 	Enemy* lockOnTarget = nullptr;
 	bool isLockOn = false;
 
 	int oldQ = 0;
-
-	// ダッシュ開始時保存
-	bool backDashRotate = false;
-	VECTOR dashMoveDir = VGet(0, 0, 0);
 
 	// 回避開始時保存
 	VECTOR dodgeMoveDir = VGet(0, 0, 0);

@@ -113,6 +113,7 @@ protected:
 
 	int dash_f01Anim;
 	int dash_f02Anim;
+	int dash_bAnim;
 	int dash_rAnim;
 	int dash_lAnim;
 

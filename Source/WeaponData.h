@@ -23,6 +23,7 @@ struct WeaponData
 
 	// ===== ロックオンダッシュ =====
 	int lockDashFrontAnim;
+	int lockDashBackAnim;
 	int lockDashRightAnim;
 	int lockDashLeftAnim;
 
