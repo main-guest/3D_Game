@@ -1,4 +1,5 @@
 #include <cmath>
+
 #include "CharacterBase.h"
 
 CharacterBase::CharacterBase()
@@ -28,7 +29,6 @@ void CharacterBase::Init(const TCHAR* modelPath)
 
 void CharacterBase::ChangeAnimation(int animIndex, bool loop)
 {
-
 	if (animIndex == currentAnimIndex &&
 		currentState != AnimState::Hit)
 		return;
@@ -48,15 +48,6 @@ void CharacterBase::ChangeAnimation(int animIndex, bool loop)
 	}
 
 	bool useBlend = true;
-
-	// ===== ブレンドしないアニメ =====
-	/*switch (currentState)
-	{
-	case AnimState::JumpEnd:
-		useBlend = false;
-
-		break;
-	}*/
 
 	// ===== 即切り替え =====
 	if (!useBlend)

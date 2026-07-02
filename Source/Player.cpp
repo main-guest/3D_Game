@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <limits>
 #include <cfloat>
+
 #include "Player.h"
 #include "PhysicsManager.h"
 #include "CollisionWorld.h"
@@ -753,11 +754,6 @@ void Player::LockOn(std::vector<std::unique_ptr<Enemy>>& enemies)
 	}
 
 	isLockOn = (lockOnTarget != nullptr);
-
-	if (camera)
-	{
-		camera->SetLockTarget(lockOnTarget);
-	}
 }
 
 void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool right)
@@ -832,11 +828,6 @@ void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool
 	if (best)
 	{
 		lockOnTarget = best;
-
-		if (camera)
-		{
-			camera->SetLockTarget(lockOnTarget);
-		}
 	}
 }
 
@@ -1035,12 +1026,33 @@ void Player::DebugDraw()
 		animTime <= currentWeaponData->comboAcceptEndFrame[comboStep]);
 
 	DrawFormatString(
-		900,
+		1000,
 		80,
 		GetColor(255, 255, 255),
 		"DodgeDir X = % .2f Z = % .2f",
 		dodgeMoveDir.x,
 		dodgeMoveDir.z);
+
+	DrawFormatString(
+		1000, 100,
+		GetColor(255, 255, 255),
+		"State=%d MoveAnim=%d",
+		(int)currentState,
+		(int)currentMoveAnim);
+
+	DrawFormatString(
+		1000,
+		120,
+		GetColor(255, 255, 255),
+		"isLockOn : %p",
+		isLockOn);
+
+	DrawFormatString(
+		1000,
+		140,
+		GetColor(255, 255, 255),
+		"lockOnTarget : %p",
+		lockOnTarget);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -1291,6 +1303,8 @@ void Player::UpdateRotation(float dt)
 
 void Player::UpdateMoveVector(float cameraAngle)
 {
+	moveVector = VGet(0, 0, 0);
+
 	if (isLockOn)
 	{
 		moveVector = GetLockMoveVector();
@@ -1343,99 +1357,78 @@ void Player::UpdateFreeMove(float dt)
 
 void Player::UpdateLockOnAnimation()
 {
-	MoveDirection dir = GetLockMoveDirection();
+	MoveAnimState next = GetNextMoveAnim();
 
-	bool needUpdate =
-		(dir != currentDirection) ||
-		(prevDash != isDash);
-
-	if (!needUpdate)
+	if (next == currentMoveAnim)
 		return;
 
-	currentDirection = dir;
-	prevDash = isDash;
+	currentMoveAnim = next;
 
-	if (isDash)
+	switch (next)
 	{
-		switch (dir)
-		{
-		case MoveDirection::Front:
-			ChangeAnimation(currentWeaponData->lockDashFrontAnim, true);
-			break;
+	case MoveAnimState::Idle:
+		ChangeAnimation(idleAnim, true);
+		break;
 
-		case MoveDirection::Back:
-			ChangeAnimation(currentWeaponData->lockDashBackAnim, true);
-			break;
+	case MoveAnimState::WalkFront:
+		ChangeAnimation(walk_fAnim, true);
+		break;
 
-		case MoveDirection::Left:
-			ChangeAnimation(currentWeaponData->lockDashLeftAnim, true);
-			break;
+	case MoveAnimState::WalkBack:
+		ChangeAnimation(walk_bAnim, true);
+		break;
 
-		case MoveDirection::Right:
-			ChangeAnimation(currentWeaponData->lockDashRightAnim, true);
-			break;
+	case MoveAnimState::WalkLeft:
+		ChangeAnimation(walk_lAnim, true);
+		break;
 
-		case MoveDirection::None:
-			ChangeAnimation(idleAnim, true);
-			break;
-		}
-	}
-	else
-	{
-		switch (dir)
-		{
-		case MoveDirection::Front:
-			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Front], true);
-			break;
+	case MoveAnimState::WalkRight:
+		ChangeAnimation(walk_rAnim, true);
+		break;
 
-		case MoveDirection::Back:
-			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Back], true);
-			break;
+	case MoveAnimState::DashFront:
+		ChangeAnimation(currentWeaponData->lockDashFrontAnim, true);
+		break;
 
-		case MoveDirection::Left:
-			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Left], true);
-			break;
+	case MoveAnimState::DashBack:
+		ChangeAnimation(currentWeaponData->lockDashBackAnim, true);
+		break;
 
-		case MoveDirection::Right:
-			ChangeAnimation(currentWeaponData->lockWalkAnim[(int)MoveDirection::Right], true);
-			break;
+	case MoveAnimState::DashLeft:
+		ChangeAnimation(currentWeaponData->lockDashLeftAnim, true);
+		break;
 
-		case MoveDirection::None:
-			ChangeAnimation(idleAnim, true);
-			break;
-		}
+	case MoveAnimState::DashRight:
+		ChangeAnimation(currentWeaponData->lockDashRightAnim, true);
+		break;
 	}
 }
 
 void Player::UpdateFreeAnimation()
 {
-	if (fabsf(velocity.x) < 0.1f &&
-		fabsf(velocity.z) < 0.1f)
-	{
-		if (currentState != AnimState::Idle)
-		{
-			currentState = AnimState::Idle;
-			ChangeAnimation(idleAnim, true);
-		}
+	MoveAnimState next = GetNextMoveAnim();
 
+	if (next == currentMoveAnim)
 		return;
-	}
 
-	if (isDash)
+	currentMoveAnim = next;
+
+	switch (next)
 	{
-		if (currentState != AnimState::Dash)
-		{
-			currentState = AnimState::Dash;
-			ChangeAnimation(currentWeaponData->dashAnim, true);
-		}
-	}
-	else
-	{
-		if (currentState != AnimState::Walk)
-		{
-			currentState = AnimState::Walk;
-			ChangeAnimation(walk_fAnim, true);
-		}
+	case MoveAnimState::Idle:
+		ChangeAnimation(idleAnim, true);
+		break;
+
+	case MoveAnimState::WalkFront:
+		ChangeAnimation(walk_fAnim, true);
+		break;
+
+	case MoveAnimState::DashFront:
+		ChangeAnimation(currentWeaponData->dashAnim, true);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -1467,6 +1460,8 @@ bool Player::UpdateDodge()
 		isDodging = false;
 
 		SetAnimSpeed(1.0f);
+
+		currentMoveAnim = MoveAnimState::Idle;
 
 		bool isMove =
 			fabsf(moveVector.x) > 0.1f ||
@@ -1693,6 +1688,8 @@ bool Player::UpdateAttack()
 
 		attackActive = false;
 
+		currentMoveAnim = MoveAnimState::Idle;
+
 		currentState =
 			(fabsf(velocity.x) > 0.1f ||
 				fabsf(velocity.z) > 0.1f)
@@ -1711,6 +1708,8 @@ bool Player::UpdateHit()
 
 	if (animTime >= totalTime)
 	{
+		currentMoveAnim = MoveAnimState::Idle;
+
 		currentState = AnimState::Idle;
 
 		ChangeAnimation(idleAnim, true);
@@ -1817,11 +1816,6 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 			lockOnTarget = nullptr;
 
 			currentDirection = MoveDirection::None;
-
-			if (camera)
-			{
-				camera->ClearLockTarget();
-			}
 		}
 		else
 		{
@@ -2014,6 +2008,30 @@ void Player::UpdateState()
 
 	if (UpdateHit()) return;
 
+	// ===== 通常状態更新 =====
+	if (!isDodging &&
+		currentState != AnimState::Attack &&
+		currentState != AnimState::JumpStart &&
+		currentState != AnimState::JumpRise &&
+		currentState != AnimState::JumpFall &&
+		currentState != AnimState::JumpEnd &&
+		currentState != AnimState::Dead)
+	{
+		bool moving =
+			fabsf(moveVector.x) > 0.01f ||
+			fabsf(moveVector.z) > 0.01f;
+
+		if (moving)
+		{
+			currentState = isDash ?
+				AnimState::Dash : AnimState::Walk;
+		}
+		else
+		{
+			currentState = AnimState::Idle;
+		}
+	}
+
 	if (isLockOn)
 	{
 		UpdateLockOnAnimation();
@@ -2022,4 +2040,45 @@ void Player::UpdateState()
 	{
 		UpdateFreeAnimation();
 	}
+}
+
+MoveAnimState Player::GetNextMoveAnim() const
+{
+	if (currentState != AnimState::Walk &&
+		currentState != AnimState::Dash)
+	{
+		return MoveAnimState::Idle;
+	}
+
+	if (isLockOn)
+	{
+		MoveDirection dir = GetLockMoveDirection();
+
+		if (isDash)
+		{
+			switch (dir)
+			{
+			case MoveDirection::Front: return  MoveAnimState::DashFront;
+			case MoveDirection::Back: return MoveAnimState::DashBack;
+			case MoveDirection::Left: return MoveAnimState::DashLeft;
+			case MoveDirection::Right: return MoveAnimState::DashRight;
+			default: return MoveAnimState::Idle;
+			}
+		}
+		else
+		{
+			switch (dir)
+			{
+			case MoveDirection::Front: return MoveAnimState::WalkFront;
+			case MoveDirection::Back: return MoveAnimState::WalkBack;
+			case MoveDirection::Left: return MoveAnimState::WalkLeft;
+			case MoveDirection::Right: return MoveAnimState::WalkRight;
+			default: return MoveAnimState::Idle;
+			}
+		}
+	}
+
+	return isDash ?
+		MoveAnimState::DashFront : MoveAnimState::WalkFront;
+
 }

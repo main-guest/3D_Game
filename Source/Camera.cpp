@@ -1,4 +1,5 @@
 #include <cmath>
+
 #include "Camera.h"
 #include "Enemy.h"
 
@@ -171,6 +172,16 @@ void Camera::Update(float dt, VECTOR playerPos)
 
 		SetCameraPositionAndTarget_UpVecY(cameraPos, cameraTarget);
 	}
+}
+
+void Camera::DebugDraw()
+{
+	DrawFormatString(
+		1000,
+		160,
+		GetColor(255, 255, 255),
+		"Camera lockTarget : %p",
+		lockOnTarget);
 }
 
 void Camera::SetLockTarget(Enemy* enemy)

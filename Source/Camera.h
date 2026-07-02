@@ -10,6 +10,8 @@ public:
 
 	void Update(float dt, VECTOR playerPos);
 
+	void DebugDraw();
+
 	float GetYaw() const { return yaw; }
 
 	int GetMouseDeltaX() const { return mouseDeltaX; }

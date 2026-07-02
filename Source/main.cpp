@@ -57,6 +57,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --- çXêV ---
 		player.Update(deltaTime, camera.GetYaw(), stage.GetPhysics());
 		stage.Update(deltaTime, player.GetPos());
+
+		if (player.IsLockOn())
+		{
+			camera.SetLockTarget(player.GetLockOnTarget());
+		}
+		else
+		{
+			camera.ClearLockTarget();
+		}
+
 		camera.Update(deltaTime, player.GetPos());
 		fog.Update(camera.GetPosition(), player.GetPos());
 
@@ -67,6 +77,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		player.Draw();
 
 		stage.DebugDraw();
+
+		camera.DebugDraw();
 
 		player.DebugDraw();
 		player.DrawCapsuleDebug(stage.GetEnemies());

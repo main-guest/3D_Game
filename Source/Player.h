@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+
 #include "CharacterBase.h"
 #include "Weapon.h"
 #include "MoveDirection.h"
@@ -16,6 +17,21 @@ enum class EquipState
 	Unarmed,
 	Weapon1,
 	Weapon2
+};
+
+enum class MoveAnimState
+{
+	Idle,
+
+	WalkFront,
+	WalkBack,
+	WalkLeft,
+	WalkRight,
+
+	DashFront,
+	DashBack,
+	DashLeft,
+	DashRight
 };
 
 class Player : public CharacterBase
@@ -109,6 +125,8 @@ private:
 	void UpdateInput(float dt, float cameraAngle, std::vector<std::unique_ptr<Enemy>>& enemies);
 	void UpdateState();
 
+	MoveAnimState GetNextMoveAnim() const;
+
 private:
 	// ===== ステータス =====
 	int hp = 100;
@@ -143,6 +161,8 @@ private:
 
 	bool isDead = false;
 	bool isDying = false; 
+
+	MoveAnimState currentMoveAnim = MoveAnimState::Idle;
 
 	// ===== 移動速度 =====
 	float walkSpeed = 220.0f;
