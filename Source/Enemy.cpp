@@ -17,17 +17,6 @@ const TCHAR* ToString(EnemyAIState state)
 	}
 }
 
-Enemy::Enemy()
-	:jumpRequest(false)
-{
-
-}
-
-Enemy::~Enemy()
-{
-
-}
-
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== 共通初期化 =====
@@ -67,6 +56,7 @@ void Enemy::Init(VECTOR startPos)
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 {
+	targetPlayerPos = playerPos;
 
 	if (isDead)
 	{
@@ -110,206 +100,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 		return;
 	}
 
-	VECTOR dir = VGet(0, 0, 0);
-
-	dir.x = playerPos.x - pos.x;
-	dir.z = playerPos.z - pos.z;
-
-	float distance = sqrtf(dir.x * dir.x + dir.z * dir.z);
-
-	if (distance > 0.0001f)
-	{
-		dir.x /= distance;
-		dir.z /= distance;
-	}
-
-	// ==== デフォルト停止 ====
-	velocity = VGet(0, 0, 0);
-
-	// ==== AI判定 ====
-	switch (aiState)
-	{
-		case EnemyAIState::Idle:
-		{
-			velocity = VGet(0, 0, 0);
-
-			stateTimer -= dt;
-
-			if (distance <= searchRange)
-			{
-				aiState = EnemyAIState::Chase;
-				break;
-			}
-
-			if (stateTimer <= 0.0f)
-			{
-				GeneratePatrolTarget();
-
-				aiState = EnemyAIState::Patrol;
-			}
-
-			break;
-		}
-
-		case EnemyAIState::Patrol:
-		{
-			if (distance <= searchRange)
-			{
-				aiState = EnemyAIState::Chase;
-
-				break;
-			}
-
-			VECTOR moveDir = VSub(patrolTarget, pos);
-
-			float dist = sqrtf(moveDir.x * moveDir.x + moveDir.z * moveDir.z);
-
-			if (dist <= 20.0f)
-			{
-				aiState = EnemyAIState::Idle;
-
-				stateTimer = 2.0f;
-
-				break;
-			}
-			else
-			{
-				moveDir.x /= dist;
-				moveDir.z /= dist;
-
-				velocity.x = moveDir.x * speed * 0.5f;
-				velocity.z = moveDir.z * speed * 0.5f;
-
-				float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
-
-				float diff = targetAngle - characterAngle;
-
-				while (diff > DX_PI)diff -= DX_TWO_PI;
-				while (diff < -DX_PI)diff += DX_TWO_PI;
-
-				characterAngle += diff * 5.0f * dt;
-			}
-
-			break;
-		}
-			
-		case EnemyAIState::Chase:
-		{
-			if (distance > searchRange)
-			{
-				GeneratePatrolTarget();
-
-				aiState = EnemyAIState::Patrol;
-
-				break;
-			}
-
-			if (distance <= attackRange)
-			{
-				aiState = EnemyAIState::Attack;
-
-				break;
-			}
-
-			velocity.x = dir.x * speed;
-			velocity.z = dir.z * speed;
-
-			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-			float diff = targetAngle - characterAngle;
-
-			while (diff > DX_PI)diff -= DX_TWO_PI;
-			while (diff < -DX_PI)diff += DX_TWO_PI;
-
-			characterAngle += diff * 10.0f * dt;
-
-			break;
-		}
-
-		case EnemyAIState::Attack:
-		{
-			velocity.x = 0.0f;
-			velocity.z = 0.0f;
-
-			// 攻撃中も常にプレイヤー方向を向く
-			float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-
-			float diff = targetAngle - characterAngle;
-
-			while (diff > DX_PI)diff -= DX_TWO_PI;
-			while (diff < -DX_PI)diff += DX_TWO_PI;
-
-			characterAngle += diff * 10.0f * dt;
-
-			// 攻撃判定位置更新
-			VECTOR forward;
-			forward.x = -sinf(characterAngle);
-			forward.y = 0.0f;
-			forward.z = -cosf(characterAngle);
-
-			attackCenter =
-			{
-				pos.x + forward.x * attackOffset,
-				pos.y + 120.0f,
-				pos.z + forward.z * attackOffset
-			};
-
-			if (!attackStarted)
-			{
-				attackStarted = true;
-
-				currentState = AnimState::Attack;
-				ChangeAnimation(handAttackAnim, false);
-			}
-
-			float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-			if (animTime >= attackStartFrame && animTime <= attackEndFrame)
-			{
-				attackActive = true;
-			}
-			else
-			{
-				attackActive = false;
-			}
-
-			if (animTime >= totalTime)
-			{
-				ResetAttackState();
-
-				aiState = EnemyAIState::Cooldown;
-
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-			}
-
-			break;
-		}
-
-		case EnemyAIState::Cooldown:
-		{
-			velocity = VGet(0, 0, 0);
-
-			if (attackTimer <= 0.0f)
-			{
-				if (distance <= attackRange)
-				{
-					aiState = EnemyAIState::Attack;
-				}
-				else if (distance <= searchRange)
-				{
-					aiState = EnemyAIState::Chase;
-				}
-				else
-				{
-					GeneratePatrolTarget();
-
-					aiState = EnemyAIState::Patrol;
-				}
-			}
-
-			break;
-		}
-	}
+	UpdateAI(dt, playerPos);
 
 	//　=====　物理処理　=====
 	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
@@ -364,6 +155,12 @@ void Enemy::Damage(int power)
 
 	ResetAttackState();
 
+	// ===== 攻撃されたらプレイヤーを認識 =====
+	if (aiState != EnemyAIState::Attack)
+	{
+		aiState = EnemyAIState::Chase;
+	}
+
 	hp -= power;
 
 	isHit = true;
@@ -384,6 +181,39 @@ void Enemy::Damage(int power)
 	// ===== アニメーション切り替え =====
 	currentState = AnimState::Hit;
 	ChangeAnimation(hitAnim, false);
+}
+
+bool Enemy::CanSeePlayer(VECTOR playerPos) const
+{
+	VECTOR toPlayer = VSub(playerPos, pos);
+
+	toPlayer.y = 0.0f;
+
+	float distance = VSize(toPlayer);
+
+	// 距離外
+	if (distance > viewDistance)
+		return false;
+
+	toPlayer = VNorm(toPlayer);
+
+	// Enemy前方向
+	VECTOR forward;
+
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	// 内積
+	float dot =
+		forward.x * toPlayer.x +
+		forward.y * toPlayer.y +
+		forward.z * toPlayer.z;
+
+	// cos(45°)
+	float limit = cosf((viewAngle * 0.5f) * DX_PI_F / 180.0f);
+
+	return dot >= limit;
 }
 
 VECTOR Enemy::GetCenterPos() const
@@ -437,40 +267,24 @@ void Enemy::DebugDraw()
 			GetColor(255, 255, 0),
 			FALSE);
 	}
+	
+	float half = viewAngle * 0.5f * DX_PI_F / 180.0f;
 
-	VECTOR forward;
+	float left = characterAngle - half;
+	float right = characterAngle + half;
 
-	forward.x = -sinf(characterAngle);
-	forward.y = 0.0f;
-	forward.z = -cosf(characterAngle);
-
-	VECTOR endPos =
+	VECTOR leftPos =
 	{
-		pos.x + forward.x * attackRange,
+		pos.x - sinf(left) * viewDistance,
 		pos.y + 20.0f,
-		pos.z + forward.z * attackRange
+		pos.z - cosf(left) * viewDistance
 	};
 
-	DrawLine3D(
-		VAdd(pos, VGet(0, 20, 0)),
-		endPos,
-		GetColor(255, 255, 0));
-
-	float leftAngle = characterAngle - DX_PI_F / 3.0f; // -60°
-	float rightAngle = characterAngle + DX_PI_F / 3.0f; // +60°
-
-	VECTOR left =
+	VECTOR rightPos =
 	{
-		pos.x - sinf(leftAngle) * attackRange,
+		pos.x - sinf(right) * viewDistance,
 		pos.y + 20.0f,
-		pos.z - cosf(leftAngle) * attackRange
-	};
-
-	VECTOR right =
-	{
-		pos.x - sinf(rightAngle) * attackRange,
-		pos.y + 20.0f,
-		pos.z - cosf(rightAngle) * attackRange
+		pos.z - cosf(right) * viewDistance
 	};
 
 	VECTOR center =
@@ -480,8 +294,17 @@ void Enemy::DebugDraw()
 		pos.z
 	};
 
-	DrawLine3D(center, left, GetColor(255, 0, 0));
-	DrawLine3D(center, right, GetColor(255, 0, 0));
+	DrawLine3D(center, leftPos, GetColor(0, 255, 255));
+	DrawLine3D(center, rightPos, GetColor(0, 255, 255));
+
+	VECTOR front =
+	{
+		pos.x - sinf(characterAngle) * viewDistance,
+		pos.y + 20.0f,
+		pos.z - cosf(characterAngle) * viewDistance
+	};
+
+	DrawLine3D(center, front, GetColor(255, 255, 0));
 }
 
 void Enemy::GeneratePatrolTarget()
@@ -500,6 +323,206 @@ void Enemy::ResetAttackState()
 	attackActive = false;
 
 	attackTimer = attackCooldown;
+}
+
+void Enemy::UpdateAI(float dt, VECTOR playerPos)
+{
+	VECTOR dir = VSub(playerPos, pos);
+	dir.y = 0.0f;
+
+	float distance = VSize(dir);
+
+	if (distance > 0.001f)
+	{
+		dir = VNorm(dir);
+	}
+
+	velocity = VGet(0, 0, 0);
+
+	switch (aiState)
+	{
+	case EnemyAIState::Idle:
+		UpdateIdle(dt, distance);
+		break;
+
+	case EnemyAIState::Patrol:
+		UpdatePatrol(dt, distance);
+		break;
+
+	case EnemyAIState::Chase:
+		UpdateChase(dt, dir, distance);
+		break;
+
+	case EnemyAIState::Attack:
+		UpdateAttack(dt, dir);
+		break;
+
+	case EnemyAIState::Cooldown:
+		UpdateCooldown(dt, distance);
+		break;
+	}
+}
+
+void Enemy::UpdateIdle(float dt, float distance)
+{
+	velocity = VGet(0, 0, 0);
+
+	stateTimer -= dt;
+
+	if (CanSeePlayer(targetPlayerPos))
+	{
+		aiState = EnemyAIState::Chase;
+		return;
+	}
+
+	if (stateTimer <= 0.0f)
+	{
+		GeneratePatrolTarget();
+
+		aiState = EnemyAIState::Patrol;
+	}
+}
+
+void Enemy::UpdatePatrol(float dt, float distance)
+{
+	if (CanSeePlayer(targetPlayerPos))
+	{
+		aiState = EnemyAIState::Chase;
+		return;
+	}
+
+	VECTOR moveDir = VSub(patrolTarget, pos);
+	moveDir.y = 0.0f;
+
+	float dist = VSize(moveDir);
+
+	if (dist <= 20.0f)
+	{
+		aiState = EnemyAIState::Idle;
+
+		stateTimer = 2.0f;
+
+		return;
+	}
+
+	moveDir = VNorm(moveDir);
+
+	velocity = VScale(moveDir, speed * 0.5f);
+
+	float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
+
+	float diff = targetAngle - characterAngle;
+
+	while (diff > DX_PI)diff -= DX_TWO_PI;
+	while (diff < -DX_PI)diff += DX_TWO_PI;
+
+	characterAngle += diff * 5.0f * dt;
+}
+
+void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
+{
+	if (distance > viewDistance)
+	{
+		GeneratePatrolTarget();
+
+		aiState = EnemyAIState::Patrol;
+
+		return;
+	}
+
+	if (distance <= attackRange)
+	{
+		aiState = EnemyAIState::Attack;
+
+		return;
+	}
+
+	velocity = VScale(dir, speed);
+
+	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+	float diff = targetAngle - characterAngle;
+
+	while (diff > DX_PI)diff -= DX_TWO_PI;
+	while (diff < -DX_PI)diff += DX_TWO_PI;
+
+	characterAngle += diff * 10.0f * dt;
+}
+
+void Enemy::UpdateAttack(float dt, VECTOR dir)
+{
+	velocity = VGet(0, 0, 0);
+
+	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+	float diff = targetAngle - characterAngle;
+
+	while (diff > DX_PI)diff -= DX_TWO_PI;
+	while (diff < -DX_PI)diff += DX_TWO_PI;
+
+	characterAngle += diff * 10.0f * dt;
+
+	VECTOR forward;
+
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	attackCenter =
+	{
+		pos.x + forward.x * attackOffset,
+		pos.y + 120.0f,
+		pos.z + forward.z * attackOffset
+	};
+
+	if (!attackStarted)
+	{
+		attackStarted = true;
+
+		currentState = AnimState::Attack;
+
+		ChangeAnimation(handAttackAnim, false);
+	}
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	attackActive =
+		animTime >= attackStartFrame &&
+		animTime <= attackEndFrame;
+
+	if (animTime >= totalTime)
+	{
+		ResetAttackState();
+
+		aiState = EnemyAIState::Cooldown;
+
+		currentState = AnimState::Idle;
+
+		ChangeAnimation(idleAnim, true);
+	}
+}
+
+void Enemy::UpdateCooldown(float dt, float distance)
+{
+	velocity = VGet(0, 0, 0);
+
+	if (attackTimer > 0.0f)
+		return;
+
+	if (distance <= attackRange)
+	{
+		aiState = EnemyAIState::Attack;
+	}
+	else if (distance <= viewDistance)
+	{
+		aiState = EnemyAIState::Chase;
+	}
+	else
+	{
+		GeneratePatrolTarget();
+
+		aiState = EnemyAIState::Patrol;
+	}
 }
 
 void Enemy::UpdateState()
@@ -528,54 +551,28 @@ void Enemy::UpdateState()
 		// アニメ終了
 		if (animTime >= totalTime)
 		{
-			currentState = AnimState::Idle;
-			ChangeAnimation(idleAnim, true);
-		}
+			switch (aiState)
+			{
+			case EnemyAIState::Idle:
+				currentState = AnimState::Idle;
+				ChangeAnimation(idleAnim, true);
+				break;
 
-		return;
-	}
+			case EnemyAIState::Patrol:
+				currentState = AnimState::Walk;
+				ChangeAnimation(walk_fAnim, true);
+				break;
 
-	//　=====　JumpStart → JumpLoop　=====
-	if (currentState == AnimState::JumpStart)
-	{
-		if (jumpRequest && animTime >= jumpStartFrame)
-		{
-			velocity.y = jumpPower;
+			case EnemyAIState::Chase:
+				currentState = AnimState::Chase;
+				ChangeAnimation(chaseAnim, true);
+				break;
 
-			isGround = false;
-
-			jumpRequest = false;
-
-			currentState = AnimState::JumpRise;
-
-			ChangeAnimation(jumpRiseAnim, true);
-		}
-
-		return;
-	}
-
-	//　=====　着地瞬間検知　=====
-	bool landed = (!prevGround && isGround);
-
-	if (landed && currentState != AnimState::JumpEnd)
-	{
-		currentState = AnimState::JumpEnd;
-
-		ChangeAnimation(jumpEndAnim, false);
-
-		return;
-	}
-
-	//　=====　JumpEnd終了　=====
-	if (currentState == AnimState::JumpEnd)
-	{
-		// アニメ終了判定
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		if (animTime >= totalTime - 0.1f)
-		{
-			currentState = AnimState::Idle;
-			ChangeAnimation(idleAnim, true);
+			default:
+				currentState = AnimState::Idle;
+				ChangeAnimation(idleAnim, true);
+				break;
+			}
 		}
 
 		return;

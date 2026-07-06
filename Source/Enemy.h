@@ -16,9 +16,6 @@ enum class EnemyAIState
 class Enemy :public CharacterBase
 {
 public:
-	Enemy();
-	virtual ~Enemy();
-
 	void Init(VECTOR startPos);
 	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
 	void Render();
@@ -26,6 +23,8 @@ public:
 	void CheckAttackHit(Player* player);
 
 	void Damage(int power);
+
+	bool CanSeePlayer(VECTOR playerPos) const;
 
 	VECTOR GetCenterPos() const;
 
@@ -37,8 +36,15 @@ public:
 
 private:
 	void GeneratePatrolTarget();
-
 	void ResetAttackState();
+
+	void UpdateAI(float dt, VECTOR playerPos);
+
+	void UpdateIdle(float dt, float distance);
+	void UpdatePatrol(float dt, float distance);
+	void UpdateChase(float dt, VECTOR dir, float distance);
+	void UpdateAttack(float dt, VECTOR dir);
+	void UpdateCooldown(float dt, float distance);
 
 	void UpdateState();
 
@@ -54,7 +60,7 @@ private:
 	// ===== èÛë‘ =====
 	bool prevGround = true;
 
-	bool jumpRequest = false;
+	//bool jumpRequest = false;
 
 	bool attackActive = false;
 	bool attackHit = false;
@@ -81,10 +87,13 @@ private:
 
 	VECTOR patrolTarget = VGet(0, 0, 0);
 
-	float searchRange = 400.0f;
+	// ===== éãäE =====
+	float viewDistance = 500.0f;	// ä¥ímãóó£
+	float viewAngle = 90.0f;		// éãñÏäp(ìx)
+
 	float attackRange = 150.0f;
 
-	const float jumpStartFrame = 50.0f;
+	//const float jumpStartFrame = 50.0f;
 
 	float attackStartFrame = 50.0f;
 	float attackEndFrame = 100.0f;
@@ -93,4 +102,7 @@ private:
 
 	float attackTimer = 0.0f;
 	const float attackCooldown = 1.5f;
+
+	// PLAYERà íuï€ë∂
+	VECTOR targetPlayerPos;
 };

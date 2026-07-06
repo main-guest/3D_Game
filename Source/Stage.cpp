@@ -27,9 +27,9 @@ void Stage::Init(Player* p)
 	enemy1->Init(VGet(1000, 0, 1000));
 	enemies.push_back(std::move(enemy1));
 
-	auto enemy2 = std::make_unique<Enemy>();
+	/*auto enemy2 = std::make_unique<Enemy>();
 	enemy2->Init(VGet(-1000, 0, -1000));
-	enemies.push_back(std::move(enemy2));
+	enemies.push_back(std::move(enemy2));*/
 }
 
 void Stage::Update(float dt, VECTOR playerPos)
