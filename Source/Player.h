@@ -21,7 +21,7 @@ enum class EquipState
 
 enum class MoveAnimState
 {
-	None,
+	None = -1,
 
 	Idle,
 
