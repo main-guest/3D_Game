@@ -21,6 +21,8 @@ enum class EquipState
 
 enum class MoveAnimState
 {
+	None,
+
 	Idle,
 
 	WalkFront,
@@ -52,6 +54,8 @@ public:
 	void Damage(int power);
 
 	void StartDodge(float cameraAngle);
+
+	void ConsumeStamina(float cost, float recoveryDelay);
 
 	void LockOn(std::vector<std::unique_ptr<Enemy>>& enemies);
 	void SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool right);
@@ -130,6 +134,35 @@ private:
 private:
 	// ===== ステータス =====
 	int hp = 100;
+
+	// --スタミナ--
+	float stamina = 100.0f;
+	const float maxStamina = 100.0f;
+
+	// 回復速度
+	float staminaRecovery = 25.0f;
+
+	// 回復開始までの待機時間
+	float staminaRecoveryDelay = 1.0f;
+
+	// 消費してからの経過時間
+	float staminaRecoveryTimer = 0.0f;
+
+	// ダッシュ消費
+	float dashStaminaCost = 20.0f;
+
+	// 行動消費
+	float dodgeCost = 25.0f;
+	float attackCost = 15.0f;
+	float jumpCost = 10.0f;
+
+	// 行動ごとの回復待機時間
+	float dashDelay = 2.0f;
+	float dodgeDelay = 2.0f;
+	float attackDelay = 3.5f;
+	float jumpDelay = 3.0f;
+
+	bool staminaBreak = false;
 
 	// ===== 入力 =====
 	int oldMouse = 0;

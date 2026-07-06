@@ -297,6 +297,8 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		{
 			isLockOn = false;
 			lockOnTarget = nullptr;
+
+			currentDirection = MoveDirection::None;
 		}
 
 		VECTOR diff = VSub(lockOnTarget->GetCenterPos(), GetCenterPos());
@@ -307,6 +309,8 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		{
 			isLockOn = false;
 			lockOnTarget = nullptr;
+
+			currentDirection = MoveDirection::None;
 		}
 	}
 
@@ -418,6 +422,21 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 
 	//　=====　接地保存　=====
 	prevGround = isGround;
+
+	// ===== スタミナ回復処理 =====
+	// 回復タイマー更新
+	staminaRecoveryTimer += dt;
+
+	// 一定時間経過したら回復
+	if (staminaRecoveryTimer >= staminaRecoveryDelay)
+	{
+		stamina += staminaRecovery * dt;
+
+		if (stamina > maxStamina)
+		{
+			stamina = maxStamina;
+		}
+	}
 }
 
 void Player::Draw()
@@ -633,6 +652,9 @@ void Player::Damage(int power)
 
 void Player::StartDodge(float cameraAngle)
 {
+	if (stamina < dodgeCost)
+		return;
+
 	if (isDodging)
 		return;
 
@@ -642,6 +664,8 @@ void Player::StartDodge(float cameraAngle)
 	isDash = false;
 
 	isDodging = true;
+
+	ConsumeStamina(dodgeCost, dodgeDelay);
 
 	currentState = AnimState::Dodge;
 
@@ -723,6 +747,22 @@ void Player::StartDodge(float cameraAngle)
 	}
 
 	SetAnimSpeed(1.5f);
+}
+
+void Player::ConsumeStamina(float cost, float recoveryDelay)
+{
+	stamina -= cost;
+
+	if (stamina <= 0.0f)
+	{
+		stamina = 0.0f;
+		isDash = false;
+
+		staminaBreak = true;
+	}
+
+	staminaRecoveryTimer = 0.0f;
+	staminaRecoveryDelay = recoveryDelay;
 }
 
 void Player::LockOn(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -1053,6 +1093,21 @@ void Player::DebugDraw()
 		GetColor(255, 255, 255),
 		"lockOnTarget : %p",
 		lockOnTarget);
+
+	// ===== ステータス =====
+	DrawFormatString(
+		1000,
+		400,
+		GetColor(0, 255, 0),
+		"HP : %d",
+		hp);
+
+	DrawFormatString(
+		1000,
+		420,
+		GetColor(0, 255, 0),
+		"ST : %.2f",
+		stamina);
 }
 
 void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
@@ -1461,8 +1516,6 @@ bool Player::UpdateDodge()
 
 		SetAnimSpeed(1.0f);
 
-		currentMoveAnim = MoveAnimState::Idle;
-
 		bool isMove =
 			fabsf(moveVector.x) > 0.1f ||
 			fabsf(moveVector.z) > 0.1f;
@@ -1476,6 +1529,8 @@ bool Player::UpdateDodge()
 		{
 			currentState = AnimState::Idle;
 		}
+
+		currentMoveAnim = MoveAnimState::None;
 	}
 
 	return true;
@@ -1618,6 +1673,8 @@ bool Player::UpdateJump()
 		if (animTime >= totalTime)
 		{
 			animTime = totalTime;
+
+			currentMoveAnim=MoveAnimState::None;
 		}
 
 		return true;
@@ -1666,6 +1723,15 @@ bool Player::UpdateAttack()
 		comboStep + 1 < currentWeaponData->comboCount &&
 		animTime >= currentWeaponData->comboCancelFrame[comboStep])
 	{
+		// スタミナ不足ならコンボ終了
+		if (stamina < attackCost)
+		{
+			comboNext = false;
+			return true;
+		}
+
+		ConsumeStamina(attackCost, attackDelay);
+
 		comboStep++;
 
 		comboNext = false;
@@ -1681,19 +1747,36 @@ bool Player::UpdateAttack()
 	if (animTime >= totalTime)
 	{
 		comboStep = 0;
-
 		comboNext = false;
 
 		attackHit = false;
-
 		attackActive = false;
 
-		currentMoveAnim = MoveAnimState::Idle;
+		bool moving =
+			fabsf(moveVector.x) > 0.01f ||
+			fabsf(moveVector.z) > 0.01f;
 
-		currentState =
-			(fabsf(velocity.x) > 0.1f ||
-				fabsf(velocity.z) > 0.1f)
-			? AnimState::Walk : AnimState::Idle;
+		if (moving)
+		{
+			currentState = isDash ?
+				AnimState::Dash : AnimState::Walk;
+
+			if (isLockOn)
+			{
+				UpdateLockOnAnimation();
+			}
+			else
+			{
+				UpdateFreeAnimation();
+			}
+		}
+		else
+		{
+			currentState = AnimState::Idle;
+
+			currentMoveAnim = MoveAnimState::None;
+			ChangeAnimation(idleAnim, true);
+		}
 	}
 
 	return true;
@@ -1708,7 +1791,7 @@ bool Player::UpdateHit()
 
 	if (animTime >= totalTime)
 	{
-		currentMoveAnim = MoveAnimState::Idle;
+		currentMoveAnim = MoveAnimState::None;
 
 		currentState = AnimState::Idle;
 
@@ -1883,10 +1966,18 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 		shiftHoldTimer += dt;
 
 		// 長押しでダッシュ
-		if (shiftHoldTimer >= dashHoldTime && !isDash)
+		if (shiftHoldTimer >= dashHoldTime && 
+			!isDash &&
+			!staminaBreak &&
+			stamina > 0.0f)
 		{
 			isDash = true;
 		}
+	}
+
+	if (isDash)
+	{
+		ConsumeStamina(dashStaminaCost * dt, dashDelay);
 	}
 
 	// 離した瞬間
@@ -1905,6 +1996,8 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 		// Shift状態リセット
 		shiftPressed = false;
 		shiftHoldTimer = 0.0f;
+
+		staminaBreak = false;
 	}
 
 	// ===== 速度切り替え =====
@@ -1921,8 +2014,14 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	if (leftClick)
 	{
 		// 攻撃開始
-		if (currentState != AnimState::Attack && isGround)
+		if (currentState != AnimState::Attack && 
+			isGround)
 		{
+			if (stamina < attackCost)
+				return;
+
+			ConsumeStamina(attackCost, attackDelay);
+
 			comboStep = 0;
 			comboNext = false;
 
@@ -1948,8 +2047,12 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 	}
 
 	// ===== ジャンプ =====
-	if (CheckHitKey(KEY_INPUT_SPACE) && isGround)
+	if (CheckHitKey(KEY_INPUT_SPACE) && 
+		isGround)
 	{
+		if (stamina < jumpCost)
+			return;
+
 		currentState = AnimState::JumpStart;
 
 		dashJump = isDash;
@@ -1964,11 +2067,15 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 			velocity.y = jumpPower;
 			isGround = false;
 
+			ConsumeStamina(jumpCost, jumpDelay);
+
 			ChangeAnimation(dashJumpStartAnim, false);
 		}
 		else
 		{
 			jumpRequest = true;
+
+			ConsumeStamina(jumpCost, jumpDelay);
 
 			ChangeAnimation(jumpStartAnim, false);
 		}
@@ -2044,11 +2151,12 @@ void Player::UpdateState()
 
 MoveAnimState Player::GetNextMoveAnim() const
 {
-	if (currentState != AnimState::Walk &&
-		currentState != AnimState::Dash)
-	{
+	bool moving =
+		fabsf(moveVector.x) > 0.01f ||
+		fabsf(moveVector.z) > 0.01f;
+
+	if (!moving)
 		return MoveAnimState::Idle;
-	}
 
 	if (isLockOn)
 	{
@@ -2058,22 +2166,22 @@ MoveAnimState Player::GetNextMoveAnim() const
 		{
 			switch (dir)
 			{
-			case MoveDirection::Front: return  MoveAnimState::DashFront;
-			case MoveDirection::Back: return MoveAnimState::DashBack;
-			case MoveDirection::Left: return MoveAnimState::DashLeft;
-			case MoveDirection::Right: return MoveAnimState::DashRight;
-			default: return MoveAnimState::Idle;
+			case MoveDirection::Front:	return  MoveAnimState::DashFront;
+			case MoveDirection::Back:	return MoveAnimState::DashBack;
+			case MoveDirection::Left:	return MoveAnimState::DashLeft;
+			case MoveDirection::Right:	return MoveAnimState::DashRight;
+			default:					return MoveAnimState::Idle;
 			}
 		}
 		else
 		{
 			switch (dir)
 			{
-			case MoveDirection::Front: return MoveAnimState::WalkFront;
-			case MoveDirection::Back: return MoveAnimState::WalkBack;
-			case MoveDirection::Left: return MoveAnimState::WalkLeft;
-			case MoveDirection::Right: return MoveAnimState::WalkRight;
-			default: return MoveAnimState::Idle;
+			case MoveDirection::Front:	return MoveAnimState::WalkFront;
+			case MoveDirection::Back:	return MoveAnimState::WalkBack;
+			case MoveDirection::Left:	return MoveAnimState::WalkLeft;
+			case MoveDirection::Right:	return MoveAnimState::WalkRight;
+			default:					return MoveAnimState::Idle;
 			}
 		}
 	}
