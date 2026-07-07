@@ -91,12 +91,14 @@ private:
 	float viewDistance = 500.0f;	// Š´’m‹——£
 	float viewAngle = 90.0f;		// ‹–ìŠp(“x)
 
-	float attackRange = 150.0f;
+	float chaseRange = 800.0f;      // Å‘å’Ç”ö‹——£
+	float attackRange = 150.0f;     // UŒ‚‹——£
 
-	//const float jumpStartFrame = 50.0f;
+	float lostTimer = 0.0f;
+	const float lostTime = 5.0f;
 
-	float attackStartFrame = 50.0f;
-	float attackEndFrame = 100.0f;
+	float attackStartFrame = 35.0f;
+	float attackEndFrame = 53.0f;
 
 	bool attackStarted = false;
 

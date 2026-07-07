@@ -37,13 +37,28 @@ void Enemy::Init(VECTOR startPos)
 	// ===== ƒAƒjƒ”Ô† =====
 	idleAnim = 0;
 	walk_fAnim = 1;
-	chaseAnim = 2;
-	jumpStartAnim = 3;
-	jumpRiseAnim = 4;
-	jumpEndAnim = 5;
-	handAttackAnim = 6;
-	hitAnim = 7;
-	deadAnim = 8;
+
+	chase_fAnim = 2;
+	chase_bAnim = 3;
+	chase_rAnim = 4;
+	chase_lAnim = 5;
+
+	dash_f01Anim = 6;
+	dash_f02Anim = 7;
+
+	swordAttack01Anim = 8;
+	swordAttack02Anim = 9;
+	swordAttack03Anim = 10;
+	swordAttack04Anim = 11;
+
+	dodge_b01Anim = 12;
+	dodge_rAnim = 13;
+	dodge_lAnim = 14;
+
+	changeWeaponAnim = 15;
+
+	hitAnim = 16;
+	deadAnim = 17;
 
 	// ===== ‰Šúó‘Ô =====
 	currentState = AnimState::Idle;
@@ -305,6 +320,13 @@ void Enemy::DebugDraw()
 	};
 
 	DrawLine3D(center, front, GetColor(255, 255, 0));
+
+	DrawFormatString(
+		1000,
+		200,
+		GetColor(255, 255, 255),
+		"lostTimer : %.2f",
+		lostTimer);
 }
 
 void Enemy::GeneratePatrolTarget()
@@ -372,6 +394,8 @@ void Enemy::UpdateIdle(float dt, float distance)
 	if (CanSeePlayer(targetPlayerPos))
 	{
 		aiState = EnemyAIState::Chase;
+		lostTimer = lostTime;
+
 		return;
 	}
 
@@ -388,6 +412,8 @@ void Enemy::UpdatePatrol(float dt, float distance)
 	if (CanSeePlayer(targetPlayerPos))
 	{
 		aiState = EnemyAIState::Chase;
+		lostTimer = lostTime;
+
 		return;
 	}
 
@@ -421,7 +447,25 @@ void Enemy::UpdatePatrol(float dt, float distance)
 
 void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 {
-	if (distance > viewDistance)
+	if (CanSeePlayer(targetPlayerPos))
+	{
+		lostTimer = lostTime;
+	}
+	else
+	{
+		lostTimer -= dt;
+
+		if (lostTimer <= 0.0f)
+		{
+			GeneratePatrolTarget();
+
+			aiState = EnemyAIState::Patrol;
+
+			return;
+		}
+	}
+
+	if (distance > chaseRange)
 	{
 		GeneratePatrolTarget();
 
@@ -481,7 +525,7 @@ void Enemy::UpdateAttack(float dt, VECTOR dir)
 
 		currentState = AnimState::Attack;
 
-		ChangeAnimation(handAttackAnim, false);
+		ChangeAnimation(swordAttack01Anim, false);
 	}
 
 	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
@@ -516,6 +560,7 @@ void Enemy::UpdateCooldown(float dt, float distance)
 	else if (distance <= viewDistance)
 	{
 		aiState = EnemyAIState::Chase;
+		lostTimer = lostTime;
 	}
 	else
 	{
@@ -565,7 +610,7 @@ void Enemy::UpdateState()
 
 			case EnemyAIState::Chase:
 				currentState = AnimState::Chase;
-				ChangeAnimation(chaseAnim, true);
+				ChangeAnimation(chase_fAnim, true);
 				break;
 
 			default:
@@ -601,7 +646,7 @@ void Enemy::UpdateState()
 
 			currentState = AnimState::Walk;
 
-			ChangeAnimation(chaseAnim, true);
+			ChangeAnimation(chase_fAnim, true);
 		}
 
 		return;
@@ -644,11 +689,11 @@ void Enemy::UpdateState()
 			break;
 
 		case AnimState::Chase:
-			ChangeAnimation(chaseAnim, true);
+			ChangeAnimation(chase_fAnim, true);
 			break;
 
 		case AnimState::Attack:
-			ChangeAnimation(handAttackAnim, false);
+			ChangeAnimation(swordAttack01Anim, false);
 			break;
 
 		case AnimState::JumpRise:

@@ -109,8 +109,6 @@ protected:
 	int walk_rAnim;
 	int walk_lAnim;
 
-	int chaseAnim;
-
 	int dash_f01Anim;
 	int dash_f02Anim;
 	int dash_bAnim;
@@ -137,6 +135,17 @@ protected:
 	int dodge_b02Anim;
 
 	int deadAnim;
+
+	// -- Enemy --
+	int chase_fAnim;
+	int chase_bAnim;
+	int chase_rAnim;
+	int chase_lAnim;
+
+	int dodge_rAnim;
+	int dodge_lAnim;
+
+	int changeWeaponAnim;
 
 	// ===== ’è” ====
 	float speed;						// ˆÚ“®‘¬“x
