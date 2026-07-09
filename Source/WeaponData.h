@@ -64,3 +64,33 @@ struct WeaponData
 	// ===== コンボキャンセル開始フレーム =====
 	float comboCancelFrame[MaxCombo];
 };
+
+struct EnemyWeaponData
+{
+	// ダッシュ
+	int dashAnim = -1;
+
+	// コンボ
+	static constexpr int MaxCombo = 4;
+
+	int attackAnim[MaxCombo] =
+	{
+		-1,-1,-1,-1
+	};
+
+	int comboCount = 0;
+
+	float attackStartFrame[MaxCombo];
+	float attackEndFrame[MaxCombo];
+
+	float comboAcceptStartFrame[MaxCombo];
+	float comboAcceptEndFrame[MaxCombo];
+
+	// 射程
+	float attackRange = 150.0f;
+
+	float attackDistance = 150.0f;
+	float attackRadius = 80.0f;
+
+	float moveSpeed = 200.0f;
+};

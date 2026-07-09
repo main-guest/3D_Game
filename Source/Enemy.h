@@ -1,8 +1,15 @@
 #pragma once
 #include "CharacterBase.h"
+#include "Weapon.h"
 
 class PhysicsManager;
 class Player;
+
+enum class EnemyWeaponType
+{
+	Sword,
+	Gun
+};
 
 enum class EnemyAIState
 {
@@ -10,6 +17,7 @@ enum class EnemyAIState
 	Patrol,
 	Chase,
 	Attack,
+	ChangeWeapon,
 	Cooldown
 };
 
@@ -19,6 +27,10 @@ public:
 	void Init(VECTOR startPos);
 	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
 	void Render();
+
+	void ChangeWeapon();
+
+	void StartChangeWeapon();
 
 	void CheckAttackHit(Player* player);
 
@@ -107,4 +119,18 @@ private:
 
 	// PLAYER位置保存
 	VECTOR targetPlayerPos;
+
+	// ===== 武器 =====
+	EnemyWeaponType weaponType = EnemyWeaponType::Sword;
+
+	// ===== 武器データ =====
+	EnemyWeaponData swordData;
+	EnemyWeaponData gunData;
+
+	// 現在装備
+	EnemyWeaponData* currentWeapon = nullptr;
+
+	// ===== 攻撃コンボ =====
+	int comboStep = 0;          // 現在のコンボ段数
+	bool comboNext = false;     // 次段予約
 };

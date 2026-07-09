@@ -58,8 +58,8 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	CharacterBase::Init("Assets/mv1model/Player.mv1");
 
 	// ===== 武器モデル読み込み =====
-	weapon1.Init("Assets/mv1model/Blade.mv1");
-	weapon2.Init("Assets/mv1model/Gun01.mv1");
+	sword.Init("Assets/mv1model/Sword.mv1");
+	gun01.Init("Assets/mv1model/Gun01.mv1");
 
 	// ===== アニメーション番号 =====
 	idleAnim = 0;
@@ -134,122 +134,122 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	unarmedData.followAttack = true;
 
-	// weapon1（剣）
-	weapon1Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
+	// SwordData（剣）
+	SwordData.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
-	weapon1Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+	SwordData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
 
-	weapon1Data.attackAnim[0] = swordAttack01Anim;
-	weapon1Data.attackAnim[1] = swordAttack02Anim;
-	weapon1Data.attackAnim[2] = swordAttack03Anim;
-	weapon1Data.attackAnim[3] = swordAttack04Anim;
+	SwordData.attackAnim[0] = swordAttack01Anim;
+	SwordData.attackAnim[1] = swordAttack02Anim;
+	SwordData.attackAnim[2] = swordAttack03Anim;
+	SwordData.attackAnim[3] = swordAttack04Anim;
 
-	weapon1Data.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
-	weapon1Data.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
-	weapon1Data.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
-	weapon1Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
+	SwordData.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
+	SwordData.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
+	SwordData.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
+	SwordData.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
 
-	weapon1Data.lockDashFrontAnim = dash_f02Anim;
-	weapon1Data.lockDashBackAnim = dash_bAnim;
-	weapon1Data.lockDashRightAnim = dash_rAnim;
-	weapon1Data.lockDashLeftAnim = dash_lAnim;
+	SwordData.lockDashFrontAnim = dash_f02Anim;
+	SwordData.lockDashBackAnim = dash_bAnim;
+	SwordData.lockDashRightAnim = dash_rAnim;
+	SwordData.lockDashLeftAnim = dash_lAnim;
 
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
-	weapon1Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
+	SwordData.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
+	SwordData.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
+	SwordData.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
+	SwordData.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
 
-	weapon1Data.comboCount = 4;
+	SwordData.comboCount = 4;
 
-	weapon1Data.dashAnim = dash_f02Anim;
+	SwordData.dashAnim = dash_f02Anim;
 
-	weapon1Data.attackShape = AttackShape::Line;
-	weapon1Data.attackRadius = 20.0f;
-	weapon1Data.attackDistance = 160.0f;
-	weapon1Data.attackOffset = VGet(0, 115, 0);
+	SwordData.attackShape = AttackShape::Line;
+	SwordData.attackRadius = 20.0f;
+	SwordData.attackDistance = 160.0f;
+	SwordData.attackOffset = VGet(0, 115, 0);
 
-	weapon1Data.followAttack = true;
+	SwordData.followAttack = true;
 
 	// 攻撃コンボ　攻撃開始・終了フレーム
-	weapon1Data.attackStartFrame[0] = 30.0f;
-	weapon1Data.attackEndFrame[0] = 57.0f;
+	SwordData.attackStartFrame[0] = 30.0f;
+	SwordData.attackEndFrame[0] = 57.0f;
 
-	weapon1Data.attackStartFrame[1] = 3.0f;
-	weapon1Data.attackEndFrame[1] = 29.0f;
+	SwordData.attackStartFrame[1] = 3.0f;
+	SwordData.attackEndFrame[1] = 29.0f;
 
-	weapon1Data.attackStartFrame[2] = 41.0f;
-	weapon1Data.attackEndFrame[2] = 73.0f;
+	SwordData.attackStartFrame[2] = 41.0f;
+	SwordData.attackEndFrame[2] = 73.0f;
 
-	weapon1Data.attackStartFrame[3] = 46.0f;
-	weapon1Data.attackEndFrame[3] = 85.0f;
+	SwordData.attackStartFrame[3] = 46.0f;
+	SwordData.attackEndFrame[3] = 85.0f;
 
 	// 攻撃コンボ　受付フレーム
-	weapon1Data.comboAcceptStartFrame[0] = 43.0f;
-	weapon1Data.comboAcceptEndFrame[0] = 65.0f;
+	SwordData.comboAcceptStartFrame[0] = 43.0f;
+	SwordData.comboAcceptEndFrame[0] = 65.0f;
 
-	weapon1Data.comboAcceptStartFrame[1] = 20.0f;
-	weapon1Data.comboAcceptEndFrame[1] = 44.0f;
+	SwordData.comboAcceptStartFrame[1] = 20.0f;
+	SwordData.comboAcceptEndFrame[1] = 44.0f;
 
-	weapon1Data.comboAcceptStartFrame[2] = 47.0f;
-	weapon1Data.comboAcceptEndFrame[2] = 97.0f;
+	SwordData.comboAcceptStartFrame[2] = 47.0f;
+	SwordData.comboAcceptEndFrame[2] = 97.0f;
 
-	weapon1Data.comboAcceptStartFrame[3] = 0.0f;
-	weapon1Data.comboAcceptEndFrame[3] = 0.0f;
+	SwordData.comboAcceptStartFrame[3] = 0.0f;
+	SwordData.comboAcceptEndFrame[3] = 0.0f;
 
 	// 攻撃コンボ　コンボキャンセルフレーム
-	weapon1Data.comboCancelFrame[0] = 53.0f;
-	weapon1Data.comboCancelFrame[1] = 36.0f;
-	weapon1Data.comboCancelFrame[2] = 73.0f;
-	weapon1Data.comboCancelFrame[3] = 999.0f;
+	SwordData.comboCancelFrame[0] = 53.0f;
+	SwordData.comboCancelFrame[1] = 36.0f;
+	SwordData.comboCancelFrame[2] = 73.0f;
+	SwordData.comboCancelFrame[3] = 999.0f;
 
-	weapon1.SetData(weapon1Data);
+	sword.SetData(SwordData);
 
-	// weapon2（銃）
-	weapon2Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
+	// Gun01Data（銃）
+	Gun01Data.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
-	weapon2Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+	Gun01Data.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
 
-	weapon2Data.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
-	weapon2Data.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
-	weapon2Data.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
-	weapon2Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
+	Gun01Data.lockWalkAnim[(int)MoveDirection::Front] = walk_fAnim;
+	Gun01Data.lockWalkAnim[(int)MoveDirection::Back] = walk_bAnim;
+	Gun01Data.lockWalkAnim[(int)MoveDirection::Right] = walk_rAnim;
+	Gun01Data.lockWalkAnim[(int)MoveDirection::Left] = walk_lAnim;
 
-	weapon2Data.lockDashFrontAnim = dash_f01Anim;
-	weapon2Data.lockDashBackAnim = dash_bAnim;
-	weapon2Data.lockDashRightAnim = dash_rAnim;
-	weapon2Data.lockDashLeftAnim = dash_lAnim;
+	Gun01Data.lockDashFrontAnim = dash_f01Anim;
+	Gun01Data.lockDashBackAnim = dash_bAnim;
+	Gun01Data.lockDashRightAnim = dash_rAnim;
+	Gun01Data.lockDashLeftAnim = dash_lAnim;
 
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
-	weapon2Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
+	Gun01Data.lockDodgeAnim[(int)MoveDirection::Front] = dodge_fAnim;
+	Gun01Data.lockDodgeAnim[(int)MoveDirection::Back] = dodge_b01Anim;
+	Gun01Data.lockDodgeAnim[(int)MoveDirection::Right] = dodge_fAnim;
+	Gun01Data.lockDodgeAnim[(int)MoveDirection::Left] = dodge_fAnim;
 
 	for (int i = 0; i < WeaponData::MaxCombo; i++)
 	{
-		weapon2Data.attackAnim[i] = gunAttackAnim;
+		Gun01Data.attackAnim[i] = gunAttackAnim;
 
-		weapon2Data.attackStartFrame[i] = 10.0f;
-		weapon2Data.attackEndFrame[i] = 20.0f;
+		Gun01Data.attackStartFrame[i] = 10.0f;
+		Gun01Data.attackEndFrame[i] = 20.0f;
 
-		weapon2Data.comboAcceptStartFrame[i] = 0.0f;
-		weapon2Data.comboAcceptEndFrame[i] = 0.0f;
+		Gun01Data.comboAcceptStartFrame[i] = 0.0f;
+		Gun01Data.comboAcceptEndFrame[i] = 0.0f;
 
-		weapon2Data.comboCancelFrame[i] = 0.0f;
+		Gun01Data.comboCancelFrame[i] = 0.0f;
 	}
 
-	weapon2Data.comboCount = 1;
+	Gun01Data.comboCount = 1;
 
-	weapon2Data.dashAnim = dash_f01Anim;
+	Gun01Data.dashAnim = dash_f01Anim;
 
-	weapon2Data.attackShape = AttackShape::Gun;
+	Gun01Data.attackShape = AttackShape::Gun;
 
-	weapon2Data.attackRadius = 10.0f;
-	weapon2Data.attackDistance = 600.0f;
-	weapon2Data.attackOffset = VGet(0, 115, 0);
+	Gun01Data.attackRadius = 10.0f;
+	Gun01Data.attackDistance = 600.0f;
+	Gun01Data.attackOffset = VGet(0, 115, 0);
 
-	weapon2Data.followAttack = false;
+	Gun01Data.followAttack = false;
 
-	weapon2.SetData(weapon2Data);
+	gun01.SetData(Gun01Data);
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -271,12 +271,12 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	//　=====　武器更新　=====
 	switch (equipState)
 	{
-	case EquipState::Weapon1:
-		weapon1.Update(handle, "mixamorig:RightHand", characterAngle);
+	case EquipState::Sword:
+		sword.Update(handle, "mixamorig:RightHand", characterAngle);
 		break;
 
-	case EquipState::Weapon2:
-		weapon2.Update(handle, "mixamorig:RightHand", characterAngle);
+	case EquipState::Gun01:
+		gun01.Update(handle, "mixamorig:RightHand", characterAngle);
 		break;
 
 	case EquipState::Unarmed:
@@ -452,12 +452,12 @@ void Player::Draw()
 	//　=====　武器表示　=====
 	switch (equipState)
 	{
-	case EquipState::Weapon1:
-		weapon1.Draw();
+	case EquipState::Sword:
+		sword.Draw();
 		break;
 
-	case EquipState::Weapon2:
-		weapon2.Draw();
+	case EquipState::Gun01:
+		gun01.Draw();
 		break;
 
 	case EquipState::Unarmed:
@@ -470,16 +470,16 @@ void Player::Draw()
 // ==========================================
 void Player::EquipWeapon1()
 {
-	equipState = EquipState::Weapon1;
+	equipState = EquipState::Sword;
 
-	currentWeaponData = &weapon1Data;
+	currentWeaponData = &SwordData;
 }
 
 void Player::EquipWeapon2()
 {
-	equipState = EquipState::Weapon2;
+	equipState = EquipState::Gun01;
 
-	currentWeaponData = &weapon2Data;
+	currentWeaponData = &Gun01Data;
 }
 
 void Player::Unequip()
@@ -554,11 +554,11 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 		case AttackShape::Line:
 		{
-			VECTOR prevRoot = weapon1.GetPrevRootPosition();
-			VECTOR root = weapon1.GetRootPosition();
+			VECTOR prevRoot = sword.GetPrevRootPosition();
+			VECTOR root = sword.GetRootPosition();
 
-			VECTOR prevTip = weapon1.GetPrevTipPosition();
-			VECTOR tip = weapon1.GetTipPosition();
+			VECTOR prevTip = sword.GetPrevTipPosition();
+			VECTOR tip = sword.GetTipPosition();
 
 			for (auto& enemy : enemies)
 			{
@@ -1157,8 +1157,8 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	// 前フレームの剣
 	DrawCapsule3D(
-		weapon1.GetPrevRootPosition(),
-		weapon1.GetPrevTipPosition(),
+		sword.GetPrevRootPosition(),
+		sword.GetPrevTipPosition(),
 		hitRadius,
 		8,
 		GetColor(255, 255, 0),
@@ -1167,8 +1167,8 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	// 現在フレームの剣
 	DrawCapsule3D(
-		weapon1.GetRootPosition(),
-		weapon1.GetTipPosition(),
+		sword.GetRootPosition(),
+		sword.GetTipPosition(),
 		hitRadius,
 		8,
 		GetColor(0, 255, 0),
@@ -1178,8 +1178,8 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	// 剣先の移動軌跡
 	DrawCapsule3D(
-		weapon1.GetPrevRootPosition(),
-		weapon1.GetRootPosition(),
+		sword.GetPrevRootPosition(),
+		sword.GetRootPosition(),
 		hitRadius,
 		8,
 		GetColor(0, 255, 255),
@@ -1189,8 +1189,8 @@ void Player::DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 	// 根元の移動軌跡
 	DrawCapsule3D(
-		weapon1.GetPrevTipPosition(),
-		weapon1.GetTipPosition(),
+		sword.GetPrevTipPosition(),
+		sword.GetTipPosition(),
 		hitRadius,
 		8,
 		GetColor(255, 0, 255),

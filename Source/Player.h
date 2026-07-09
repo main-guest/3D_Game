@@ -15,8 +15,8 @@ class Camera;
 enum class EquipState
 {
 	Unarmed,
-	Weapon1,
-	Weapon2
+	Sword,
+	Gun01
 };
 
 enum class MoveAnimState
@@ -239,13 +239,13 @@ private:
 	Camera* camera;
 
 	// ===== •Ší =====
-	Weapon weapon1;
-	Weapon weapon2;
+	Weapon sword;
+	Weapon gun01;
 
 	// ===== •Šíƒf[ƒ^ =====
 	WeaponData unarmedData;
-	WeaponData weapon1Data;
-	WeaponData weapon2Data;
+	WeaponData SwordData;
+	WeaponData Gun01Data;
 
 	// ===== Œ»İ‘•”õ =====
 	EquipState equipState;

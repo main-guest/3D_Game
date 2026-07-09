@@ -20,7 +20,7 @@ const TCHAR* ToString(EnemyAIState state)
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== 共通初期化 =====
-	CharacterBase::Init("Assets/mv1model/Enemy.mv1");
+	CharacterBase::Init("Assets/mv1model/Enemy/Enemy2.mv1");
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -50,20 +50,72 @@ void Enemy::Init(VECTOR startPos)
 	swordAttack02Anim = 9;
 	swordAttack03Anim = 10;
 	swordAttack04Anim = 11;
+	gunAttackAnim = 12;
 
-	dodge_b01Anim = 12;
-	dodge_rAnim = 13;
-	dodge_lAnim = 14;
+	dodge_b01Anim = 13;
+	dodge_rAnim = 14;
+	dodge_lAnim = 15;
 
-	changeWeaponAnim = 15;
+	changeWeaponAnim = 16;
 
-	hitAnim = 16;
-	deadAnim = 17;
+	hitAnim = 17;
+	deadAnim = 18;
+
+	// ===== 武器データ設定 =====
+	// ----- Sword -----
+	swordData.dashAnim = dash_f01Anim;
+
+	swordData.attackRange = 150.0f;
+
+	swordData.attackAnim[0] = swordAttack01Anim;
+	swordData.attackAnim[1] = swordAttack02Anim;
+	swordData.attackAnim[2] = swordAttack03Anim;
+	swordData.attackAnim[3] = swordAttack04Anim;
+
+	swordData.attackStartFrame[0] = 34.0f;
+	swordData.attackEndFrame[0] = 50.0f;
+
+	swordData.attackStartFrame[1] = 1.0f;
+	swordData.attackEndFrame[1] = 35.0f;
+
+	swordData.attackStartFrame[2] = 20.0f;
+	swordData.attackEndFrame[2] = 55.0f;
+
+	swordData.attackStartFrame[3] = 45.0f;
+	swordData.attackEndFrame[3] = 70.0f;
+
+	swordData.comboAcceptStartFrame[0] = 39.0f;
+	swordData.comboAcceptEndFrame[0] = 49.0f;
+
+	swordData.comboAcceptStartFrame[1] = 20.0f;
+	swordData.comboAcceptEndFrame[1] = 32.0f;
+
+	swordData.comboAcceptStartFrame[2] = 0.0f;
+	swordData.comboAcceptEndFrame[2] = 0.0f;
+
+	swordData.comboAcceptStartFrame[3] = 0.0f;
+	swordData.comboAcceptEndFrame[3] = 0.0f;
+
+	// ----- Gun -----
+	gunData.dashAnim = dash_f02Anim;
+
+	gunData.attackRange = 600.0f;
+
+
+	gunData.attackAnim[0] = gunAttackAnim;
+
+	gunData.attackStartFrame[0] = 14.0f;
+
+	gunData.attackEndFrame[0] = 20.0f;
 
 	// ===== 初期状態 =====
 	currentState = AnimState::Idle;
 
 	ChangeAnimation(idleAnim, true);
+
+	// 初期装備
+	weaponType = EnemyWeaponType::Sword;
+	currentWeapon = &swordData;
 
 	aiState = EnemyAIState::Idle;
 	stateTimer = 2.0f;
@@ -138,6 +190,29 @@ void Enemy::Render()
 
 	// ===== Debug =====
 	DebugDraw();
+}
+
+void Enemy::ChangeWeapon()
+{
+	if (weaponType == EnemyWeaponType::Sword)
+	{
+		weaponType = EnemyWeaponType::Gun;
+		currentWeapon = &gunData;
+	}
+	else
+	{
+		weaponType = EnemyWeaponType::Sword;
+		currentWeapon = &swordData;
+	}
+}
+
+void Enemy::StartChangeWeapon()
+{
+	aiState = EnemyAIState::ChangeWeapon;
+
+	currentState = AnimState::Idle;
+
+	ChangeAnimation(changeWeaponAnim, false);
 }
 
 void Enemy::CheckAttackHit(Player* player)
@@ -465,6 +540,12 @@ void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 		}
 	}
 
+	if (GetRand(1000) < 2)
+	{
+		StartChangeWeapon();
+		return;
+	}
+
 	if (distance > chaseRange)
 	{
 		GeneratePatrolTarget();
@@ -525,14 +606,21 @@ void Enemy::UpdateAttack(float dt, VECTOR dir)
 
 		currentState = AnimState::Attack;
 
-		ChangeAnimation(swordAttack01Anim, false);
+		ChangeAnimation(currentWeapon->attackAnim[comboStep], false);
 	}
 
 	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 	attackActive =
-		animTime >= attackStartFrame &&
-		animTime <= attackEndFrame;
+		animTime >= currentWeapon->attackStartFrame[comboStep] &&
+		animTime <= currentWeapon->attackEndFrame[comboStep];
+
+	// 次段へ
+	if (comboNext &&
+		comboStep + 1 < currentWeapon->comboCount)
+	{
+
+	}
 
 	if (animTime >= totalTime)
 	{
@@ -671,6 +759,10 @@ void Enemy::UpdateState()
 
 	case EnemyAIState::Attack:
 		nextState = AnimState::Attack;
+		break;
+
+	case EnemyAIState::ChangeWeapon:
+		nextState = AnimState::Idle;
 		break;
 	}
 
