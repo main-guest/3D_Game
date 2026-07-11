@@ -17,6 +17,8 @@ enum class EnemyAIState
 	Patrol,
 	Chase,
 	Attack,
+	Dodge,
+	Dash,
 	ChangeWeapon,
 	Cooldown
 };
@@ -28,43 +30,58 @@ public:
 	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
 	void Render();
 
-	void ChangeWeapon();
-
-	void StartChangeWeapon();
+	void Damage(int power);
 
 	void CheckAttackHit(Player* player);
 
-	void Damage(int power);
-
-	bool CanSeePlayer(VECTOR playerPos) const;
-
 	VECTOR GetCenterPos() const;
-
-	void DebugDraw();
 
 	VECTOR GetPos() const { return pos; }
 
 	bool IsDead() const { return isDead; }
 
-private:
-	void GeneratePatrolTarget();
-	void ResetAttackState();
+	void DebugDraw();
 
+private:
+	// ===== AI ======
 	void UpdateAI(float dt, VECTOR playerPos);
 
 	void UpdateIdle(float dt, float distance);
 	void UpdatePatrol(float dt, float distance);
 	void UpdateChase(float dt, VECTOR dir, float distance);
 	void UpdateAttack(float dt, VECTOR dir);
+	void UpdateDash(float dt);
+	void UpdateDodge(float dt);
+	void UpdateChangeWeapon(float dt);
 	void UpdateCooldown(float dt, float distance);
 
+	bool CanSeePlayer(VECTOR playerPos) const;
+
+	void GeneratePatrolTarget();
+
+	// ===== Attack =====
+	void StartAttacK();
+
+	void UpdateAttackAnimation();
+
+	void EndAttack();
+
+	void ChangeWeapon();
+
+	void ResetAttackState();
+
+	// アニメーション
 	void UpdateState();
 
 private:
 	// ==== ステータス ====
 	int hp = 100;
 
-	VECTOR pos;
+	float stamina = 100.0f;
+
+	float maxStamina = 100.0f;
+
+	VECTOR pos = VGet(0, 0, 0);
 	VECTOR velocity = VGet(0, 0, 0);
 
 	float characterAngle = 0.0f;
@@ -72,65 +89,78 @@ private:
 	// ===== 状態 =====
 	bool prevGround = true;
 
-	//bool jumpRequest = false;
-
-	bool attackActive = false;
-	bool attackHit = false;
-
-	bool isHit = false;
-
 	bool isDead = false;
 	bool isDying = false;
 
+	// ===== AI =====
 	EnemyAIState aiState = EnemyAIState::Idle;
 
-	VECTOR attackPos = VGet(0, 0, 0);
-	float attackOffset = 140.0f;
-	float attackRadius = 80.0f;
-
-	VECTOR attackCenter;
-
-	// ==== 怯み（ヒットストップ）====
-	float hitStopTimer = 0.0f;
-	const float hitStopDuration = 1.5f;
-
-	// ==== AI ====
 	float stateTimer = 2.0f;
 
 	VECTOR patrolTarget = VGet(0, 0, 0);
 
-	// ===== 視界 =====
-	float viewDistance = 500.0f;	// 感知距離
-	float viewAngle = 90.0f;		// 視野角(度)
+	// PLAYER位置保存
+	VECTOR targetPlayerPos = VGet(0, 0, 0);
 
+	// ===== 視界 =====
+	float searchRange = 500.0f;	// 感知距離
 	float chaseRange = 800.0f;      // 最大追尾距離
 	float attackRange = 150.0f;     // 攻撃距離
+
+	float viewAngle = 90.0f;		// 視野角(度)
 
 	float lostTimer = 0.0f;
 	const float lostTime = 5.0f;
 
-	float attackStartFrame = 35.0f;
-	float attackEndFrame = 53.0f;
-
-	bool attackStarted = false;
-
-	float attackTimer = 0.0f;
-	const float attackCooldown = 1.5f;
-
-	// PLAYER位置保存
-	VECTOR targetPlayerPos;
-
-	// ===== 武器 =====
+	// ===== Weapon =====
+	// 武器
 	EnemyWeaponType weaponType = EnemyWeaponType::Sword;
 
-	// ===== 武器データ =====
+	// 武器データ
 	EnemyWeaponData swordData;
 	EnemyWeaponData gunData;
 
 	// 現在装備
 	EnemyWeaponData* currentWeapon = nullptr;
 
-	// ===== 攻撃コンボ =====
+	// ChangeWeapon
+	bool weaponChanging = false;
+
+	// ===== Attack =====
+	bool attackStarted = false;
+
+	bool attackActive = false;
+	bool attackHit = false;
+
+	// 攻撃コンボ
 	int comboStep = 0;          // 現在のコンボ段数
 	bool comboNext = false;     // 次段予約
+
+	float comboTimer = 0.0f;
+
+	float attackTimer = 0.0f;
+
+	VECTOR attackCenter = VGet(0, 0, 0);
+
+	// ===== Dash =====
+	bool dashStarted = false;
+
+	VECTOR dashDirection = VGet(0, 0, 0);
+
+	float dashTimer = 0.0;
+
+	float dashTime = 0.35f;
+
+	// ===== Dodge =====
+	bool dodgeStarted = false;
+
+	VECTOR dodgeDirection = VGet(0, 0, 0);
+
+	float dodgeTimer = 0.0f;
+
+	float dodgeTime = 0.45f;
+
+	// ==== Hit （ヒットストップ）====
+	float hitStopTimer = 0.0f;
+	const float hitStopDuration = 1.5f;
 };

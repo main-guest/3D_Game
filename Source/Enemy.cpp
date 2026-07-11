@@ -1,4 +1,5 @@
 #include <cmath>
+
 #include "Enemy.h"
 #include "Player.h"
 #include "CollisionWorld.h"
@@ -25,9 +26,6 @@ void Enemy::Init(VECTOR startPos)
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
 	height = 140.0f;
-
-	// ===== 移動速度 =====
-	speed = 200.0f;
 
 	// ===== 初期位置 =====
 	pos = startPos;
@@ -63,14 +61,14 @@ void Enemy::Init(VECTOR startPos)
 
 	// ===== 武器データ設定 =====
 	// ----- Sword -----
-	swordData.dashAnim = dash_f01Anim;
-
-	swordData.attackRange = 150.0f;
+	swordData.comboCount = 4;
 
 	swordData.attackAnim[0] = swordAttack01Anim;
 	swordData.attackAnim[1] = swordAttack02Anim;
 	swordData.attackAnim[2] = swordAttack03Anim;
 	swordData.attackAnim[3] = swordAttack04Anim;
+
+	swordData.dashAnim = dash_f01Anim;
 
 	swordData.attackStartFrame[0] = 34.0f;
 	swordData.attackEndFrame[0] = 50.0f;
@@ -96,35 +94,49 @@ void Enemy::Init(VECTOR startPos)
 	swordData.comboAcceptStartFrame[3] = 0.0f;
 	swordData.comboAcceptEndFrame[3] = 0.0f;
 
+	swordData.attackShape = AttackShape::Sphere;
+
+	swordData.attackDistance = 150.0f;
+	swordData.attackRadius = 80.0f;
+
+	swordData.moveSpeed = 230.0f;
+	swordData.attackCooldown = 1.2f;
+
 	// ----- Gun -----
-	gunData.dashAnim = dash_f02Anim;
-
-	gunData.attackRange = 600.0f;
-
+	gunData.comboCount = 1;
 
 	gunData.attackAnim[0] = gunAttackAnim;
+
+	gunData.dashAnim = dash_f02Anim;
 
 	gunData.attackStartFrame[0] = 14.0f;
 
 	gunData.attackEndFrame[0] = 20.0f;
 
-	// ===== 初期状態 =====
-	currentState = AnimState::Idle;
+	gunData.attackShape = AttackShape::Gun;
 
-	ChangeAnimation(idleAnim, true);
+	gunData.attackDistance = 650.0f;
+	gunData.attackRadius = 20.0f;
+
+	gunData.moveSpeed = 200.0f;
+	gunData.attackCooldown = 1.8f;
 
 	// 初期装備
 	weaponType = EnemyWeaponType::Sword;
 	currentWeapon = &swordData;
 
+	// ===== 初期状態 =====
+	speed = currentWeapon->moveSpeed;
+
 	aiState = EnemyAIState::Idle;
-	stateTimer = 2.0f;
+
+	currentState = AnimState::Idle;
+
+	ChangeAnimation(idleAnim, true);
 }
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 {
-	targetPlayerPos = playerPos;
-
 	if (isDead)
 	{
 		// ===== モデル非表示 =====
@@ -144,16 +156,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 		return;
 	}
 
-	// ==== クールダウン更新 ====
-	if (attackTimer > 0.0f)
-	{
-		attackTimer -= dt;
-
-		if (attackTimer < 0.0f)
-		{
-			attackTimer = 0.0f;
-		}
-	}
+	targetPlayerPos = playerPos;
 
 	// ==== ヒットストップ中は停止 ====
 	if (hitStopTimer > 0.0f)
@@ -166,6 +169,17 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 		return;
 	}
+	// ==== クールダウン更新 ====
+	if (attackTimer > 0.0f)
+	{
+		attackTimer -= dt;
+
+		if (attackTimer < 0.0f)
+		{
+			attackTimer = 0.0f;
+		}
+	}
+
 
 	UpdateAI(dt, playerPos);
 
@@ -192,68 +206,21 @@ void Enemy::Render()
 	DebugDraw();
 }
 
-void Enemy::ChangeWeapon()
-{
-	if (weaponType == EnemyWeaponType::Sword)
-	{
-		weaponType = EnemyWeaponType::Gun;
-		currentWeapon = &gunData;
-	}
-	else
-	{
-		weaponType = EnemyWeaponType::Sword;
-		currentWeapon = &swordData;
-	}
-}
-
-void Enemy::StartChangeWeapon()
-{
-	aiState = EnemyAIState::ChangeWeapon;
-
-	currentState = AnimState::Idle;
-
-	ChangeAnimation(changeWeaponAnim, false);
-}
-
-void Enemy::CheckAttackHit(Player* player)
-{
-	if (!attackActive)
-		return;
-
-	if (attackHit)
-		return;
-
-	VECTOR playerCenter = player->GetCenterPos();
-
-	VECTOR diff = VSub(playerCenter, attackCenter);
-
-	float dist = VSize(diff);
-
-
-	if (dist <= attackRadius)
-	{
-		player->Damage(20);
-
-		attackHit = true;
-	}
-}
-
 void Enemy::Damage(int power)
 {
 	if (isDead)
 		return;
 
-	ResetAttackState();
-
-	// ===== 攻撃されたらプレイヤーを認識 =====
-	if (aiState != EnemyAIState::Attack)
-	{
-		aiState = EnemyAIState::Chase;
-	}
-
 	hp -= power;
 
-	isHit = true;
+	attackStarted = false;
+	attackHit = false;
+	attackActive = false;
+
+	comboStep = 0;
+	comboNext = false;
+
+	attackTimer = currentWeapon->attackCooldown;
 
 	if (hp <= 0)
 	{
@@ -271,39 +238,46 @@ void Enemy::Damage(int power)
 	// ===== アニメーション切り替え =====
 	currentState = AnimState::Hit;
 	ChangeAnimation(hitAnim, false);
+
+	// ===== 攻撃されたらプレイヤーを認識 =====
+	if (aiState != EnemyAIState::Attack)
+	{
+		aiState = EnemyAIState::Chase;
+	}
 }
 
-bool Enemy::CanSeePlayer(VECTOR playerPos) const
+void Enemy::CheckAttackHit(Player* player)
 {
-	VECTOR toPlayer = VSub(playerPos, pos);
+	if (!attackActive)
+		return;
 
-	toPlayer.y = 0.0f;
+	if (attackHit)
+		return;
 
-	float distance = VSize(toPlayer);
+	VECTOR center = GetCenterPos();
 
-	// 距離外
-	if (distance > viewDistance)
-		return false;
+	VECTOR forward =
+	{
+		-sinf(characterAngle),
+		0.0f,
+		-cosf(characterAngle)
+	};
 
-	toPlayer = VNorm(toPlayer);
+	VECTOR attackCenter =
+	{
+		center.x + forward.x * currentWeapon->attackDistance,
+		center.y,
+		center.z + forward.z * currentWeapon->attackDistance
+	};
 
-	// Enemy前方向
-	VECTOR forward;
+	float dist = VSize(VSub(player->GetCenterPos(), attackCenter));
 
-	forward.x = -sinf(characterAngle);
-	forward.y = 0.0f;
-	forward.z = -cosf(characterAngle);
+	if (dist <= currentWeapon->attackRadius)
+	{
+		player->Damage(currentWeapon->damage);
 
-	// 内積
-	float dot =
-		forward.x * toPlayer.x +
-		forward.y * toPlayer.y +
-		forward.z * toPlayer.z;
-
-	// cos(45°)
-	float limit = cosf((viewAngle * 0.5f) * DX_PI_F / 180.0f);
-
-	return dot >= limit;
+		attackHit = true;
+	}
 }
 
 VECTOR Enemy::GetCenterPos() const
@@ -351,13 +325,13 @@ void Enemy::DebugDraw()
 	{
 		DrawSphere3D(
 			attackCenter,
-			attackRadius,
+			currentWeapon->attackRadius,
 			16,
 			GetColor(255, 255, 0),
 			GetColor(255, 255, 0),
 			FALSE);
 	}
-	
+
 	float half = viewAngle * 0.5f * DX_PI_F / 180.0f;
 
 	float left = characterAngle - half;
@@ -365,16 +339,16 @@ void Enemy::DebugDraw()
 
 	VECTOR leftPos =
 	{
-		pos.x - sinf(left) * viewDistance,
+		pos.x - sinf(left) * searchRange,
 		pos.y + 20.0f,
-		pos.z - cosf(left) * viewDistance
+		pos.z - cosf(left) * searchRange
 	};
 
 	VECTOR rightPos =
 	{
-		pos.x - sinf(right) * viewDistance,
+		pos.x - sinf(right) * searchRange,
 		pos.y + 20.0f,
-		pos.z - cosf(right) * viewDistance
+		pos.z - cosf(right) * searchRange
 	};
 
 	VECTOR center =
@@ -389,9 +363,9 @@ void Enemy::DebugDraw()
 
 	VECTOR front =
 	{
-		pos.x - sinf(characterAngle) * viewDistance,
+		pos.x - sinf(characterAngle) * searchRange,
 		pos.y + 20.0f,
-		pos.z - cosf(characterAngle) * viewDistance
+		pos.z - cosf(characterAngle) * searchRange
 	};
 
 	DrawLine3D(center, front, GetColor(255, 255, 0));
@@ -402,24 +376,6 @@ void Enemy::DebugDraw()
 		GetColor(255, 255, 255),
 		"lostTimer : %.2f",
 		lostTimer);
-}
-
-void Enemy::GeneratePatrolTarget()
-{
-	float range = 300.0f;
-
-	patrolTarget.x = pos.x + (float)(GetRand((int)range * 2) - range);
-	patrolTarget.y = pos.y;
-	patrolTarget.z = pos.z + (float)(GetRand((int)range * 2) - range);
-}
-
-void Enemy::ResetAttackState()
-{
-	attackStarted = false;
-	attackHit = false;
-	attackActive = false;
-
-	attackTimer = attackCooldown;
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
@@ -435,6 +391,8 @@ void Enemy::UpdateAI(float dt, VECTOR playerPos)
 	}
 
 	velocity = VGet(0, 0, 0);
+
+	speed = currentWeapon->moveSpeed;
 
 	switch (aiState)
 	{
@@ -452,6 +410,18 @@ void Enemy::UpdateAI(float dt, VECTOR playerPos)
 
 	case EnemyAIState::Attack:
 		UpdateAttack(dt, dir);
+		break;
+
+	case EnemyAIState::Dash:
+		UpdateDash(dt);
+		break;
+
+	case EnemyAIState::Dodge:
+		UpdateDodge(dt);
+		break;
+
+	case EnemyAIState::ChangeWeapon:
+		UpdateChangeWeapon(dt);
 		break;
 
 	case EnemyAIState::Cooldown:
@@ -522,6 +492,35 @@ void Enemy::UpdatePatrol(float dt, float distance)
 
 void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 {
+	currentState = AnimState::Chase;
+
+	if (distance > chaseRange)
+	{
+		GeneratePatrolTarget();
+
+		aiState = EnemyAIState::Patrol;
+
+		return;
+	}
+
+	if (distance <= currentWeapon->attackDistance)
+	{
+		aiState = EnemyAIState::Attack;
+
+		return;
+	}
+
+	velocity = VScale(dir, speed);
+
+	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+	float diff = targetAngle - characterAngle;
+
+	while (diff > DX_PI)diff -= DX_TWO_PI;
+	while (diff < -DX_PI)diff += DX_TWO_PI;
+
+	characterAngle += diff * 10.0f * dt;
+
 	if (CanSeePlayer(targetPlayerPos))
 	{
 		lostTimer = lostTime;
@@ -539,39 +538,6 @@ void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 			return;
 		}
 	}
-
-	if (GetRand(1000) < 2)
-	{
-		StartChangeWeapon();
-		return;
-	}
-
-	if (distance > chaseRange)
-	{
-		GeneratePatrolTarget();
-
-		aiState = EnemyAIState::Patrol;
-
-		return;
-	}
-
-	if (distance <= attackRange)
-	{
-		aiState = EnemyAIState::Attack;
-
-		return;
-	}
-
-	velocity = VScale(dir, speed);
-
-	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
-
-	float diff = targetAngle - characterAngle;
-
-	while (diff > DX_PI)diff -= DX_TWO_PI;
-	while (diff < -DX_PI)diff += DX_TWO_PI;
-
-	characterAngle += diff * 10.0f * dt;
 }
 
 void Enemy::UpdateAttack(float dt, VECTOR dir)
@@ -587,22 +553,12 @@ void Enemy::UpdateAttack(float dt, VECTOR dir)
 
 	characterAngle += diff * 10.0f * dt;
 
-	VECTOR forward;
-
-	forward.x = -sinf(characterAngle);
-	forward.y = 0.0f;
-	forward.z = -cosf(characterAngle);
-
-	attackCenter =
-	{
-		pos.x + forward.x * attackOffset,
-		pos.y + 120.0f,
-		pos.z + forward.z * attackOffset
-	};
-
 	if (!attackStarted)
 	{
 		attackStarted = true;
+
+		comboStep = 0;
+		comboNext = false;
 
 		currentState = AnimState::Attack;
 
@@ -617,20 +573,113 @@ void Enemy::UpdateAttack(float dt, VECTOR dir)
 
 	// 次段へ
 	if (comboNext &&
-		comboStep + 1 < currentWeapon->comboCount)
+		comboStep + 1 < currentWeapon->comboCount &&
+		animTime >= currentWeapon->comboAcceptStartFrame[comboStep])
 	{
+		comboStep++;
 
+		comboNext = false;
+		attackHit = false;
+
+		ChangeAnimation(currentWeapon->attackAnim[comboStep], false);
+
+		return;
 	}
 
 	if (animTime >= totalTime)
 	{
-		ResetAttackState();
+		comboStep = 0;
 
-		aiState = EnemyAIState::Cooldown;
+		attackStarted = false;
+		attackActive = false;
+		attackHit = false;
+
+		attackTimer = currentWeapon->attackCooldown;
 
 		currentState = AnimState::Idle;
+		aiState = EnemyAIState::Cooldown;
 
 		ChangeAnimation(idleAnim, true);
+	}
+}
+
+void Enemy::UpdateDash(float dt)
+{
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (!dashStarted)
+	{
+		dashStarted = true;
+
+		currentState = AnimState::Dash;
+
+		ChangeAnimation(currentWeapon->dashAnim, false);
+	}
+
+	if (animTime >= totalTime)
+	{
+		dashStarted = false;
+
+		aiState = EnemyAIState::Chase;
+	}
+}
+
+void Enemy::UpdateDodge(float dt)
+{
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (!dodgeStarted)
+	{
+		dodgeStarted = true;
+
+		currentState = AnimState::Dodge;
+
+		int r = GetRand(2);
+
+		switch (r)
+		{
+		case 0:
+			ChangeAnimation(dodge_b01Anim, false);
+			break;
+
+		case 1:
+			ChangeAnimation(dodge_rAnim, false);
+			break;
+
+		case 2:
+			ChangeAnimation(dodge_lAnim, false);
+			break;
+		}
+	}
+
+	if (animTime >= totalTime)
+	{
+		dodgeStarted = false;
+
+		aiState = EnemyAIState::Chase;
+	}
+}
+
+void Enemy::UpdateChangeWeapon(float dt)
+{
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (!weaponChanging)
+	{
+		weaponChanging = true;
+
+		currentState = AnimState::ChangeWeapon;
+
+		ChangeAnimation(changeWeaponAnim, false);
+	}
+
+	if (animTime >= totalTime)
+	{
+		weaponChanging = false;
+
+		ChangeWeapon();
+
+		aiState = EnemyAIState::Chase;
 	}
 }
 
@@ -641,11 +690,11 @@ void Enemy::UpdateCooldown(float dt, float distance)
 	if (attackTimer > 0.0f)
 		return;
 
-	if (distance <= attackRange)
+	if (distance <= currentWeapon->attackDistance)
 	{
 		aiState = EnemyAIState::Attack;
 	}
-	else if (distance <= viewDistance)
+	else if (distance <= searchRange)
 	{
 		aiState = EnemyAIState::Chase;
 		lostTimer = lostTime;
@@ -684,113 +733,135 @@ void Enemy::UpdateState()
 		// アニメ終了
 		if (animTime >= totalTime)
 		{
-			switch (aiState)
-			{
-			case EnemyAIState::Idle:
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-				break;
+			currentState = AnimState::Idle;
 
-			case EnemyAIState::Patrol:
-				currentState = AnimState::Walk;
-				ChangeAnimation(walk_fAnim, true);
-				break;
-
-			case EnemyAIState::Chase:
-				currentState = AnimState::Chase;
-				ChangeAnimation(chase_fAnim, true);
-				break;
-
-			default:
-				currentState = AnimState::Idle;
-				ChangeAnimation(idleAnim, true);
-				break;
-			}
+			ChangeAnimation(idleAnim, true);
 		}
 
 		return;
 	}
 
-	//　=====　Attack中　=====
-	if (currentState == AnimState::Attack)
+	if (currentState == AnimState::Attack ||
+		currentState == AnimState::Dash ||
+		currentState == AnimState::Dodge ||
+		currentState == AnimState::ChangeWeapon)
 	{
-		float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-		// アニメ終了
-		if (animTime >= attackStartFrame && animTime <= attackEndFrame)
-		{
-			attackActive = true;
-		}
-		else
-		{
-			attackActive = false;
-		}
-
-		if (animTime >= totalTime)
-		{
-			attackHit = false;
-
-			aiState = EnemyAIState::Chase;
-
-			currentState = AnimState::Walk;
-
-			ChangeAnimation(chase_fAnim, true);
-		}
-
 		return;
 	}
 
-	//　=====　通常状態　=====
-	AnimState nextState = AnimState::Idle;
+	AnimState next = AnimState::Idle;
 
 	switch (aiState)
 	{
 	case EnemyAIState::Idle:
-		nextState = AnimState::Idle;
+		next = AnimState::Idle;
 		break;
 
 	case EnemyAIState::Patrol:
-		nextState = AnimState::Walk;
+		next = (velocity.x != 0.0f || velocity.z != 0.0f)
+			? AnimState::Walk
+			: AnimState::Idle;
 		break;
 
 	case EnemyAIState::Chase:
-		nextState = AnimState::Chase;
+		next = (velocity.x != 0.0f || velocity.z != 0.0f)
+			? AnimState::Chase
+			: AnimState::Idle;
 		break;
 
-	case EnemyAIState::Attack:
-		nextState = AnimState::Attack;
+	case EnemyAIState::Cooldown:
+		next = AnimState::Idle;
 		break;
 
-	case EnemyAIState::ChangeWeapon:
-		nextState = AnimState::Idle;
+	default:
+		next = currentState;
 		break;
 	}
 
-	if (nextState != currentState)
+	if (next == currentState)
+		return;
+
+	currentState = next;
+
+	switch (currentState)
 	{
-		currentState = nextState;
+	case AnimState::Idle:
+		ChangeAnimation(idleAnim, true);
+		break;
 
-		switch (currentState)
-		{
-		case AnimState::Idle:
-			ChangeAnimation(idleAnim, true);
-			break;
+	case AnimState::Walk:
+		ChangeAnimation(walk_fAnim, true);
+		break;
 
-		case AnimState::Walk:
-			ChangeAnimation(walk_fAnim, true);
-			break;
-
-		case AnimState::Chase:
-			ChangeAnimation(chase_fAnim, true);
-			break;
-
-		case AnimState::Attack:
-			ChangeAnimation(swordAttack01Anim, false);
-			break;
-
-		case AnimState::JumpRise:
-			ChangeAnimation(jumpRiseAnim, true);
-			break;
-		}
+	case AnimState::Chase:
+		ChangeAnimation(chase_fAnim, true);
+		break;
 	}
+}
+
+void Enemy::ChangeWeapon()
+{
+	if (weaponType == EnemyWeaponType::Sword)
+	{
+		weaponType = EnemyWeaponType::Gun;
+		currentWeapon = &gunData;
+	}
+	else
+	{
+		weaponType = EnemyWeaponType::Sword;
+		currentWeapon = &swordData;
+	}
+
+	speed = currentWeapon->moveSpeed;
+}
+
+void Enemy::ResetAttackState()
+{
+	attackStarted = false;
+	attackHit = false;
+	attackActive = false;
+
+	attackTimer = currentWeapon->attackCooldown;
+}
+
+bool Enemy::CanSeePlayer(VECTOR playerPos) const
+{
+	VECTOR toPlayer = VSub(playerPos, pos);
+
+	toPlayer.y = 0.0f;
+
+	float distance = VSize(toPlayer);
+
+	// 距離外
+	if (distance > searchRange)
+		return false;
+
+	toPlayer = VNorm(toPlayer);
+
+	// Enemy前方向
+	VECTOR forward;
+
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	// 内積
+	float dot =
+		forward.x * toPlayer.x +
+		forward.y * toPlayer.y +
+		forward.z * toPlayer.z;
+
+	// cos(45°)
+	float limit = cosf((viewAngle * 0.5f) * DX_PI_F / 180.0f);
+
+	return dot >= limit;
+}
+
+void Enemy::GeneratePatrolTarget()
+{
+	float range = 300.0f;
+
+	patrolTarget.x = pos.x + (float)(GetRand((int)range * 2) - range);
+	patrolTarget.y = pos.y;
+	patrolTarget.z = pos.z + (float)(GetRand((int)range * 2) - range);
 }

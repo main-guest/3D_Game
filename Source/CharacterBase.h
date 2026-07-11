@@ -20,6 +20,8 @@ enum class AnimState
 
 	Dodge,
 
+	ChangeWeapon,
+
 	Dead
 };
 
