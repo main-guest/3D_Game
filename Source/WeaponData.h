@@ -11,6 +11,12 @@ enum class AttackShape
 
 struct BaseWeaponData
 {
+	// ===== 装備位置補正 =====
+	VECTOR posOffset;
+
+	// ===== 装備回転補正 =====
+	VECTOR rotOffset;
+
 	// ===== 最大コンボ数 =====
 	static constexpr int MaxCombo = 4;
 
@@ -61,12 +67,6 @@ struct WeaponData : public BaseWeaponData
 	{
 		-1,-1,-1,-1
 	};
-
-	// ===== 装備位置補正 =====
-	VECTOR posOffset;
-
-	// ===== 装備回転補正 =====
-	VECTOR rotOffset;
 
 	// ===== 攻撃判定方式 =====
 	bool followAttack = false;

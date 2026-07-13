@@ -114,6 +114,9 @@ private:
 
 	// ===== Weapon =====
 	// •Ší
+	Weapon sword;
+	Weapon gun;
+
 	EnemyWeaponType weaponType = EnemyWeaponType::Sword;
 
 	// •Šíƒf[ƒ^

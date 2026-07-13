@@ -23,6 +23,8 @@ void Enemy::Init(VECTOR startPos)
 	// ===== 共通初期化 =====
 	CharacterBase::Init("Assets/mv1model/Enemy/Enemy2.mv1");
 
+	sword.Init("Aseets/mv1model/Enemy/Sword.mv1");
+
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
 	height = 140.0f;
@@ -61,6 +63,10 @@ void Enemy::Init(VECTOR startPos)
 
 	// ===== 武器データ設定 =====
 	// ----- Sword -----
+	swordData.posOffset = VGet(0.0f, 0.0f, 0.0f);
+
+	swordData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+
 	swordData.comboCount = 4;
 
 	swordData.attackAnim[0] = swordAttack01Anim;
@@ -99,6 +105,10 @@ void Enemy::Init(VECTOR startPos)
 	swordData.attackCooldown = 1.2f;
 
 	// ----- Gun -----
+	gunData.posOffset = VGet(0.0f, 0.0f, 0.0f);
+
+	gunData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+
 	gunData.comboCount = 1;
 
 	gunData.attackAnim[0] = gunAttackAnim;
@@ -133,6 +143,17 @@ void Enemy::Init(VECTOR startPos)
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 {
+	switch (weaponType)
+	{
+	case EnemyWeaponType::Sword:
+		sword.Update(handle, "mixamorig:RightHand", characterAngle);
+		break;
+
+	case EnemyWeaponType::Gun:
+		gun.Update(handle, "mixamorig:RightHand", characterAngle);
+		break;
+	}
+
 	if (isDead)
 	{
 		// ===== モデル非表示 =====
@@ -212,6 +233,17 @@ void Enemy::Render()
 	MV1SetPosition(handle, drawPos);
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 	MV1DrawModel(handle);
+
+	switch (weaponType)
+	{
+	case EnemyWeaponType::Sword:
+		sword.Draw();
+		break;
+
+	case EnemyWeaponType::Gun:
+		gun.Draw();
+		break;
+	}
 
 	// ===== Debug =====
 	DebugDraw();
@@ -393,6 +425,23 @@ void Enemy::DebugDraw()
 		GetColor(255, 255, 255),
 		"comboGoal = %d",
 		comboGoal);
+
+	int y = 40;
+
+	int frameNum = MV1GetFrameNum(handle);
+
+	for (int i = 0; i < frameNum && i < 40; i++)
+	{
+		DrawFormatString(
+			20,
+			y,
+			GetColor(255, 255, 255),
+			"%3d : %s",
+			i,
+			MV1GetFrameName(handle, i));
+
+		y += 18;
+	}
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
