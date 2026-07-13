@@ -9,13 +9,25 @@ enum class AttackShape
 	Gun
 };
 
+/// <summary>
+/// 描画専用データ
+/// </summary>
+struct WeaponRenderData
+{
+	// 装備位置
+	VECTOR posOffset = VGet(0, 0, 0);
+
+	// 装備回転
+	VECTOR rotOffset = VGet(0, 0, 0);
+};
+
 struct BaseWeaponData
 {
-	// ===== 装備位置補正 =====
-	VECTOR posOffset;
+	// 攻撃位置補正
+	VECTOR attackOffset = VGet(0, 0, 0);
 
-	// ===== 装備回転補正 =====
-	VECTOR rotOffset;
+	// 武器追従判定
+	bool followAttack = false;
 
 	// ===== 最大コンボ数 =====
 	static constexpr int MaxCombo = 4;
@@ -34,7 +46,6 @@ struct BaseWeaponData
 	// ===== 判定 =====
 	float attackRadius = 80.0f;
 	float attackDistance = 150.0f;
-	VECTOR attackOffset = VGet(0, 115, 0);;
 
 	// ===== 攻撃フレーム =====
 	float attackStartFrame[MaxCombo]{};
@@ -43,6 +54,8 @@ struct BaseWeaponData
 	// ===== コンボ受付 =====
 	float comboAcceptStartFrame[MaxCombo]{};
 	float comboAcceptEndFrame[MaxCombo]{};
+
+	float comboNextFrame[MaxCombo]{};
 
 	// ===== ダッシュ =====
 	int dashAnim = -1;
@@ -68,14 +81,15 @@ struct WeaponData : public BaseWeaponData
 		-1,-1,-1,-1
 	};
 
-	// ===== 攻撃判定方式 =====
-	bool followAttack = false;
-
 	// ===== ロックオン角度 =====
 	float lockAngle = 30.0f;
 
 	// ===== コンボキャンセル開始フレーム =====
 	float comboCancelFrame[MaxCombo]{};
+
+	float staminaCost = 20.0f;
+
+	int damage = 20;
 };
 
 struct EnemyWeaponData : public BaseWeaponData
@@ -95,8 +109,6 @@ struct EnemyWeaponData : public BaseWeaponData
 	float combo1Probability = 0.3f; //1段止め
 	float combo2Probability = 0.4f; //2段
 	float combo3Probability = 0.3f; //3段
-
-	float comboNextFrame[MaxCombo]{};
 
 	float dashProbability = 0.2f;
 

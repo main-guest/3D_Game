@@ -244,8 +244,12 @@ private:
 
 	// ===== •Šíƒf[ƒ^ =====
 	WeaponData unarmedData;
-	WeaponData SwordData;
-	WeaponData Gun01Data;
+	WeaponData swordData;
+	WeaponData gun01Data;
+
+	WeaponRenderData unarmedRenderData;
+	WeaponRenderData swordRenderData;
+	WeaponRenderData gun01RenderData;
 
 	// ===== Œ»İ‘•”õ =====
 	EquipState equipState;

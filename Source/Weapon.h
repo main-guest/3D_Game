@@ -7,11 +7,11 @@ class Weapon
 public:
 	void Init(const TCHAR* path);
 
-	void Update(int parentHandle, const TCHAR* boneName, float characterAngle);
+	void Update(int parentHandle, const TCHAR* boneName, float characterAngle, bool removeScale = false);
 
 	void Draw();
 
-	void SetData(const WeaponData& d);
+	void SetRenderData(const WeaponRenderData& d);
 
 	const VECTOR& GetRootPosition() const
 	{
@@ -43,6 +43,11 @@ public:
 		return handle;
 	}
 
+	const MATRIX& GetWorldMatrix() const
+	{
+		return worldMatrix;
+	}
+
 private:
 	int handle = -1;
 
@@ -59,7 +64,7 @@ private:
 	// åïêÊà íu
 	const float BLADE_LENGTH = 150.0f;
 
-	WeaponData data;
+	WeaponRenderData renderData;
 
 	VECTOR debugPos;
 };

@@ -8,7 +8,7 @@ void Weapon::Init(const TCHAR* path)
 	MV1SetScale(handle, VGet(1.0f, 1.0f, 1.0f));
 }
 
-void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngle)
+void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngle, bool removeScale)
 {
 	// 前フレーム保存
 	prevRootPos = rootPos;
@@ -25,21 +25,71 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 	// ===== 手ボーン行列取得（位置、回転、向き） =====
 	MATRIX handMat = MV1GetFrameLocalWorldMatrix(parentHandle, frame);
 
+	// ===== Enemy用：ボーンスケール除去 =====
+	if (removeScale)
+	{
+		VECTOR xAxis =
+		{
+			handMat.m[0][0],
+			handMat.m[0][1],
+			handMat.m[0][2]
+		};
+
+		VECTOR yAxis =
+		{
+			handMat.m[1][0],
+			handMat.m[1][1],
+			handMat.m[1][2]
+		};
+
+		VECTOR zAxis =
+		{
+			handMat.m[2][0],
+			handMat.m[2][1],
+			handMat.m[2][2]
+		};
+
+		float sx = VSize(xAxis);
+		float sy = VSize(yAxis);
+		float sz = VSize(zAxis);
+
+		if (sx > 0.0001f)
+		{
+			handMat.m[0][0] /= sx;
+			handMat.m[0][1] /= sx;
+			handMat.m[0][2] /= sx;
+		}
+
+		if (sy > 0.0001f)
+		{
+			handMat.m[1][0] /= sy;
+			handMat.m[1][1] /= sy;
+			handMat.m[1][2] /= sy;
+		}
+
+		if (sz > 0.0001f)
+		{
+			handMat.m[2][0] /= sz;
+			handMat.m[2][1] /= sz;
+			handMat.m[2][2] /= sz;
+		}
+	}
+
 	// デバッグ座標
 	debugPos = VGet(handMat.m[3][0], handMat.m[3][1], handMat.m[3][2]);
 
 	// ===== 武器位置オフセット =====
-	MATRIX transMat = MGetTranslate(data.posOffset);
+	MATRIX transMat = MGetTranslate(renderData.posOffset);
 
 	// ===== 武器回転オフセット =====
 	// X軸
-	MATRIX rotX = MGetRotX(data.rotOffset.x);
+	MATRIX rotX = MGetRotX(renderData.rotOffset.x);
 
 	// Y軸
-	MATRIX rotY = MGetRotY(data.rotOffset.y);
+	MATRIX rotY = MGetRotY(renderData.rotOffset.y);
 
 	// Z軸
-	MATRIX rotZ = MGetRotZ(data.rotOffset.z);
+	MATRIX rotZ = MGetRotZ(renderData.rotOffset.z);
 
 	MATRIX rotOffset = MMult(MMult(rotX, rotY), rotZ);
 
@@ -67,7 +117,7 @@ void Weapon::Draw()
 	MV1DrawModel(handle);
 }
 
-void Weapon::SetData(const WeaponData& d)
+void Weapon::SetRenderData(const WeaponRenderData& d)
 {
-	data = d;
+	renderData = d;
 }

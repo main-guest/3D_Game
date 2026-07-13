@@ -123,6 +123,9 @@ private:
 	EnemyWeaponData swordData;
 	EnemyWeaponData gunData;
 
+	WeaponRenderData swordRenderData;
+	WeaponRenderData gunRenderData;
+
 	// åªç›ëïîı
 	EnemyWeaponData* currentWeapon = nullptr;
 
@@ -141,6 +144,8 @@ private:
 
 	bool useJumpAttack = false;
 
+	bool jumpAttackChecked = false;
+
 	float jumpAttackDistance = 400.0f;
 
 	float comboTimer = 0.0f;
@@ -149,7 +154,7 @@ private:
 
 	VECTOR attackCenter = VGet(0, 0, 0);
 
-	float jumpAttackProbability = 1.0f;
+	float jumpAttackProbability = 0.35f;
 
 	float jumpAttackMoveFrame = 40.0f;
 

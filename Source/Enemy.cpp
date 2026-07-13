@@ -21,9 +21,9 @@ const TCHAR* ToString(EnemyAIState state)
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== 共通初期化 =====
-	CharacterBase::Init("Assets/mv1model/Enemy/Enemy2.mv1");
+	CharacterBase::Init("Assets/mv1model/Enemy/Enemy.mv1");
 
-	sword.Init("Aseets/mv1model/Enemy/Sword.mv1");
+	sword.Init("Assets/mv1model/Enemy/Sword.mv1");
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -63,10 +63,6 @@ void Enemy::Init(VECTOR startPos)
 
 	// ===== 武器データ設定 =====
 	// ----- Sword -----
-	swordData.posOffset = VGet(0.0f, 0.0f, 0.0f);
-
-	swordData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
-
 	swordData.comboCount = 4;
 
 	swordData.attackAnim[0] = swordAttack01Anim;
@@ -104,11 +100,15 @@ void Enemy::Init(VECTOR startPos)
 	swordData.moveSpeed = 230.0f;
 	swordData.attackCooldown = 1.2f;
 
+	swordData.attackOffset = VGet(0, 115, 0);
+
+	swordRenderData.posOffset = VGet(0.0f, 10.0f, -5.0f);
+
+	swordRenderData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 1.25f, DX_PI_F);
+
+	sword.SetRenderData(swordRenderData);
+
 	// ----- Gun -----
-	gunData.posOffset = VGet(0.0f, 0.0f, 0.0f);
-
-	gunData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
-
 	gunData.comboCount = 1;
 
 	gunData.attackAnim[0] = gunAttackAnim;
@@ -126,6 +126,14 @@ void Enemy::Init(VECTOR startPos)
 
 	gunData.moveSpeed = 200.0f;
 	gunData.attackCooldown = 1.8f;
+
+	gunData.attackOffset = VGet(0, 115, 0);
+
+	gunRenderData.posOffset = VGet(0.0f, 0.0f, 0.0f);
+
+	gunRenderData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
+
+	gun.SetRenderData(gunRenderData);
 
 	// 初期装備
 	weaponType = EnemyWeaponType::Sword;
@@ -146,11 +154,11 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 	switch (weaponType)
 	{
 	case EnemyWeaponType::Sword:
-		sword.Update(handle, "mixamorig:RightHand", characterAngle);
+		sword.Update(handle, "mixamorig:RightHand", characterAngle, true);
 		break;
 
 	case EnemyWeaponType::Gun:
-		gun.Update(handle, "mixamorig:RightHand", characterAngle);
+		gun.Update(handle, "mixamorig:RightHand", characterAngle, true);
 		break;
 	}
 
@@ -201,6 +209,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 		return;
 	}
+
 	// ==== クールダウン更新 ====
 	if (attackTimer > 0.0f)
 	{
@@ -212,7 +221,6 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 		}
 	}
 
-
 	UpdateAI(dt, playerPos);
 
 	//　=====　物理処理　=====
@@ -222,6 +230,13 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 	// ===== アニメーション更新 =====
 	UpdateAnimation(dt);
+
+	VECTOR drawPos = pos;
+	drawPos.y -= 30; // 足元補正
+
+	// ===== 描画 =====
+	MV1SetPosition(handle, drawPos);
+	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 }
 
 void Enemy::Render()
@@ -426,7 +441,7 @@ void Enemy::DebugDraw()
 		"comboGoal = %d",
 		comboGoal);
 
-	int y = 40;
+	/*int y = 40;
 
 	int frameNum = MV1GetFrameNum(handle);
 
@@ -441,7 +456,60 @@ void Enemy::DebugDraw()
 			MV1GetFrameName(handle, i));
 
 		y += 18;
-	}
+	}*/
+
+	const MATRIX& mat = sword.GetWorldMatrix();
+
+	DrawFormatString(
+		20,
+		80,
+		GetColor(255, 255, 0),
+		"Enemy Pos %.1f, %.1f, %.1f",
+		mat.m[3][0],
+		mat.m[3][1],
+		mat.m[3][2]);
+
+	DrawFormatString(
+		20,
+		100,
+		GetColor(255, 255, 0),
+		"Enemy Pos %.2f, %.2f, %.2f",
+		VSize(VGet(mat.m[0][0], mat.m[0][1], mat.m[0][2])),
+		VSize(VGet(mat.m[1][0], mat.m[1][1], mat.m[1][2])),
+		VSize(VGet(mat.m[2][0], mat.m[2][1], mat.m[2][2])));
+
+	VECTOR xAxis;
+	xAxis.x = mat.m[0][0];
+	xAxis.y = mat.m[0][1];
+	xAxis.z = mat.m[0][2];
+
+	VECTOR yAxis;
+	yAxis.x = mat.m[1][0];
+	yAxis.y = mat.m[1][1];
+	yAxis.z = mat.m[1][2];
+
+	VECTOR zAxis;
+	zAxis.x = mat.m[2][0];
+	zAxis.y = mat.m[2][1];
+	zAxis.z = mat.m[2][2];
+
+	DrawFormatString(
+		20, 120,
+		GetColor(255, 255, 255),
+		"Scale %.2f %.2f %.2f",
+		VSize(xAxis),
+		VSize(yAxis),
+		VSize(zAxis));
+
+	VECTOR scale = MV1GetScale(handle);
+
+	DrawFormatString(
+		20, 140,
+		GetColor(255, 255, 255),
+		"Model Scale %.2f %.2f %.2f",
+		scale.x,
+		scale.y,
+		scale.z);
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
@@ -568,15 +636,24 @@ void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 	if (distance <= jumpAttackDistance &&
 		distance > currentWeapon->attackDistance)
 	{
-		useJumpAttack = true;
+		if (!jumpAttackChecked)
+		{
+			jumpAttackChecked = true;
 
-		aiState = EnemyAIState::Attack;
+			float r = GetRand(999) / 999.0f;
 
-		return;
+			if (r < jumpAttackProbability)
+			{
+				useJumpAttack = true;
+				aiState = EnemyAIState::Attack;
+				return;
+			}
+		}
 	}
 
 	if (distance <= currentWeapon->attackDistance)
 	{
+		jumpAttackChecked = false;
 		useJumpAttack = false;
 
 		aiState = EnemyAIState::Attack;
@@ -631,19 +708,6 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 		attackActive = false;
 
 		currentState = AnimState::Attack;
-
-		useJumpAttack = false;
-
-		if (distance > currentWeapon->attackDistance &&
-			distance <= jumpAttackDistance)
-		{
-			float r = GetRand(999) / 999.0f;
-
-			if (r < jumpAttackProbability)
-			{
-				useJumpAttack = true;
-			}
-		}
 
 		if (useJumpAttack)
 		{
