@@ -92,7 +92,11 @@ struct EnemyWeaponData : public BaseWeaponData
 
 	float dodgeProbability = 0.25f;
 
-	float attackProbability = 1.0f;
+	float combo1Probability = 0.3f; //1íié~Çﬂ
+	float combo2Probability = 0.4f; //2íi
+	float combo3Probability = 0.3f; //3íi
+
+	float comboNextFrame[MaxCombo]{};
 
 	float dashProbability = 0.2f;
 

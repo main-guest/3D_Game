@@ -49,7 +49,7 @@ private:
 	void UpdateIdle(float dt, float distance);
 	void UpdatePatrol(float dt, float distance);
 	void UpdateChase(float dt, VECTOR dir, float distance);
-	void UpdateAttack(float dt, VECTOR dir);
+	void UpdateAttack(float dt, VECTOR dir, float distance);
 	void UpdateDash(float dt);
 	void UpdateDodge(float dt);
 	void UpdateChangeWeapon(float dt);
@@ -134,13 +134,21 @@ private:
 
 	// 攻撃コンボ
 	int comboStep = 0;          // 現在のコンボ段数
-	bool comboNext = false;     // 次段予約
+	int comboGoal = 0;			//	最終コンボ数
+
+	bool useJumpAttack = false;
+
+	float jumpAttackDistance = 400.0f;
 
 	float comboTimer = 0.0f;
 
 	float attackTimer = 0.0f;
 
 	VECTOR attackCenter = VGet(0, 0, 0);
+
+	float jumpAttackProbability = 1.0f;
+
+	float jumpAttackMoveFrame = 40.0f;
 
 	// ===== Dash =====
 	bool dashStarted = false;

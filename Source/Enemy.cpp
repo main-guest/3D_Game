@@ -82,17 +82,13 @@ void Enemy::Init(VECTOR startPos)
 	swordData.attackStartFrame[3] = 45.0f;
 	swordData.attackEndFrame[3] = 70.0f;
 
-	swordData.comboAcceptStartFrame[0] = 39.0f;
-	swordData.comboAcceptEndFrame[0] = 49.0f;
+	swordData.comboNextFrame[0] = 52.0f;
 
-	swordData.comboAcceptStartFrame[1] = 20.0f;
-	swordData.comboAcceptEndFrame[1] = 32.0f;
+	swordData.comboNextFrame[1] = 35.0f;
 
-	swordData.comboAcceptStartFrame[2] = 0.0f;
-	swordData.comboAcceptEndFrame[2] = 0.0f;
+	swordData.comboNextFrame[2] = 0.0f;
 
-	swordData.comboAcceptStartFrame[3] = 0.0f;
-	swordData.comboAcceptEndFrame[3] = 0.0f;
+	swordData.comboNextFrame[3] = 0.0f;
 
 	swordData.attackShape = AttackShape::Sphere;
 
@@ -158,6 +154,21 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 
 	targetPlayerPos = playerPos;
 
+	if (CanSeePlayer(targetPlayerPos))
+	{
+		// プレイヤーを見えている間はタイマーをリセット
+		lostTimer = lostTime;
+	}
+	else
+	{
+		lostTimer -= dt;
+
+		if (lostTimer < 0.0f)
+		{
+			lostTimer = 0.0f;
+		}
+	}
+
 	// ==== ヒットストップ中は停止 ====
 	if (hitStopTimer > 0.0f)
 	{
@@ -218,7 +229,6 @@ void Enemy::Damage(int power)
 	attackActive = false;
 
 	comboStep = 0;
-	comboNext = false;
 
 	attackTimer = currentWeapon->attackCooldown;
 
@@ -376,6 +386,13 @@ void Enemy::DebugDraw()
 		GetColor(255, 255, 255),
 		"lostTimer : %.2f",
 		lostTimer);
+
+	DrawFormatString(
+		20,
+		60,
+		GetColor(255, 255, 255),
+		"comboGoal = %d",
+		comboGoal);
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
@@ -409,7 +426,7 @@ void Enemy::UpdateAI(float dt, VECTOR playerPos)
 		break;
 
 	case EnemyAIState::Attack:
-		UpdateAttack(dt, dir);
+		UpdateAttack(dt, dir, distance);
 		break;
 
 	case EnemyAIState::Dash:
@@ -439,7 +456,6 @@ void Enemy::UpdateIdle(float dt, float distance)
 	if (CanSeePlayer(targetPlayerPos))
 	{
 		aiState = EnemyAIState::Chase;
-		lostTimer = lostTime;
 
 		return;
 	}
@@ -457,7 +473,6 @@ void Enemy::UpdatePatrol(float dt, float distance)
 	if (CanSeePlayer(targetPlayerPos))
 	{
 		aiState = EnemyAIState::Chase;
-		lostTimer = lostTime;
 
 		return;
 	}
@@ -478,7 +493,7 @@ void Enemy::UpdatePatrol(float dt, float distance)
 
 	moveDir = VNorm(moveDir);
 
-	velocity = VScale(moveDir, speed * 0.5f);
+	velocity = VScale(moveDir, currentWeapon->moveSpeed * 0.5f);
 
 	float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
 
@@ -492,8 +507,6 @@ void Enemy::UpdatePatrol(float dt, float distance)
 
 void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 {
-	currentState = AnimState::Chase;
-
 	if (distance > chaseRange)
 	{
 		GeneratePatrolTarget();
@@ -503,14 +516,26 @@ void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 		return;
 	}
 
-	if (distance <= currentWeapon->attackDistance)
+	if (distance <= jumpAttackDistance &&
+		distance > currentWeapon->attackDistance)
 	{
+		useJumpAttack = true;
+
 		aiState = EnemyAIState::Attack;
 
 		return;
 	}
 
-	velocity = VScale(dir, speed);
+	if (distance <= currentWeapon->attackDistance)
+	{
+		useJumpAttack = false;
+
+		aiState = EnemyAIState::Attack;
+
+		return;
+	}
+
+	velocity = VScale(dir, currentWeapon->moveSpeed);
 
 	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
 
@@ -521,29 +546,21 @@ void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 
 	characterAngle += diff * 10.0f * dt;
 
-	if (CanSeePlayer(targetPlayerPos))
+	if (lostTimer <= 0.0f)
 	{
-		lostTimer = lostTime;
-	}
-	else
-	{
-		lostTimer -= dt;
+		GeneratePatrolTarget();
 
-		if (lostTimer <= 0.0f)
-		{
-			GeneratePatrolTarget();
+		aiState = EnemyAIState::Patrol;
 
-			aiState = EnemyAIState::Patrol;
-
-			return;
-		}
+		return;
 	}
 }
 
-void Enemy::UpdateAttack(float dt, VECTOR dir)
+void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 {
 	velocity = VGet(0, 0, 0);
 
+	// プレイヤー方向へ向く
 	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
 
 	float diff = targetAngle - characterAngle;
@@ -553,53 +570,127 @@ void Enemy::UpdateAttack(float dt, VECTOR dir)
 
 	characterAngle += diff * 10.0f * dt;
 
+	// 攻撃開始
 	if (!attackStarted)
 	{
 		attackStarted = true;
 
 		comboStep = 0;
-		comboNext = false;
+		comboGoal = 0;
+
+		attackHit = false;
+		attackActive = false;
 
 		currentState = AnimState::Attack;
 
-		ChangeAnimation(currentWeapon->attackAnim[comboStep], false);
+		useJumpAttack = false;
+
+		if (distance > currentWeapon->attackDistance &&
+			distance <= jumpAttackDistance)
+		{
+			float r = GetRand(999) / 999.0f;
+
+			if (r < jumpAttackProbability)
+			{
+				useJumpAttack = true;
+			}
+		}
+
+		if (useJumpAttack)
+		{
+			ChangeAnimation(currentWeapon->attackAnim[3], false);
+		}
+		else
+		{
+			// コンボ数決定
+			float r = GetRand(999) / 999.0f;
+
+			if (r < currentWeapon->combo1Probability)
+			{
+				comboGoal = 0;
+			}
+			else if (r < currentWeapon->combo1Probability +
+						 currentWeapon->combo2Probability)
+			{
+				comboGoal = 1;
+			}
+			else
+			{
+				comboGoal = 2;
+			}
+
+			if (comboGoal >= currentWeapon->comboCount)
+			{
+				comboGoal = currentWeapon->comboCount - 1;
+			}
+
+			ChangeAnimation(currentWeapon->attackAnim[0], false);
+		}
+	}
+
+	if (useJumpAttack)
+	{
+		attackActive =
+			animTime >= currentWeapon->attackStartFrame[3] &&
+			animTime <= currentWeapon->attackEndFrame[3];
+	}
+	else
+	{
+		attackActive =
+			animTime >= currentWeapon->attackStartFrame[comboStep] &&
+			animTime <= currentWeapon->attackEndFrame[comboStep];
+	}
+
+	if (useJumpAttack &&
+		animTime <= jumpAttackMoveFrame)
+	{
+		velocity = VScale(dir, currentWeapon->moveSpeed * 2.0f);
+	}
+	else
+	{
+		velocity = VGet(0, 0, 0);
+	}
+
+	// 次段へ
+	if (!useJumpAttack)
+	{
+		if (comboStep < comboGoal &&
+			comboStep + 1 <currentWeapon->comboCount &&
+			animTime >= currentWeapon->comboNextFrame[comboStep])
+		{
+			comboStep++;
+
+			attackHit = false;
+
+			ChangeAnimation(currentWeapon->attackAnim[comboStep], false);
+
+			return;
+		}
 	}
 
 	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
-	attackActive =
-		animTime >= currentWeapon->attackStartFrame[comboStep] &&
-		animTime <= currentWeapon->attackEndFrame[comboStep];
-
-	// 次段へ
-	if (comboNext &&
-		comboStep + 1 < currentWeapon->comboCount &&
-		animTime >= currentWeapon->comboAcceptStartFrame[comboStep])
-	{
-		comboStep++;
-
-		comboNext = false;
-		attackHit = false;
-
-		ChangeAnimation(currentWeapon->attackAnim[comboStep], false);
-
-		return;
-	}
-
 	if (animTime >= totalTime)
 	{
-		comboStep = 0;
-
 		attackStarted = false;
 		attackActive = false;
 		attackHit = false;
 
+		comboStep = 0;
+		comboGoal = 0;
+
+		useJumpAttack = false;
+
 		attackTimer = currentWeapon->attackCooldown;
+
+		lostTimer = lostTime;
 
 		currentState = AnimState::Idle;
 		aiState = EnemyAIState::Cooldown;
 
 		ChangeAnimation(idleAnim, true);
+
+		return;
 	}
 }
 
@@ -690,20 +781,18 @@ void Enemy::UpdateCooldown(float dt, float distance)
 	if (attackTimer > 0.0f)
 		return;
 
-	if (distance <= currentWeapon->attackDistance)
-	{
-		aiState = EnemyAIState::Attack;
-	}
-	else if (distance <= searchRange)
-	{
-		aiState = EnemyAIState::Chase;
-		lostTimer = lostTime;
-	}
-	else
+	if (lostTimer <= 0.0f)
 	{
 		GeneratePatrolTarget();
 
 		aiState = EnemyAIState::Patrol;
+
+		return;
+	}
+
+	if (attackTimer <= 0.0f)
+	{
+		aiState = EnemyAIState::Chase;
 	}
 }
 

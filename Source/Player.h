@@ -136,8 +136,8 @@ private:
 	int hp = 100;
 
 	// --スタミナ--
-	float stamina = 100.0f;
-	const float maxStamina = 100.0f;
+	float stamina = 1000.0f;
+	const float maxStamina = 1000.0f;
 
 	// 回復速度
 	float staminaRecovery = 25.0f;
