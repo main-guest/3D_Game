@@ -271,6 +271,9 @@ void Enemy::Damage(int power)
 
 	hp -= power;
 
+	if (useJumpAttack)
+		return;
+
 	attackStarted = false;
 	attackHit = false;
 	attackActive = false;
@@ -441,75 +444,12 @@ void Enemy::DebugDraw()
 		"comboGoal = %d",
 		comboGoal);
 
-	/*int y = 40;
-
-	int frameNum = MV1GetFrameNum(handle);
-
-	for (int i = 0; i < frameNum && i < 40; i++)
-	{
-		DrawFormatString(
-			20,
-			y,
-			GetColor(255, 255, 255),
-			"%3d : %s",
-			i,
-			MV1GetFrameName(handle, i));
-
-		y += 18;
-	}*/
-
-	const MATRIX& mat = sword.GetWorldMatrix();
-
 	DrawFormatString(
 		20,
 		80,
 		GetColor(255, 255, 0),
-		"Enemy Pos %.1f, %.1f, %.1f",
-		mat.m[3][0],
-		mat.m[3][1],
-		mat.m[3][2]);
-
-	DrawFormatString(
-		20,
-		100,
-		GetColor(255, 255, 0),
-		"Enemy Pos %.2f, %.2f, %.2f",
-		VSize(VGet(mat.m[0][0], mat.m[0][1], mat.m[0][2])),
-		VSize(VGet(mat.m[1][0], mat.m[1][1], mat.m[1][2])),
-		VSize(VGet(mat.m[2][0], mat.m[2][1], mat.m[2][2])));
-
-	VECTOR xAxis;
-	xAxis.x = mat.m[0][0];
-	xAxis.y = mat.m[0][1];
-	xAxis.z = mat.m[0][2];
-
-	VECTOR yAxis;
-	yAxis.x = mat.m[1][0];
-	yAxis.y = mat.m[1][1];
-	yAxis.z = mat.m[1][2];
-
-	VECTOR zAxis;
-	zAxis.x = mat.m[2][0];
-	zAxis.y = mat.m[2][1];
-	zAxis.z = mat.m[2][2];
-
-	DrawFormatString(
-		20, 120,
-		GetColor(255, 255, 255),
-		"Scale %.2f %.2f %.2f",
-		VSize(xAxis),
-		VSize(yAxis),
-		VSize(zAxis));
-
-	VECTOR scale = MV1GetScale(handle);
-
-	DrawFormatString(
-		20, 140,
-		GetColor(255, 255, 255),
-		"Model Scale %.2f %.2f %.2f",
-		scale.x,
-		scale.y,
-		scale.z);
+		"Enemy HP : %d",
+		hp);
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)

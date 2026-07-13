@@ -195,6 +195,8 @@ private:
 	bool isDead = false;
 	bool isDying = false; 
 
+	bool deadFinished = false;
+
 	MoveAnimState currentMoveAnim = MoveAnimState::Idle;
 
 	// ===== ˆÚ“®‘¬“x =====

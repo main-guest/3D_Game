@@ -154,7 +154,7 @@ private:
 
 	VECTOR attackCenter = VGet(0, 0, 0);
 
-	float jumpAttackProbability = 0.35f;
+	float jumpAttackProbability = 1.0f;
 
 	float jumpAttackMoveFrame = 40.0f;
 

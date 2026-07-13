@@ -271,6 +271,25 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
+	// ===== 死亡判定 =====
+	if (hp <= 0)
+	{
+		if (currentState != AnimState::Dead)
+		{
+			currentState = AnimState::Dead;
+
+			velocity = VGet(0, 0, 0);
+
+			ChangeAnimation(deadAnim, false);
+		}
+
+		UpdateAnimation(dt);
+
+		UpdateDead();
+
+		return;
+	}
+
 	//　=====　武器更新　=====
 	switch (equipState)
 	{
@@ -634,23 +653,20 @@ void Player::Damage(int power)
 	velocity.x = -back.x * 350.0f;
 	velocity.z = -back.z * 350.0f;
 
-	// ==== 死亡処理 ====
-	if (hp <= 0)
+	if (hp < 0)
 	{
-		isDying = true;
-
-		currentState = AnimState::Dead;
-		ChangeAnimation(deadAnim, false);
-
-		return;
+		hp = 0;
 	}
 
-	// ==== 怯み開始 ====
-	hitStopTimer = hitStopDuration;
+	if (hp > 0)
+	{
+		// ==== 怯み開始 ====
+		hitStopTimer = hitStopDuration;
 
-	// ===== アニメーション切り替え =====
-	currentState = AnimState::Hit;
-	ChangeAnimation(hitAnim, false);
+		// ===== アニメーション切り替え =====
+		currentState = AnimState::Hit;
+		ChangeAnimation(hitAnim, false);
+	}
 }
 
 void Player::StartDodge(float cameraAngle)
@@ -1515,12 +1531,19 @@ bool Player::UpdateDead()
 	if (currentState != AnimState::Dead)
 		return false;
 
+	if (deadFinished)
+		return true;
+
 	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 	if (animTime >= totalTime)
 	{
 		animTime = totalTime;
 		isDead = true;
+
+		deadFinished = true;
+
+		MV1SetVisible(handle, FALSE);
 	}
 
 	return true;
@@ -1781,6 +1804,8 @@ bool Player::UpdateAttack()
 
 		if (moving)
 		{
+			currentMoveAnim = MoveAnimState::None;
+
 			currentState = isDash ?
 				AnimState::Dash : AnimState::Walk;
 
