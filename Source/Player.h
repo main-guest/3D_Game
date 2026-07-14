@@ -70,6 +70,8 @@ public:
 		return isLockOn;
 	}
 
+	bool IsAttackActive() const { return attackActive; }
+
 	VECTOR GetCenterPos() const;
 
 	void SetPos(const VECTOR& p) { pos = p; }

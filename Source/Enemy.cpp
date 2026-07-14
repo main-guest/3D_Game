@@ -149,7 +149,7 @@ void Enemy::Init(VECTOR startPos)
 	ChangeAnimation(idleAnim, true);
 }
 
-void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
+void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* player)
 {
 	switch (weaponType)
 	{
@@ -220,6 +220,8 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics)
 			attackTimer = 0.0f;
 		}
 	}
+
+	TryDodge(player);
 
 	UpdateAI(dt, playerPos);
 
@@ -450,6 +452,13 @@ void Enemy::DebugDraw()
 		GetColor(255, 255, 0),
 		"Enemy HP : %d",
 		hp);
+
+	DrawFormatString(
+		20,
+		100,
+		GetColor(0, 255, 255),
+		"State=%d",
+		(int)currentState);
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
@@ -778,21 +787,56 @@ void Enemy::UpdateDodge(float dt)
 
 		currentState = AnimState::Dodge;
 
-		int r = GetRand(2);
+		int type = GetRand(2);
 
-		switch (r)
+		switch (type)
 		{
 		case 0:
 			ChangeAnimation(dodge_b01Anim, false);
+			dodgeDir = MoveDirection::Back;
 			break;
 
 		case 1:
 			ChangeAnimation(dodge_rAnim, false);
+			dodgeDir = MoveDirection::Right;
 			break;
 
 		case 2:
 			ChangeAnimation(dodge_lAnim, false);
+			dodgeDir = MoveDirection::Left;
 			break;
+		}
+
+		// Enemy‘O•ûŒü
+		VECTOR forward;
+
+		forward.x = -sinf(characterAngle);
+		forward.y = 0.0f;
+		forward.z = -cosf(characterAngle);
+
+		VECTOR right;
+
+		right.x = forward.z;
+		right.y = 0.0f;
+		right.z = -forward.x;
+
+		if (animTime >= dodgeStartFrame &&
+			animTime <= dodgeEndFrame)
+		{
+			switch (dodgeDir)
+			{
+			case MoveDirection::Back:
+				velocity = VScale(forward, -350);
+				break;
+
+			case MoveDirection::Right:
+				velocity = VScale(right, 350);
+				break;
+
+			case MoveDirection::Left:
+				velocity = VScale(right, -350);
+				break;
+			}
 		}
 	}
 
@@ -801,6 +845,8 @@ void Enemy::UpdateDodge(float dt)
 		dodgeStarted = false;
 
 		aiState = EnemyAIState::Chase;
+
+		currentState = AnimState::Chase;
 	}
 }
 
@@ -1006,4 +1052,31 @@ void Enemy::GeneratePatrolTarget()
 	patrolTarget.x = pos.x + (float)(GetRand((int)range * 2) - range);
 	patrolTarget.y = pos.y;
 	patrolTarget.z = pos.z + (float)(GetRand((int)range * 2) - range);
+}
+
+void Enemy::TryDodge(Player* player)
+{
+	if (currentState == AnimState::Attack ||
+		currentState == AnimState::Dodge ||
+		currentState == AnimState::Dead ||
+		currentState == AnimState::Hit)
+		return;
+
+	if (!player->IsAttackActive())
+	{
+		dodgeStarted = false;
+		return;
+	}
+
+	if (dodgeStarted)
+		return;
+
+	dodgeStarted = true;
+
+	float r = GetRand(999) / 999.0f;
+
+	if (r < currentWeapon->dodgeProbability)
+	{
+		aiState = EnemyAIState::Dodge;
+	}
 }

@@ -104,7 +104,7 @@ struct EnemyWeaponData : public BaseWeaponData
 	// ===== ˆÚ“®‘¬“x =====
 	float moveSpeed = 200.0f;
 
-	float dodgeProbability = 0.25f;
+	float dodgeProbability = 1.0f;
 
 	float combo1Probability = 0.3f; //1’iŽ~‚ß
 	float combo2Probability = 0.4f; //2’i

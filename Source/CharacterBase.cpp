@@ -148,7 +148,7 @@ void CharacterBase::UpdateAnimation(float dt)
 			{
 				MV1DetachAnim(handle, prevAnimAttach);
 
-				prevAnimAttach = false;
+				prevAnimAttach = -1;
 			}
 
 			isBlending = false;

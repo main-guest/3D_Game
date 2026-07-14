@@ -37,7 +37,7 @@ void Stage::Update(float dt, VECTOR playerPos)
 	// ===== Enemy更新 =====
 	for (auto& enemy : enemies)
 	{
-		enemy->Update(dt, playerPos, physics);
+		enemy->Update(dt, playerPos, physics, player);
 	}
 
 	// ===== キャラ衝突用リスト作成 =====

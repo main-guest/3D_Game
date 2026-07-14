@@ -1,6 +1,7 @@
 #pragma once
 #include "CharacterBase.h"
 #include "Weapon.h"
+#include "MoveDirection.h"
 
 class PhysicsManager;
 class Player;
@@ -27,7 +28,7 @@ class Enemy :public CharacterBase
 {
 public:
 	void Init(VECTOR startPos);
-	void Update(float dt, VECTOR playerPos, PhysicsManager& physics);
+	void Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* player);
 	void Render();
 
 	void Damage(int power);
@@ -55,23 +56,18 @@ private:
 	void UpdateChangeWeapon(float dt);
 	void UpdateCooldown(float dt, float distance);
 
-	bool CanSeePlayer(VECTOR playerPos) const;
-
-	void GeneratePatrolTarget();
-
-	// ===== Attack =====
-	void StartAttacK();
-
-	void UpdateAttackAnimation();
-
-	void EndAttack();
+	// アニメーション
+	void UpdateState();
 
 	void ChangeWeapon();
 
 	void ResetAttackState();
 
-	// アニメーション
-	void UpdateState();
+	bool CanSeePlayer(VECTOR playerPos) const;
+
+	void GeneratePatrolTarget();
+
+	void TryDodge(Player* player);
 
 private:
 	// ==== ステータス ====
@@ -174,9 +170,15 @@ private:
 
 	float dodgeTimer = 0.0f;
 
-	float dodgeTime = 0.45f;
+	float dodgeTime = 0.40f;
+
+	MoveDirection dodgeDir = MoveDirection::None;
+
+	float dodgeStartFrame = 0.0f;
+	float dodgeEndFrame = 47.0f;
 
 	// ==== Hit （ヒットストップ）====
 	float hitStopTimer = 0.0f;
+	
 	const float hitStopDuration = 1.5f;
 };
