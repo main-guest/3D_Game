@@ -8,6 +8,7 @@
 #include "FogManager.h"
 
 class Player;
+class Camera;
 
 class Stage
 {
@@ -47,6 +48,9 @@ private:
 
 	// ===== PlayerQÆ =====
 	Player* player = nullptr;
+
+	// ===== CameraQÆ =====
+	Camera* camera = nullptr;
 
 	// ===== Enemyˆê—— =====
 	std::vector<std::unique_ptr<Enemy>> enemies;

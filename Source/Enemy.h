@@ -35,6 +35,8 @@ public:
 
 	void CheckAttackHit(Player* player);
 
+	bool IsDodging() const;
+
 	VECTOR GetCenterPos() const;
 
 	VECTOR GetPos() const { return pos; }
@@ -53,6 +55,9 @@ private:
 	void UpdateAttack(float dt, VECTOR dir, float distance);
 	void UpdateDash(float dt);
 	void UpdateDodge(float dt);
+
+	bool UpdateDead();
+
 	void UpdateChangeWeapon(float dt);
 	void UpdateCooldown(float dt, float distance);
 
@@ -67,15 +72,15 @@ private:
 
 	void GeneratePatrolTarget();
 
-	void TryDodge(Player* player);
+	void TryDodge(Player* player, float distance);
 
 private:
 	// ==== ステータス ====
 	int hp = 100;
 
-	float stamina = 100.0f;
+	float stamina = 300.0f;
 
-	float maxStamina = 100.0f;
+	float maxStamina = 300.0f;
 
 	VECTOR pos = VGet(0, 0, 0);
 	VECTOR velocity = VGet(0, 0, 0);
@@ -86,7 +91,8 @@ private:
 	bool prevGround = true;
 
 	bool isDead = false;
-	bool isDying = false;
+
+	bool deadFinished = false;
 
 	// ===== AI =====
 	EnemyAIState aiState = EnemyAIState::Idle;
@@ -122,6 +128,11 @@ private:
 	WeaponRenderData swordRenderData;
 	WeaponRenderData gunRenderData;
 
+	// Player武器データ
+	const WeaponData* playerWeapon;
+
+	bool isGun = false;
+
 	// 現在装備
 	EnemyWeaponData* currentWeapon = nullptr;
 
@@ -150,7 +161,7 @@ private:
 
 	VECTOR attackCenter = VGet(0, 0, 0);
 
-	float jumpAttackProbability = 1.0f;
+	float jumpAttackProbability = 0.35f;
 
 	float jumpAttackMoveFrame = 40.0f;
 

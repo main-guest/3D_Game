@@ -57,6 +57,10 @@ struct BaseWeaponData
 
 	float comboNextFrame[MaxCombo]{};
 
+	int swordDamage = 20.0f;
+
+	int gunDamage = 30.0f;
+
 	// ===== ダッシュ =====
 	int dashAnim = -1;
 };
@@ -95,8 +99,6 @@ struct WeaponData : public BaseWeaponData
 struct EnemyWeaponData : public BaseWeaponData
 {
 	//  ダメージ
-	int damage = 20;
-
 	float attackCooldown = 1.0f;
 
 	float staminaCost = 20.0f;
@@ -104,7 +106,8 @@ struct EnemyWeaponData : public BaseWeaponData
 	// ===== 移動速度 =====
 	float moveSpeed = 200.0f;
 
-	float dodgeProbability = 1.0f;
+	float dodgeProbability = 0.5f;
+	float gunDodgeProbability = 0.7f;
 
 	float combo1Probability = 0.3f; //1段止め
 	float combo2Probability = 0.4f; //2段

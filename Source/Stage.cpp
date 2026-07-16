@@ -1,5 +1,6 @@
 #include "Stage.h"
 #include "Player.h"
+#include "Camera.h"
 
 Stage::~Stage()
 {
@@ -81,6 +82,37 @@ void Stage::Update(float dt, VECTOR playerPos)
 			}
 		}
 	}
+
+	for (auto& enemy : enemies)
+	{
+		if (enemy->IsDead())
+		{
+			// Playerのロックオン解除
+			if (player->GetLockOnTarget() == enemy.get())
+			{
+				player->SetLockOnTarget(nullptr);
+			}
+
+			// Cameraのターゲット解除
+			if (camera)
+			{
+				if (camera->GetTargetEnemy() == enemy.get())
+				{
+					camera->SetLockTarget(nullptr);
+				}
+			}
+		}
+	}
+
+	enemies.erase(
+		std::remove_if(
+			enemies.begin(),
+			enemies.end(),
+			[](const std::unique_ptr<Enemy>& e)
+			{
+				return e->IsDead();
+			}),
+		enemies.end());
 }
 
 void Stage::Draw(VECTOR camPos)

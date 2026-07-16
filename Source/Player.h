@@ -65,12 +65,19 @@ public:
 		return lockOnTarget;
 	}
 
+	void SetLockOnTarget(Enemy* enemy)
+	{
+		lockOnTarget = enemy;
+	}
+
 	bool IsLockOn() const
 	{
 		return isLockOn;
 	}
 
 	bool IsAttackActive() const { return attackActive; }
+
+	const WeaponData* GetCurrentWeaponData() const;
 
 	VECTOR GetCenterPos() const;
 
@@ -195,7 +202,6 @@ private:
 	bool attackHit = false;
 
 	bool isDead = false;
-	bool isDying = false; 
 
 	bool deadFinished = false;
 

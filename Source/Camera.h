@@ -19,6 +19,11 @@ public:
 
 	VECTOR GetPosition() const { return cameraPos; }
 
+	Enemy* GetTargetEnemy() const
+	{
+		return lockOnTarget;
+	}
+
 	void SetLockTarget(Enemy* enemy);
 
 	void ClearLockTarget();

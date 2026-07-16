@@ -226,8 +226,8 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	{
 		gun01Data.attackAnim[i] = gunAttackAnim;
 
-		gun01Data.attackStartFrame[i] = 10.0f;
-		gun01Data.attackEndFrame[i] = 20.0f;
+		gun01Data.attackStartFrame[i] = 25.0f;
+		gun01Data.attackEndFrame[i] = 26.0f;
 
 		gun01Data.comboAcceptStartFrame[i] = 0.0f;
 		gun01Data.comboAcceptEndFrame[i] = 0.0f;
@@ -271,7 +271,10 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 {
-	// ===== 死亡判定 =====
+	if (isDead)
+		return;
+
+	// ===== 死亡処理 =====
 	if (hp <= 0)
 	{
 		if (currentState != AnimState::Dead)
@@ -290,6 +293,14 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		return;
 	}
 
+	if (lockOnTarget)
+	{
+		if (lockOnTarget->IsDead())
+		{
+			lockOnTarget = nullptr;
+		}
+	}
+
 	//　=====　武器更新　=====
 	switch (equipState)
 	{
@@ -303,14 +314,6 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 
 	case EquipState::Unarmed:
 		break;
-	}
-
-	if (isDead)
-	{
-		// ===== モデル非表示 =====
-		MV1SetVisible(handle, FALSE);
-
-		return;
 	}
 
 	if (isLockOn && lockOnTarget)
@@ -431,10 +434,13 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		{
 			for (Enemy* enemy : gunTargets)
 			{
-				if (enemy && !enemy->IsDead())
-				{
-					enemy->Damage(20);
-				}
+				if (!enemy)
+					continue;
+
+				if (enemy->IsDead())
+					continue;
+
+				enemy->Damage(currentWeaponData->gunDamage);
 			}
 
 			gunTargets.clear();
@@ -564,6 +570,9 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 				if (distanceSq <= radius * radius)
 				{
+					if (enemy->IsDodging())
+						continue;
+
 					enemy->Damage(20);
 
 					attackHit = true;
@@ -602,7 +611,10 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 				if (hit)
 				{
-					enemy->Damage(20);
+					if (enemy->IsDodging())
+						continue;
+
+					enemy->Damage(currentWeaponData->swordDamage);
 
 					attackHit = true;
 					break;
@@ -640,7 +652,7 @@ void Player::Damage(int power)
 	if (isInvincible)
 		return;
 
-	if (isDead || isDying)
+	if (isDead)
 		return;
 
 	hp -= power;
@@ -786,7 +798,10 @@ void Player::ConsumeStamina(float cost, float recoveryDelay)
 
 void Player::LockOn(std::vector<std::unique_ptr<Enemy>>& enemies)
 {
-	lockOnTarget = nullptr;
+	if (lockOnTarget && lockOnTarget->IsDead())
+	{
+		lockOnTarget = nullptr;
+	}
 
 	float nearestDistSq = FLT_MAX;
 
@@ -888,6 +903,11 @@ void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool
 	{
 		lockOnTarget = best;
 	}
+}
+
+const WeaponData* Player::GetCurrentWeaponData() const
+{
+	return currentWeaponData;
 }
 
 VECTOR Player::GetCenterPos() const
@@ -1867,6 +1887,10 @@ std::vector<Enemy*> Player::FindGunTargets(std::vector<std::unique_ptr< Enemy >>
 	for (auto& enemy : enemies)
 	{
 		if (enemy->IsDead())
+			continue;
+
+		// 回避無敵中はスキップ
+		if (enemy->IsDodging())
 			continue;
 
 		VECTOR center = enemy->GetPos();

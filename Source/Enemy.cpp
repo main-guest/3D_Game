@@ -21,7 +21,7 @@ const TCHAR* ToString(EnemyAIState state)
 void Enemy::Init(VECTOR startPos)
 {
 	// ===== 共通初期化 =====
-	CharacterBase::Init("Assets/mv1model/Enemy/Enemy.mv1");
+	CharacterBase::Init("Assets/mv1model/Enemy/Enemy2.mv1");
 
 	sword.Init("Assets/mv1model/Enemy/Sword.mv1");
 
@@ -115,9 +115,9 @@ void Enemy::Init(VECTOR startPos)
 
 	gunData.dashAnim = dash_f02Anim;
 
-	gunData.attackStartFrame[0] = 14.0f;
+	gunData.attackStartFrame[0] = 22.0f;
 
-	gunData.attackEndFrame[0] = 20.0f;
+	gunData.attackEndFrame[0] = 24.0f;
 
 	gunData.attackShape = AttackShape::Gun;
 
@@ -151,6 +151,9 @@ void Enemy::Init(VECTOR startPos)
 
 void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* player)
 {
+	if (isDead)
+		return;
+
 	switch (weaponType)
 	{
 	case EnemyWeaponType::Sword:
@@ -162,10 +165,21 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 		break;
 	}
 
-	if (isDead)
+	// ===== 死亡処理 =====
+	if (hp <= 0)
 	{
-		// ===== モデル非表示 =====
-		MV1SetVisible(handle, FALSE);
+		if (currentState != AnimState::Dead)
+		{
+			currentState = AnimState::Dead;
+
+			velocity = VGet(0, 0, 0);
+
+			ChangeAnimation(deadAnim, false);
+		}
+
+		UpdateAnimation(dt);
+
+		UpdateDead();
 
 		return;
 	}
@@ -221,7 +235,14 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 		}
 	}
 
-	TryDodge(player);
+	playerWeapon = player->GetCurrentWeaponData();
+
+	isGun = playerWeapon->attackShape == AttackShape::Gun;
+
+	VECTOR toPlayer = VSub(playerPos, pos);
+	float distance = VSize(toPlayer);
+
+	TryDodge(player, distance);
 
 	UpdateAI(dt, playerPos);
 
@@ -271,6 +292,9 @@ void Enemy::Damage(int power)
 	if (isDead)
 		return;
 
+	if (currentState == AnimState::Hit)
+		return;
+
 	hp -= power;
 
 	if (useJumpAttack)
@@ -284,22 +308,20 @@ void Enemy::Damage(int power)
 
 	attackTimer = currentWeapon->attackCooldown;
 
-	if (hp <= 0)
+	if (hp < 0)
 	{
-		isDying = true;
-
-		currentState = AnimState::Dead;
-		ChangeAnimation(deadAnim, false);
-
-		return;
+		hp = 0;
 	}
 
-	// ==== 怯み開始 ====
-	hitStopTimer = hitStopDuration;
+	if (hp > 0)
+	{
+		// ==== 怯み開始 ====
+		hitStopTimer = hitStopDuration;
 
-	// ===== アニメーション切り替え =====
-	currentState = AnimState::Hit;
-	ChangeAnimation(hitAnim, false);
+		// ===== アニメーション切り替え =====
+		currentState = AnimState::Hit;
+		ChangeAnimation(hitAnim, false);
+	}
 
 	// ===== 攻撃されたらプレイヤーを認識 =====
 	if (aiState != EnemyAIState::Attack)
@@ -336,10 +358,16 @@ void Enemy::CheckAttackHit(Player* player)
 
 	if (dist <= currentWeapon->attackRadius)
 	{
-		player->Damage(currentWeapon->damage);
+		player->Damage(currentWeapon->swordDamage);
 
 		attackHit = true;
 	}
+}
+
+bool Enemy::IsDodging() const
+{
+	return currentState == AnimState::Dodge ||
+		aiState == EnemyAIState::Dodge;
 }
 
 VECTOR Enemy::GetCenterPos() const
@@ -779,75 +807,78 @@ void Enemy::UpdateDash(float dt)
 
 void Enemy::UpdateDodge(float dt)
 {
-	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+	// Enemy前方向
+	VECTOR forward;
 
-	if (!dodgeStarted)
+	forward.x = -sinf(characterAngle);
+	forward.y = 0.0f;
+	forward.z = -cosf(characterAngle);
+
+	VECTOR right;
+
+	right.x = forward.z;
+	right.y = 0.0f;
+	right.z = -forward.x;
+
+	if (animTime >= dodgeStartFrame &&
+		animTime <= dodgeEndFrame)
 	{
-		dodgeStarted = true;
-
-		currentState = AnimState::Dodge;
-
-		int type = GetRand(2);
-
-		switch (type)
+		switch (dodgeDir)
 		{
-		case 0:
-			ChangeAnimation(dodge_b01Anim, false);
-			dodgeDir = MoveDirection::Back;
+		case MoveDirection::Back:
+			velocity = VScale(forward, -350);
 			break;
 
-		case 1:
-			ChangeAnimation(dodge_rAnim, false);
-			dodgeDir = MoveDirection::Right;
+		case MoveDirection::Right:
+			velocity = VScale(right, 350);
 			break;
 
-		case 2:
-			ChangeAnimation(dodge_lAnim, false);
-			dodgeDir = MoveDirection::Left;
+		case MoveDirection::Left:
+			velocity = VScale(right, -350);
 			break;
-		}
-
-		// Enemy前方向
-		VECTOR forward;
-
-		forward.x = -sinf(characterAngle);
-		forward.y = 0.0f;
-		forward.z = -cosf(characterAngle);
-
-		VECTOR right;
-
-		right.x = forward.z;
-		right.y = 0.0f;
-		right.z = -forward.x;
-
-		if (animTime >= dodgeStartFrame &&
-			animTime <= dodgeEndFrame)
-		{
-			switch (dodgeDir)
-			{
-			case MoveDirection::Back:
-				velocity = VScale(forward, -350);
-				break;
-
-			case MoveDirection::Right:
-				velocity = VScale(right, 350);
-				break;
-
-			case MoveDirection::Left:
-				velocity = VScale(right, -350);
-				break;
-			}
 		}
 	}
+	else
+	{
+		velocity = VGet(0, 0, 0);
+	}
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
 
 	if (animTime >= totalTime)
 	{
 		dodgeStarted = false;
 
+		velocity = VGet(0, 0, 0);
+
 		aiState = EnemyAIState::Chase;
 
 		currentState = AnimState::Chase;
 	}
+}
+
+bool Enemy::UpdateDead()
+{
+	if (currentState != AnimState::Dead)
+		return false;
+
+	if (deadFinished)
+		return true;
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
+	if (animTime >= totalTime)
+	{
+		animTime = totalTime;
+
+		isDead = true;
+
+		deadFinished = true;
+
+		MV1SetVisible(handle, FALSE);
+	}
+
+	return true;
 }
 
 void Enemy::UpdateChangeWeapon(float dt)
@@ -1054,7 +1085,7 @@ void Enemy::GeneratePatrolTarget()
 	patrolTarget.z = pos.z + (float)(GetRand((int)range * 2) - range);
 }
 
-void Enemy::TryDodge(Player* player)
+void Enemy::TryDodge(Player* player, float distance)
 {
 	if (currentState == AnimState::Attack ||
 		currentState == AnimState::Dodge ||
@@ -1071,12 +1102,71 @@ void Enemy::TryDodge(Player* player)
 	if (dodgeStarted)
 		return;
 
+	// 視界外なら回避しない
+	if (!CanSeePlayer(player->GetPos()))
+		return;
+
+	// 距離が遠いなら回避しない
+	float dodgeDistance =
+		playerWeapon->attackDistance +
+		playerWeapon->attackRadius + 50.0f;
+
+	if (distance > dodgeDistance)
+		return;
+
 	dodgeStarted = true;
+
+	float dodgeProb = currentWeapon->dodgeProbability;
+
+	if (player->GetCurrentWeaponData()->attackShape == AttackShape::Gun)
+	{
+		dodgeProb = currentWeapon->gunDodgeProbability;
+	}
 
 	float r = GetRand(999) / 999.0f;
 
-	if (r < currentWeapon->dodgeProbability)
+	if (r < dodgeProb)
 	{
 		aiState = EnemyAIState::Dodge;
+
+		currentState = AnimState::Dodge;
+
+		if (isGun)
+		{
+			int type = GetRand(1);
+
+			if (type == 0)
+			{
+				ChangeAnimation(dodge_rAnim, false);
+				dodgeDir = MoveDirection::Right;
+			}
+			else
+			{
+				ChangeAnimation(dodge_lAnim, false);
+				dodgeDir = MoveDirection::Left;
+			}
+		}
+		else
+		{
+			int type = GetRand(2);
+
+			switch (type)
+			{
+			case 0:
+				ChangeAnimation(dodge_b01Anim, false);
+				dodgeDir = MoveDirection::Back;
+				break;
+
+			case 1:
+				ChangeAnimation(dodge_rAnim, false);
+				dodgeDir = MoveDirection::Right;
+				break;
+
+			case 2:
+				ChangeAnimation(dodge_lAnim, false);
+				dodgeDir = MoveDirection::Left;
+				break;
+			}
+		}
 	}
 }
