@@ -24,6 +24,16 @@ enum class EnemyAIState
 	Cooldown
 };
 
+enum class CooldownMove
+{
+	None,
+
+	Forward,
+	Back,
+	Left,
+	Right
+};
+
 class Enemy :public CharacterBase
 {
 public:
@@ -53,7 +63,7 @@ private:
 	void UpdatePatrol(float dt, float distance);
 	void UpdateChase(float dt, VECTOR dir, float distance);
 	void UpdateAttack(float dt, VECTOR dir, float distance);
-	void UpdateDash(float dt);
+	void UpdateDash(float dt, VECTOR dir);
 	void UpdateDodge(float dt);
 
 	bool UpdateDead();
@@ -99,13 +109,17 @@ private:
 
 	float stateTimer = 2.0f;
 
+	CooldownMove cooldownMove = CooldownMove::None;
+
+	float cooldownMoveTimer = 0.0f;
+
 	VECTOR patrolTarget = VGet(0, 0, 0);
 
 	// PLAYERˆÊ’u•Û‘¶
 	VECTOR targetPlayerPos = VGet(0, 0, 0);
 
 	// ===== ‹ŠE =====
-	float searchRange = 500.0f;	// Š´’m‹——£
+	float searchRange = 600.0f;	// Š´’m‹——£
 	float chaseRange = 800.0f;      // Å‘å’Ç”ö‹——£
 	float attackRange = 150.0f;     // UŒ‚‹——£
 
@@ -169,10 +183,6 @@ private:
 	bool dashStarted = false;
 
 	VECTOR dashDirection = VGet(0, 0, 0);
-
-	float dashTimer = 0.0;
-
-	float dashTime = 0.35f;
 
 	// ===== Dodge =====
 	bool dodgeStarted = false;

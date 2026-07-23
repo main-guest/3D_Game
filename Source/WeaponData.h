@@ -9,9 +9,7 @@ enum class AttackShape
 	Gun
 };
 
-/// <summary>
-/// 描画専用データ
-/// </summary>
+// 描画専用データ
 struct WeaponRenderData
 {
 	// 装備位置
@@ -92,13 +90,10 @@ struct WeaponData : public BaseWeaponData
 	float comboCancelFrame[MaxCombo]{};
 
 	float staminaCost = 20.0f;
-
-	int damage = 20;
 };
 
 struct EnemyWeaponData : public BaseWeaponData
 {
-	//  ダメージ
 	float attackCooldown = 1.0f;
 
 	float staminaCost = 20.0f;

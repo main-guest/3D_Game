@@ -24,6 +24,7 @@ void Enemy::Init(VECTOR startPos)
 	CharacterBase::Init("Assets/mv1model/Enemy/Enemy2.mv1");
 
 	sword.Init("Assets/mv1model/Enemy/Sword.mv1");
+	gun.Init("Assets/mv1model/Enemy/Gun01.mv1");
 
 	// ===== 当たり判定サイズ =====
 	radius = 10.0f;
@@ -136,8 +137,8 @@ void Enemy::Init(VECTOR startPos)
 	gun.SetRenderData(gunRenderData);
 
 	// 初期装備
-	weaponType = EnemyWeaponType::Sword;
-	currentWeapon = &swordData;
+	weaponType = EnemyWeaponType::Gun;
+	currentWeapon = &gunData;
 
 	// ===== 初期状態 =====
 	speed = currentWeapon->moveSpeed;
@@ -338,29 +339,56 @@ void Enemy::CheckAttackHit(Player* player)
 	if (attackHit)
 		return;
 
-	VECTOR center = GetCenterPos();
-
-	VECTOR forward =
+	switch (currentWeapon->attackShape)
 	{
-		-sinf(characterAngle),
-		0.0f,
-		-cosf(characterAngle)
-	};
-
-	VECTOR attackCenter =
+	case AttackShape::Sphere:
 	{
-		center.x + forward.x * currentWeapon->attackDistance,
-		center.y,
-		center.z + forward.z * currentWeapon->attackDistance
-	};
+		VECTOR center = GetCenterPos();
 
-	float dist = VSize(VSub(player->GetCenterPos(), attackCenter));
+		VECTOR forward =
+		{
+			-sinf(characterAngle),
+			0.0f,
+			-cosf(characterAngle)
+		};
 
-	if (dist <= currentWeapon->attackRadius)
+		VECTOR attackCenter =
+		{
+			center.x + forward.x * currentWeapon->attackDistance,
+			center.y,
+			center.z + forward.z * currentWeapon->attackDistance
+		};
+
+		float dist = VSize(VSub(player->GetCenterPos(), attackCenter));
+
+		if (dist <= currentWeapon->attackRadius)
+		{
+			player->Damage(currentWeapon->swordDamage);
+
+			attackHit = true;
+		}
+
+		break;
+	}
+
+	case AttackShape::Gun:
 	{
-		player->Damage(currentWeapon->swordDamage);
+		VECTOR start = GetCenterPos();
+		VECTOR end =
+		{
+			start.x - sinf(characterAngle) * currentWeapon->attackDistance,
+			start.y,
+			start.z - cosf(characterAngle) * currentWeapon->attackDistance
+		};
 
-		attackHit = true;
+		VECTOR bottom = player->GetPos();
+
+		VECTOR top = bottom;
+		top.y += player->GetHeight();
+
+		bool hit =
+			LineCapsuleHit(start, end, bottom, top, player->GetRadius());
+	}
 	}
 }
 
@@ -524,7 +552,7 @@ void Enemy::UpdateAI(float dt, VECTOR playerPos)
 		break;
 
 	case EnemyAIState::Dash:
-		UpdateDash(dt);
+		UpdateDash(dt, dir);
 		break;
 
 	case EnemyAIState::Dodge:
@@ -587,7 +615,7 @@ void Enemy::UpdatePatrol(float dt, float distance)
 
 	moveDir = VNorm(moveDir);
 
-	velocity = VScale(moveDir, currentWeapon->moveSpeed * 0.5f);
+	velocity = VScale(moveDir, speed * 0.5f);
 
 	float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI;
 
@@ -638,7 +666,7 @@ void Enemy::UpdateChase(float dt, VECTOR dir, float distance)
 		return;
 	}
 
-	velocity = VScale(dir, currentWeapon->moveSpeed);
+	velocity = VScale(dir, speed);
 
 	float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
 
@@ -734,7 +762,7 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 	if (useJumpAttack &&
 		animTime <= jumpAttackMoveFrame)
 	{
-		velocity = VScale(dir, currentWeapon->moveSpeed * 2.0f);
+		velocity = VScale(dir, speed * 2.0f);
 	}
 	else
 	{
@@ -775,6 +803,51 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 
 		lostTimer = lostTime;
 
+		if (distance > 350.0f)
+		{
+
+			float r = GetRand(999) / 999.0f;
+
+			if (r < 0.6f)
+			{
+				currentState = AnimState::Dash;
+				aiState = EnemyAIState::Dash;
+
+				return;
+			}
+		}
+
+		float r = GetRand(999) / 999.0f;
+
+		if (r < 0.15f)
+		{
+			currentState = AnimState::ChangeWeapon;
+			aiState = EnemyAIState::ChangeWeapon;
+
+			return;
+		}
+
+		// ===== Cooldown行動 =====
+		int type = GetRand(99);
+
+		if (distance < 120.0f)
+		{
+			cooldownMove = CooldownMove::Back;
+		}
+		else
+		{
+			if (type < 10)
+				cooldownMove = CooldownMove::Forward;
+			else if (type < 40)
+				cooldownMove = CooldownMove::Back;
+			else if (type < 70)
+				cooldownMove = CooldownMove::Left;
+			else
+				cooldownMove = CooldownMove::Right;
+		}
+
+		cooldownMoveTimer = currentWeapon->attackCooldown;
+
 		currentState = AnimState::Idle;
 		aiState = EnemyAIState::Cooldown;
 
@@ -784,10 +857,8 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 	}
 }
 
-void Enemy::UpdateDash(float dt)
+void Enemy::UpdateDash(float dt, VECTOR dir)
 {
-	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
 	if (!dashStarted)
 	{
 		dashStarted = true;
@@ -797,11 +868,18 @@ void Enemy::UpdateDash(float dt)
 		ChangeAnimation(currentWeapon->dashAnim, false);
 	}
 
+	velocity = VScale(dir, speed * 1.5f);
+
+	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
+
 	if (animTime >= totalTime)
 	{
 		dashStarted = false;
 
+		velocity = VGet(0, 0, 0);
+
 		aiState = EnemyAIState::Chase;
+		currentState == AnimState::Chase;
 	}
 }
 
@@ -901,12 +979,72 @@ void Enemy::UpdateChangeWeapon(float dt)
 		ChangeWeapon();
 
 		aiState = EnemyAIState::Chase;
+		currentState = AnimState::Chase;
 	}
 }
 
 void Enemy::UpdateCooldown(float dt, float distance)
 {
+	VECTOR dir = VSub(targetPlayerPos, pos);
+	dir.y = 0.0f;
+
+	if (VSize(dir) > 0.01f)
+	{
+		dir = VNorm(dir);
+
+		float targetAngle = atan2f(dir.x, dir.z) + DX_PI;
+
+		float diff = targetAngle - characterAngle;
+
+		while (diff > DX_PI) diff -= DX_TWO_PI;
+		while (diff < -DX_PI) diff += DX_TWO_PI;
+
+		characterAngle += diff * 10.0f * dt;
+	}
+
+	VECTOR forward =
+	{
+		-sinf(characterAngle),
+		0.0f,
+		-cosf(characterAngle)
+	};
+
+	VECTOR right =
+	{
+		forward.z,
+		0.0f,
+		-forward.x
+	};
+
 	velocity = VGet(0, 0, 0);
+
+	if (cooldownMoveTimer > 0.0f)
+	{
+		cooldownMoveTimer -= dt;
+
+		switch (cooldownMove)
+		{
+		case CooldownMove::Forward:
+			velocity = VScale(forward, speed);
+			ChangeAnimation(chase_fAnim, true);
+			break;
+
+		case CooldownMove::Back:
+			velocity = VScale(forward, -speed);
+			ChangeAnimation(chase_bAnim, true);
+			break;
+
+		case CooldownMove::Left:
+			velocity = VScale(right, -speed);
+			ChangeAnimation(chase_lAnim, true);
+			break;
+
+		case CooldownMove::Right:
+			velocity = VScale(right, speed);
+			ChangeAnimation(chase_rAnim, true);
+			break;
+		}
+	}
 
 	if (attackTimer > 0.0f)
 		return;
@@ -920,7 +1058,7 @@ void Enemy::UpdateCooldown(float dt, float distance)
 		return;
 	}
 
-	if (attackTimer <= 0.0f)
+	if (attackTimer <= 0.0f || cooldownMoveTimer <= 0.0f)
 	{
 		aiState = EnemyAIState::Chase;
 	}
