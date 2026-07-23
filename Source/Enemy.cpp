@@ -127,7 +127,7 @@ void Enemy::Init(VECTOR startPos)
 	gunData.attackRadius = 50.0f;
 
 	gunData.moveSpeed = 200.0f;
-	gunData.attackCooldown = 1.8f;
+	gunData.attackCooldown = 3.0f;
 
 	gunData.attackOffset = VGet(0, 115, 0);
 
@@ -138,8 +138,8 @@ void Enemy::Init(VECTOR startPos)
 	gun.SetRenderData(gunRenderData);
 
 	// ‰Šú‘•”õ
-	weaponType = EnemyWeaponType::Gun;
-	currentWeapon = &gunData;
+	weaponType = EnemyWeaponType::Sword;
+	currentWeapon = &swordData;
 
 	// ===== ‰Šúó‘Ô =====
 	speed = currentWeapon->moveSpeed;
@@ -591,6 +591,13 @@ void Enemy::DebugDraw()
 		GetColor(0, 255, 255),
 		"State=%d",
 		(int)currentState);
+
+	DrawFormatString(
+		1000,
+		480,
+		GetColor(255, 255, 255),
+		"ChangeProb : %.2f",
+		changeProb);
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
@@ -628,7 +635,7 @@ void Enemy::UpdateAI(float dt, VECTOR playerPos)
 		break;
 
 	case EnemyAIState::Dash:
-		UpdateDash(dt, dir);
+		UpdateDash(dt, dir, distance);
 		break;
 
 	case EnemyAIState::Dodge:
@@ -893,9 +900,25 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 			}
 		}
 
+		changeProb = weaponChangeProbability;
+
+		// Œ•‚ğ‚Á‚Ä‚¢‚Ä‰“‚¢
+		if (weaponType == EnemyWeaponType::Sword &&
+			distance >= 550.0f)
+		{
+			changeProb *= 3.0f;
+		}
+
+		// e‚ğ‚Á‚Ä‚¢‚Ä‹ß‚¢
+		if (weaponType == EnemyWeaponType::Gun &&
+			distance <= 180.0f)
+		{
+			changeProb *= 5.0f;
+		}
+
 		float r = GetRand(999) / 999.0f;
 
-		if (r < weaponChangeProbability)
+		if (r < changeProb)
 		{
 			currentState = AnimState::ChangeWeapon;
 			aiState = EnemyAIState::ChangeWeapon;
@@ -933,7 +956,7 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 	}
 }
 
-void Enemy::UpdateDash(float dt, VECTOR dir)
+void Enemy::UpdateDash(float dt, VECTOR dir, float distance)
 {
 	if (!dashStarted)
 	{
@@ -941,14 +964,13 @@ void Enemy::UpdateDash(float dt, VECTOR dir)
 
 		currentState = AnimState::Dash;
 
-		ChangeAnimation(currentWeapon->dashAnim, false);
+		ChangeAnimation(currentWeapon->dashAnim, true);
 	}
 
 	velocity = VScale(dir, speed * 1.5f);
 
-	float totalTime = MV1GetAttachAnimTotalTime(handle, currentAnimAttach);
-
-	if (animTime >= totalTime)
+	if ((attackTimer <= 0.0f && cooldownMoveTimer <= 0.0f) ||
+		distance <= currentWeapon->attackDistance)
 	{
 		dashStarted = false;
 

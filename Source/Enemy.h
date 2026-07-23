@@ -63,7 +63,7 @@ private:
 	void UpdatePatrol(float dt, float distance);
 	void UpdateChase(float dt, VECTOR dir, float distance);
 	void UpdateAttack(float dt, VECTOR dir, float distance);
-	void UpdateDash(float dt, VECTOR dir);
+	void UpdateDash(float dt, VECTOR dir, float distance);
 	void UpdateDodge(float dt);
 
 	bool UpdateDead();
@@ -119,7 +119,7 @@ private:
 	VECTOR targetPlayerPos = VGet(0, 0, 0);
 
 	// ===== ‹ŠE =====
-	float searchRange = 600.0f;	// Š´’m‹——£
+	float searchRange = 650.0f;	// Š´’m‹——£
 	float chaseRange = 800.0f;      // Å‘å’Ç”ö‹——£
 	float attackRange = 150.0f;     // UŒ‚‹——£
 
@@ -153,7 +153,9 @@ private:
 	// ChangeWeapon
 	bool weaponChanging = false;
 
-	float weaponChangeProbability = 0.0f;
+	float weaponChangeProbability = 0.15f;
+
+	float changeProb;
 
 	// ===== Attack =====
 	bool attackStarted = false;
