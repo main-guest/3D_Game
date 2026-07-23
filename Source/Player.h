@@ -75,6 +75,15 @@ public:
 		return isLockOn;
 	}
 
+	MoveDirection GetDodgeDir() const
+	{
+		return dodgeDirection;
+	}
+
+	bool IsDodging() const;
+
+	bool IsInvincible() const;
+
 	bool IsAttackActive() const { return attackActive; }
 
 	const WeaponData* GetCurrentWeaponData() const;

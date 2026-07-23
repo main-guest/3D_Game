@@ -2,6 +2,7 @@
 
 #include "Enemy.h"
 #include "Player.h"
+#include "Collision.h"
 #include "CollisionWorld.h"
 #include "PhysicsManager.h"
 
@@ -123,7 +124,7 @@ void Enemy::Init(VECTOR startPos)
 	gunData.attackShape = AttackShape::Gun;
 
 	gunData.attackDistance = 650.0f;
-	gunData.attackRadius = 20.0f;
+	gunData.attackRadius = 50.0f;
 
 	gunData.moveSpeed = 200.0f;
 	gunData.attackCooldown = 1.8f;
@@ -363,9 +364,12 @@ void Enemy::CheckAttackHit(Player* player)
 
 		if (dist <= currentWeapon->attackRadius)
 		{
-			player->Damage(currentWeapon->swordDamage);
-
 			attackHit = true;
+
+			if (player->IsInvincible())
+				return;
+
+			player->Damage(currentWeapon->swordDamage);
 		}
 
 		break;
@@ -387,7 +391,28 @@ void Enemy::CheckAttackHit(Player* player)
 		top.y += player->GetHeight();
 
 		bool hit =
-			LineCapsuleHit(start, end, bottom, top, player->GetRadius());
+			LineCapsuleHit(start, end, bottom, top, player->GetRadius() + currentWeapon->attackRadius);
+
+		if (hit)
+		{
+			attackHit = true;
+
+			if (player->IsDodging() &&
+				player->IsInvincible())
+			{
+				auto dir = player->GetDodgeDir();
+
+				if (dir == MoveDirection::Left ||
+					dir == MoveDirection::Right)
+				{
+					return;
+				}
+			}
+
+			player->Damage(currentWeapon->gunDamage);
+		}
+
+		break;
 	}
 	}
 }
@@ -441,13 +466,64 @@ void Enemy::DebugDraw()
 	// UŒ‚”»’è
 	if (attackActive)
 	{
-		DrawSphere3D(
-			attackCenter,
-			currentWeapon->attackRadius,
-			16,
-			GetColor(255, 255, 0),
-			GetColor(255, 255, 0),
-			FALSE);
+		switch (currentWeapon->attackShape)
+		{
+		case AttackShape::Sphere:
+		{
+			VECTOR center = GetCenterPos();
+
+			VECTOR forward =
+			{
+				-sinf(characterAngle),
+				0.0f,
+				-cosf(characterAngle)
+			};
+
+			VECTOR attackCenter =
+			{
+				center.x + forward.x * currentWeapon->attackDistance,
+				center.y,
+				center.z + forward.z * currentWeapon->attackDistance
+			};
+
+			DrawSphere3D(
+				attackCenter,
+				5.0f,
+				8,
+				GetColor(255, 255, 0),
+				GetColor(255, 255, 0),
+				TRUE);
+
+			DrawSphere3D(
+				attackCenter,
+				currentWeapon->attackRadius,
+				16,
+				GetColor(255, 0, 0),
+				0,
+				FALSE);
+
+			break;
+		}
+
+		case AttackShape::Gun:
+		{
+			VECTOR start = GetCenterPos();
+
+			VECTOR end =
+			{
+				start.x - sinf(characterAngle) * currentWeapon->attackDistance,
+				start.y,
+				start.z - cosf(characterAngle) * currentWeapon->attackDistance
+			};
+
+			DrawLine3D(
+				start,
+				end,
+				GetColor(0, 255, 0));
+
+			break;
+		}
+		}
 	}
 
 	float half = viewAngle * 0.5f * DX_PI_F / 180.0f;
@@ -819,7 +895,7 @@ void Enemy::UpdateAttack(float dt, VECTOR dir, float distance)
 
 		float r = GetRand(999) / 999.0f;
 
-		if (r < 0.15f)
+		if (r < weaponChangeProbability)
 		{
 			currentState = AnimState::ChangeWeapon;
 			aiState = EnemyAIState::ChangeWeapon;
@@ -1030,8 +1106,29 @@ void Enemy::UpdateCooldown(float dt, float distance)
 			break;
 
 		case CooldownMove::Back:
-			velocity = VScale(forward, -speed);
-			ChangeAnimation(chase_bAnim, true);
+			if (distance < searchRange)
+			{
+				velocity = VScale(forward, -speed);
+				ChangeAnimation(chase_bAnim, true);
+			}
+			else
+			{
+				cooldownMoveTimer = currentWeapon->attackCooldown;
+
+				if (GetRand(1) == 0)
+				{
+					cooldownMove = CooldownMove::Left;
+					velocity = VScale(right, -speed);
+					ChangeAnimation(chase_lAnim, true);
+				}
+				else
+				{
+					cooldownMove = CooldownMove::Right;
+					velocity = VScale(right, speed);
+					ChangeAnimation(chase_rAnim, true);
+				}
+			}
+
 			break;
 
 		case CooldownMove::Left:
@@ -1058,7 +1155,8 @@ void Enemy::UpdateCooldown(float dt, float distance)
 		return;
 	}
 
-	if (attackTimer <= 0.0f || cooldownMoveTimer <= 0.0f)
+	if (attackTimer <= 0.0f && 
+		cooldownMoveTimer <= 0.0f)
 	{
 		aiState = EnemyAIState::Chase;
 	}

@@ -348,9 +348,14 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 		{
 			velocity.x = dodgeMoveDir.x * dodgeSpeed;
 			velocity.z = dodgeMoveDir.z * dodgeSpeed;
+
+			isInvincible = true;
 		}
 		else
 		{
+
+			isInvincible = false;
+
 			velocity.x = 0.0f;
 			velocity.z = 0.0f;
 		}
@@ -646,16 +651,15 @@ void Player::CheckAttackHit(std::vector<std::unique_ptr<Enemy>>& enemies)
 
 void Player::Damage(int power)
 {
-	if (isDodging)
-		return;
-
-	if (isInvincible)
-		return;
-
 	if (isDead)
 		return;
 
 	hp -= power;
+
+	velocity = VGet(0, 0, 0);
+
+	isDodging = false;
+	isInvincible = false;
 
 	isKnockback = true;
 	knockbackTimer = knockbackDuration;
@@ -678,6 +682,8 @@ void Player::Damage(int power)
 		// ===== アニメーション切り替え =====
 		currentState = AnimState::Hit;
 		ChangeAnimation(hitAnim, false);
+
+		SetAnimSpeed(1.5f);
 	}
 }
 
@@ -903,6 +909,16 @@ void Player::SwitchLockTarget(std::vector<std::unique_ptr<Enemy>>& enemies, bool
 	{
 		lockOnTarget = best;
 	}
+}
+
+bool Player::IsDodging() const
+{
+	return currentState == AnimState::Dodge;
+}
+
+bool Player::IsInvincible() const
+{
+	return isInvincible;
 }
 
 const WeaponData* Player::GetCurrentWeaponData() const

@@ -153,6 +153,8 @@ private:
 	// ChangeWeapon
 	bool weaponChanging = false;
 
+	float weaponChangeProbability = 0.0f;
+
 	// ===== Attack =====
 	bool attackStarted = false;
 
@@ -172,8 +174,6 @@ private:
 	float comboTimer = 0.0f;
 
 	float attackTimer = 0.0f;
-
-	VECTOR attackCenter = VGet(0, 0, 0);
 
 	float jumpAttackProbability = 0.35f;
 
