@@ -191,12 +191,15 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 		return;
 	}
 
+	VECTOR toPlayer = VSub(playerPos, pos);
+	float distance = VSize(toPlayer);
+
 	// ===== 死亡アニメ中はAI停止 =====
 	if (currentState == AnimState::Dead)
 	{
 		velocity = VGet(0, 0, 0);
 
-		UpdateState();
+		UpdateState(distance);
 		UpdateAnimation(dt);
 
 		return;
@@ -217,6 +220,15 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 		{
 			lostTimer = 0.0f;
 		}
+	}
+
+	if (hitTimer > 0.0f)
+	{
+		hitTimer -= dt;
+	}
+	else
+	{
+		hitCount = 0;
 	}
 
 	// ==== ヒットストップ中は停止 ====
@@ -246,9 +258,6 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 
 	isGun = playerWeapon->attackShape == AttackShape::Gun;
 
-	VECTOR toPlayer = VSub(playerPos, pos);
-	float distance = VSize(toPlayer);
-
 	TryDodge(player, distance);
 
 	UpdateAI(dt, playerPos);
@@ -256,7 +265,7 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 	//　=====　物理処理　=====
 	physics.MoveCharacter(pos, velocity, radius, isGround, dt);
 
-	UpdateState();
+	UpdateState(distance);
 
 	// ===== アニメーション更新 =====
 	UpdateAnimation(dt);
@@ -299,10 +308,12 @@ void Enemy::Damage(int power)
 	if (isDead)
 		return;
 
-	if (currentState == AnimState::Hit)
+	if (forceBackDodge)
 		return;
 
 	hp -= power;
+
+	hitCount++;
 
 	if (useJumpAttack)
 		return;
@@ -314,6 +325,15 @@ void Enemy::Damage(int power)
 	comboStep = 0;
 
 	attackTimer = currentWeapon->attackCooldown;
+
+	// 1秒以内に2回以上被弾
+	hitTimer = 1.5f;
+
+	if (hitCount >= 2)
+	{
+		forceBackDodge = true;
+		hitCount = 0;
+	}
 
 	if (hp < 0)
 	{
@@ -328,12 +348,12 @@ void Enemy::Damage(int power)
 		// ===== アニメーション切り替え =====
 		currentState = AnimState::Hit;
 		ChangeAnimation(hitAnim, false);
-	}
 
-	// ===== 攻撃されたらプレイヤーを認識 =====
-	if (aiState != EnemyAIState::Attack)
-	{
-		aiState = EnemyAIState::Chase;
+		if (forceBackDodge)
+		{
+			aiState = EnemyAIState::Dodge;
+			return;
+		}
 	}
 }
 
@@ -603,6 +623,27 @@ void Enemy::DebugDraw()
 		GetColor(255, 255, 255),
 		"ChangeProb : %.2f",
 		changeProb);
+
+	DrawFormatString(
+		1000,
+		500,
+		GetColor(255, 255, 255),
+		"forceBackDodge : %d",
+		forceBackDodge);
+
+	DrawFormatString(
+		1000,
+		520,
+		GetColor(255, 255, 255),
+		"hitTimer : %.1f",
+		hitTimer);
+
+	DrawFormatString(
+		1000,
+		540,
+		GetColor(255, 255, 255),
+		"hitCount : %d",
+		hitCount);
 }
 
 void Enemy::UpdateAI(float dt, VECTOR playerPos)
@@ -1027,6 +1068,14 @@ void Enemy::UpdateDodge(float dt)
 	right.y = 0.0f;
 	right.z = -forward.x;
 
+	if (forceBackDodge)
+	{
+		dodgeDir = MoveDirection::Back;
+		ChangeAnimation(dodge_b01Anim, false);
+
+		forceBackDodge = false;
+	}
+
 	if (animTime >= dodgeStartFrame &&
 		animTime <= dodgeEndFrame)
 	{
@@ -1214,7 +1263,7 @@ void Enemy::UpdateCooldown(float dt, float distance)
 	aiState = EnemyAIState::Chase;
 }
 
-void Enemy::UpdateState()
+void Enemy::UpdateState(float distance)
 {
 	// ===== 死亡 =====
 	if (currentState == AnimState::Dead)
@@ -1240,6 +1289,15 @@ void Enemy::UpdateState()
 		// アニメ終了
 		if (animTime >= totalTime)
 		{
+			if (distance < searchRange)
+			{
+				// ===== 攻撃されたらプレイヤーを認識 =====
+				if (aiState != EnemyAIState::Attack)
+				{
+					aiState = EnemyAIState::Chase;
+				}
+			}
+
 			currentState = AnimState::Idle;
 
 			ChangeAnimation(idleAnim, true);

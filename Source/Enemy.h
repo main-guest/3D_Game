@@ -72,7 +72,7 @@ private:
 	void UpdateCooldown(float dt, float distance);
 
 	// アニメーション
-	void UpdateState();
+	void UpdateState(float distance);
 
 	void ChangeWeapon();
 
@@ -206,4 +206,10 @@ private:
 	float hitStopTimer = 0.0f;
 	
 	const float hitStopDuration = 1.5f;
+
+	int hitCount = 0;
+
+	float hitTimer = 0.0f;
+
+	bool forceBackDodge = false;
 };
