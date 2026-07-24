@@ -151,11 +151,11 @@ private:
 
 private:
 	// ===== ステータス =====
-	int hp = 1000;
+	int hp = 100;
 
 	// --スタミナ--
-	float stamina = 1000.0f;
-	const float maxStamina = 1000.0f;
+	float stamina = 200.0f;
+	const float maxStamina = 200.0f;
 
 	// 回復速度
 	float staminaRecovery = 25.0f;

@@ -161,7 +161,7 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	swordData.dashAnim = dash_f02Anim;
 
 	swordData.attackShape = AttackShape::Line;
-	swordData.attackRadius = 20.0f;
+	swordData.attackRadius = 30.0f;
 	swordData.attackDistance = 160.0f;
 
 	// 攻撃コンボ　攻撃開始・終了フレーム

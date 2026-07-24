@@ -1107,6 +1107,8 @@ void Enemy::UpdateDodge(float dt)
 
 		velocity = VGet(0, 0, 0);
 
+		attackTimer = 0.0f;
+
 		aiState = EnemyAIState::Chase;
 
 		currentState = AnimState::Chase;
@@ -1237,12 +1239,12 @@ void Enemy::UpdateCooldown(float dt, float distance)
 			break;
 
 		case CooldownMove::Left:
-			velocity = VScale(right, -speed);
+			velocity = VScale(right, -speed / 3);
 			ChangeAnimation(chase_lAnim, true);
 			break;
 
 		case CooldownMove::Right:
-			velocity = VScale(right, speed);
+			velocity = VScale(right, speed / 3);
 			ChangeAnimation(chase_rAnim, true);
 			break;
 		}
