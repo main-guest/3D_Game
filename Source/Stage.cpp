@@ -139,3 +139,13 @@ void Stage::DebugDraw()
 {
 	collisionWorld.DebugDraw();
 }
+
+Enemy* Stage::GetBoss()
+{
+	if (enemies.empty())
+	{
+		return nullptr;
+	}
+
+	return enemies[0].get();
+}

@@ -99,6 +99,27 @@ public:
 
 	VECTOR GetForward() const;
 
+	// UI用
+	int GetHp() const
+	{
+		return hp;
+	}
+
+	int GetMaxHp() const
+	{
+		return maxHp;
+	}
+
+	float GetStamina() const
+	{
+		return stamina;
+	}
+
+	float GetMaxStamina() const
+	{
+		return maxStamina;
+	}
+
 	void DebugDraw();
 	void DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies);
 
@@ -152,16 +173,17 @@ private:
 private:
 	// ===== ステータス =====
 	int hp = 100;
+	int maxHp = 100;
 
 	// --スタミナ--
-	float stamina = 200.0f;
-	const float maxStamina = 200.0f;
+	float stamina = 400.0f;
+	const float maxStamina = 400.0f;
 
 	// 回復速度
 	float staminaRecovery = 25.0f;
 
 	// 回復開始までの待機時間
-	float staminaRecoveryDelay = 1.0f;
+	float staminaRecoveryDelay = 0.1f;
 
 	// 消費してからの経過時間
 	float staminaRecoveryTimer = 0.0f;
@@ -175,10 +197,10 @@ private:
 	float jumpCost = 10.0f;
 
 	// 行動ごとの回復待機時間
-	float dashDelay = 2.0f;
-	float dodgeDelay = 2.0f;
-	float attackDelay = 3.5f;
-	float jumpDelay = 3.0f;
+	float dashDelay = 1.0f;
+	float dodgeDelay = 0.3f;
+	float attackDelay = 1.5f;
+	float jumpDelay = 2.0f;
 
 	bool staminaBreak = false;
 

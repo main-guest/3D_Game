@@ -53,6 +53,27 @@ public:
 
 	bool IsDead() const { return isDead; }
 
+	// UI用
+	int GetHp() const
+	{
+		return hp;
+	}
+
+	int GetMaxHp() const
+	{
+		return maxHp;
+	}
+
+	float GetStamina() const
+	{
+		return stamina;
+	}
+
+	float GetMaxStamina() const
+	{
+		return maxStamina;
+	}
+
 	void DebugDraw();
 
 private:
@@ -87,9 +108,9 @@ private:
 private:
 	// ==== ステータス ====
 	int hp = 150;
+	int maxHp = 150.0f;
 
 	float stamina = 300.0f;
-
 	float maxStamina = 300.0f;
 
 	VECTOR pos = VGet(0, 0, 0);

@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "Camera.h"
 #include "Stage.h"
+#include "UI.h"
 #include "CollisionWorld.h"
 #include "PhysicsManager.h"
 #include "FogManager.h"
@@ -34,12 +35,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	Player player;
 	Camera camera;
 	Stage stage;
+	UI ui;
 	FogManager fog;	// フォグ（霧）設定
 
 	stage.Init(&player);
 	player.Init(&stage.GetCollisionWorld(), &stage, &camera);
 	camera.Init();
+	ui.Init(&player);
+	ui.SetEnemy(stage.GetBoss());
 	fog.Init();
+
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -57,6 +62,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// --- 更新 ---
 		player.Update(deltaTime, camera.GetYaw(), stage.GetPhysics());
 		stage.Update(deltaTime, player.GetPos());
+		ui.Update(deltaTime, &player);
 
 		if (player.IsLockOn())
 		{
@@ -76,17 +82,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		stage.Draw(camera.GetPosition());
 		player.Draw();
 
-		stage.DebugDraw();
+		ui.Draw();
 
-		camera.DebugDraw();
+		//stage.DebugDraw();
 
-		player.DebugDraw();
-		player.DrawCapsuleDebug(stage.GetEnemies());
+		//camera.DebugDraw();
+
+		//player.DebugDraw();
+		//player.DrawCapsuleDebug(stage.GetEnemies());
 
 		// デバッグ表示
-		VECTOR camPos = camera.GetPosition();
+		/*VECTOR camPos = camera.GetPosition();
 		DrawFormatString(20, 360, GetColor(255, 255, 255), "CamPos: X=%.2f Y=%.2f Z=%.2f", camPos.x, camPos.y, camPos.z);
-		DrawFormatString(20, 340, GetColor(255, 255, 255), "deltaTime : %.4f", deltaTime);
+		DrawFormatString(20, 340, GetColor(255, 255, 255), "deltaTime : %.4f", deltaTime);*/
 
 		ScreenFlip();
 

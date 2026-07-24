@@ -300,7 +300,7 @@ void Enemy::Render()
 	}
 
 	// ===== Debug =====
-	DebugDraw();
+	//DebugDraw();
 }
 
 void Enemy::Damage(int power)

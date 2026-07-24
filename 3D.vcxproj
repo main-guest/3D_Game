@@ -30,6 +30,7 @@
     <ClCompile Include="Source\Player.cpp" />
     <ClCompile Include="Source\SkyDome.cpp" />
     <ClCompile Include="Source\Stage.cpp" />
+    <ClCompile Include="Source\UI.cpp" />
     <ClCompile Include="Source\Weapon.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -44,6 +45,7 @@
     <ClInclude Include="Source\Player.h" />
     <ClInclude Include="Source\SkyDome.h" />
     <ClInclude Include="Source\Stage.h" />
+    <ClInclude Include="Source\UI.h" />
     <ClInclude Include="Source\Weapon.h" />
     <ClInclude Include="Source\WeaponData.h" />
   </ItemGroup>

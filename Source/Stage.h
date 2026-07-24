@@ -33,6 +33,8 @@ public:
 
 	void DebugDraw();
 
+	Enemy* GetBoss();
+
 	std::vector<std::unique_ptr<Enemy>>& GetEnemies();
 
 private:
