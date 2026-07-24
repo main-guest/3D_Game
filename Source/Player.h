@@ -151,7 +151,7 @@ private:
 
 private:
 	// ===== ステータス =====
-	int hp = 100;
+	int hp = 1000;
 
 	// --スタミナ--
 	float stamina = 1000.0f;

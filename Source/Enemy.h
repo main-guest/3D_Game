@@ -123,6 +123,8 @@ private:
 	float chaseRange = 800.0f;      // Å‘å’Ç”ö‹——£
 	float attackRange = 150.0f;     // UŒ‚‹——£
 
+	const float minDistance = 150.0f;
+
 	float viewAngle = 90.0f;		// ‹–ìŠp(“x)
 
 	float lostTimer = 0.0f;
