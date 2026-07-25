@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+
 #include "DxLib.h"
 #include "WeaponData.h"
 
@@ -11,7 +13,13 @@ public:
 
 	void Draw();
 
+	void DebugDraw();
+
 	void SetRenderData(const WeaponRenderData& d);
+
+	void SetGlow(bool flag);
+
+	void SetGlowColor(VECTOR color);
 
 	const VECTOR& GetRootPosition() const
 	{
@@ -67,4 +75,11 @@ private:
 	WeaponRenderData renderData;
 
 	VECTOR debugPos;
+
+	// ”­Œõ
+	bool isGlow = false;
+
+	std::vector<int> glowMaterials;
+
+	VECTOR glowColor = VGet(1.0f, 1.0f, 1.0f);
 };

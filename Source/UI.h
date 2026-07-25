@@ -10,7 +10,7 @@ public:
 
 	void Update(float dt, Player* player);
 
-	void Draw();
+	void Draw(Player* player);
 
 	void UpdatePlayer(float dt, Player* player);
 
@@ -21,6 +21,8 @@ public:
 	void UpdateEnemy(float dt);
 
 	void DrawEnemy();
+
+	void DrawLockOn(Player* player);
 
 private:
 	// ===== PLAYER =====

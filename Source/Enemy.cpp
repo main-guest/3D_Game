@@ -276,6 +276,9 @@ void Enemy::Update(float dt, VECTOR playerPos, PhysicsManager& physics, Player* 
 	// ===== •`‰æ =====
 	MV1SetPosition(handle, drawPos);
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
+
+	gun.SetGlowColor(VGet(1, 0, 0));
+	gun.SetGlow(attackActive);
 }
 
 void Enemy::Render()

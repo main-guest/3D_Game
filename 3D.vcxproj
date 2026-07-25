@@ -43,6 +43,7 @@
     <ClInclude Include="Source\MoveDirection.h" />
     <ClInclude Include="Source\PhysicsManager.h" />
     <ClInclude Include="Source\Player.h" />
+    <ClInclude Include="Source\ScreenSize.h" />
     <ClInclude Include="Source\SkyDome.h" />
     <ClInclude Include="Source\Stage.h" />
     <ClInclude Include="Source\UI.h" />

@@ -416,6 +416,9 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	MV1SetPosition(handle, drawPos);
 	MV1SetRotationXYZ(handle, VGet(0, characterAngle, 0));
 
+	gun01.SetGlowColor(VGet(0, 0, 1));
+	//gun01.SetGlow(true);
+
 	//　=====　武器切り替え　=====
 	if (CheckHitKey(KEY_INPUT_1))
 	{

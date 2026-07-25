@@ -2,6 +2,7 @@
 #include "UI.h"
 #include "Player.h"
 #include "Enemy.h"
+#include "ScreenSize.h"
 
 void UI::Init(Player* player)
 {
@@ -21,11 +22,13 @@ void UI::Update(float dt, Player* player)
 }
 
 
-void UI::Draw()
+void UI::Draw(Player* player)
 {
 	DrawPlayer();
 
 	DrawEnemy();
+
+	DrawLockOn(player);
 }
 
 
@@ -225,4 +228,27 @@ void UI::DrawEnemy()
 	DrawString(x, y - 20,
 		"Enemy",
 		GetColor(0, 0, 0));
+}
+
+void UI::DrawLockOn(Player* player)
+{
+	Enemy* enemy = player->GetLockOnTarget();
+
+	if (!enemy)
+		return;
+
+	if (enemy->IsDead())
+		return;
+
+	VECTOR pos = enemy->GetCenterPos();
+
+	VECTOR screen = ConvWorldPosToScreenPos(pos);
+
+	int x = (int)screen.x;
+	int y = (int)screen.y;
+
+	DrawCircle(x, y,
+		3,
+		GetColor(255, 255, 255),
+		TRUE);
 }

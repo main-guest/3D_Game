@@ -6,6 +6,21 @@ void Weapon::Init(const TCHAR* path)
 	handle = MV1LoadModel(path);
 
 	MV1SetScale(handle, VGet(1.0f, 1.0f, 1.0f));
+
+	glowMaterials.clear();
+
+	int materialNum = MV1GetMaterialNum(handle);
+
+	for (int i = 0; i < materialNum; i++)
+	{
+		const TCHAR* name = MV1GetMaterialName(handle, i);
+
+		if (_tcscmp(name, ("Material.002")) == 0 ||
+			_tcscmp(name, ("Material.028")) == 0)
+		{
+			glowMaterials.push_back(i);
+		}
+	}
 }
 
 void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngle, bool removeScale)
@@ -113,11 +128,64 @@ void Weapon::Update(int parentHandle, const TCHAR* boneName, float characterAngl
 
 void Weapon::Draw()
 {
+	COLOR_F color;
+
+	if (isGlow)
+	{
+		color.r = glowColor.x;
+		color.g = glowColor.y;
+		color.b = glowColor.z;
+		color.a = 1.0f;
+	}
+	else
+	{
+		color.r = 0.0f;
+		color.g = 0.0f;
+		color.b = 0.0f;
+		color.a = 1.0f;
+	}
+
+	for (int material : glowMaterials)
+	{
+		MV1SetMaterialEmiColor(handle, material, color);
+	}
+
 	// ===== •Ší•`‰æ =====
 	MV1DrawModel(handle);
+
+	DebugDraw();
+
+	printfDx("Draw %p\n", this);
 }
 
 void Weapon::SetRenderData(const WeaponRenderData& d)
 {
 	renderData = d;
+}
+
+void Weapon::SetGlow(bool flag)
+{
+	isGlow = flag;
+
+	printfDx("SetGlow %p\n", this);
+
+	DrawFormatString(
+		20,
+		150,
+		GetColor(255, 255, 255),
+		"SetGlow called");
+}
+
+void Weapon::SetGlowColor(VECTOR color)
+{
+	glowColor = color;
+}
+
+void Weapon::DebugDraw()
+{
+	DrawFormatString(
+		20, 120,
+		GetColor(255, 255, 255),
+		"Glow : %d",
+		isGlow);
 }

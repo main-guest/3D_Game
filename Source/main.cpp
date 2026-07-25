@@ -9,10 +9,7 @@
 #include "CollisionWorld.h"
 #include "PhysicsManager.h"
 #include "FogManager.h"
-
-// ===== íËêî =====
-const int SCREEN_W = 1280;
-const int SCREEN_H = 720;
+#include "ScreenSize.h"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -44,7 +41,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ui.Init(&player);
 	ui.SetEnemy(stage.GetBoss());
 	fog.Init();
-
 
 	// ===== deltaTimeóp =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -82,7 +78,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		stage.Draw(camera.GetPosition());
 		player.Draw();
 
-		ui.Draw();
+		ui.Draw(&player);
 
 		//stage.DebugDraw();
 
