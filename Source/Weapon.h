@@ -13,8 +13,6 @@ public:
 
 	void Draw();
 
-	void DebugDraw();
-
 	void SetRenderData(const WeaponRenderData& d);
 
 	void SetGlow(bool flag);

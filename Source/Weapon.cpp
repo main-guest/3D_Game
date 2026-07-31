@@ -16,7 +16,10 @@ void Weapon::Init(const TCHAR* path)
 		const TCHAR* name = MV1GetMaterialName(handle, i);
 
 		if (_tcscmp(name, ("Material.002")) == 0 ||
-			_tcscmp(name, ("Material.028")) == 0)
+			_tcscmp(name, ("Material.027")) == 0 ||
+			_tcscmp(name, ("Material.028")) == 0 ||
+			_tcscmp(name, ("Material.029")) == 0 ||
+			_tcscmp(name, ("Material.030")) == 0)
 		{
 			glowMaterials.push_back(i);
 		}
@@ -152,10 +155,6 @@ void Weapon::Draw()
 
 	// ===== ïêäÌï`âÊ =====
 	MV1DrawModel(handle);
-
-	DebugDraw();
-
-	printfDx("Draw %p\n", this);
 }
 
 void Weapon::SetRenderData(const WeaponRenderData& d)
@@ -166,26 +165,9 @@ void Weapon::SetRenderData(const WeaponRenderData& d)
 void Weapon::SetGlow(bool flag)
 {
 	isGlow = flag;
-
-	printfDx("SetGlow %p\n", this);
-
-	DrawFormatString(
-		20,
-		150,
-		GetColor(255, 255, 255),
-		"SetGlow called");
 }
 
 void Weapon::SetGlowColor(VECTOR color)
 {
 	glowColor = color;
-}
-
-void Weapon::DebugDraw()
-{
-	DrawFormatString(
-		20, 120,
-		GetColor(255, 255, 255),
-		"Glow : %d",
-		isGlow);
 }
