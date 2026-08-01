@@ -1,6 +1,7 @@
 #include <tchar.h>
 #include <cmath>
 #include "DxLib.h"
+#include "EffekseerforDxLib.h"
 
 #include "Player.h"
 #include "Camera.h"
@@ -8,6 +9,7 @@
 #include "UI.h"
 #include "CollisionWorld.h"
 #include "PhysicsManager.h"
+#include "EffectManager.h"
 #include "FogManager.h"
 #include "ScreenSize.h"
 
@@ -20,6 +22,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
 
 	if (DxLib_Init() == -1) return -1;
+
+	if (Effekseer_Init(1500) == -1)
+	{
+		DxLib_End();
+		return -1;
+	}
+
+	// フルスクリーンウインドウの切り替えでリソースが消えるのを防ぐ。
+	SetChangeScreenModeGraphicsSystemResetFlag(FALSE);
 
 	// Zバッファ有効
 	SetUseZBuffer3D(TRUE);
@@ -41,6 +52,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ui.Init(&player);
 	ui.SetEnemy(stage.GetBoss());
 	fog.Init();
+
+	EffectManager::Instance().Init();
+
+	EffectManager::Instance().Load("Slash01", "Assets/Effect/Sword/efk/Slash01.efk", 5.0f);
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();
@@ -70,13 +85,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 
 		camera.Update(deltaTime, player.GetPos());
+
+		// DXライブラリのカメラとEffekseerのカメラを同期する。
+		Effekseer_Sync3DSetting();
+
+		if (CheckHitKey(KEY_INPUT_F))
+		{
+			EffectManager::Instance().Play(
+				"Slash01",
+				VGet(0, 100, 300),
+				2.0f
+			);
+		}
+
 		fog.Update(camera.GetPosition(), player.GetPos());
+
+		// Effekseerにより再生中のエフェクトを更新する。
+		EffectManager::Instance().Update();
 
 		// --- 描画 ---
 		ClearDrawScreen();
 
 		stage.Draw(camera.GetPosition());
 		player.Draw();
+
+		EffectManager::Instance().Draw();
 
 		ui.Draw(&player);
 
@@ -100,6 +133,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		}
 	}
+
+	EffectManager::Instance().Release();
+
+	Effkseer_End();
 
 	DxLib_End();
 	return 0;
