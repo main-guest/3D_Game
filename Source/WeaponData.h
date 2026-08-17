@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 #include "DxLib.h"
 #include "MoveDirection.h"
 
@@ -90,6 +92,9 @@ struct WeaponData : public BaseWeaponData
 	float comboCancelFrame[MaxCombo]{};
 
 	float staminaCost = 20.0f;
+
+	// ===== エフェクト =====
+	std::string slashEffect[MaxCombo];
 };
 
 struct EnemyWeaponData : public BaseWeaponData

@@ -26,11 +26,14 @@ public:
 	void Release();
 
 	// エフェクト読み込み
-	void Load(const std::string& name, const std::string& path,
+	void Load(const std::string& name, 
+		const std::string& path,
 		float scale);
 
 	// 再生
-	int Play(const std::string& name, VECTOR pos,
+	int Play(const std::string& name, 
+		VECTOR pos, 
+		VECTOR rot,
 		float scale);
 
 private:

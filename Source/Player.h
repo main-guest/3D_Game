@@ -120,6 +120,9 @@ public:
 		return maxStamina;
 	}
 
+	// エフェクト
+	void PlaySlashEffect();
+
 	void DebugDraw();
 	void DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies);
 
@@ -334,4 +337,7 @@ private:
 
 	// ロックオン距離
 	float lockOnDistance = 800.0f;
+
+	// エフェクト用フラグ
+	bool slashEffectPlayed = false;
 };

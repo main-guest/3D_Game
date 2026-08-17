@@ -43,6 +43,7 @@ void EffectManager::Load(const std::string& name,
 
 int EffectManager::Play(const std::string& name,
 	VECTOR pos,
+	VECTOR rot,
 	float scale)
 {
 	auto itr = effects.find(name);
@@ -62,6 +63,13 @@ int EffectManager::Play(const std::string& name,
 		pos.x,
 		pos.y,
 		pos.z
+	);
+
+	SetRotationPlayingEffekseer3DEffect(
+		playHandle,
+		rot.x,
+		rot.y,
+		rot.z
 	);
 
 	SetScalePlayingEffekseer3DEffect(

@@ -86,19 +86,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		camera.Update(deltaTime, player.GetPos());
 
+		fog.Update(camera.GetPosition(), player.GetPos());
+
 		// DXライブラリのカメラとEffekseerのカメラを同期する。
 		Effekseer_Sync3DSetting();
-
-		if (CheckHitKey(KEY_INPUT_F))
-		{
-			EffectManager::Instance().Play(
-				"Slash01",
-				VGet(0, 100, 300),
-				2.0f
-			);
-		}
-
-		fog.Update(camera.GetPosition(), player.GetPos());
 
 		// Effekseerにより再生中のエフェクトを更新する。
 		EffectManager::Instance().Update();

@@ -157,6 +157,30 @@ void Weapon::Draw()
 	MV1DrawModel(handle);
 }
 
+//VECTOR Weapon::GetBladeDirection() const
+//{
+//	VECTOR dir = VSub(tipPos, rootPos);
+//
+//	if (VSize(dir) < 0.001f)
+//	{
+//		return VGet(0.0f, 1.0f, 0.0f);
+//	}
+//
+//	return VNorm(dir);
+//}
+//
+//VECTOR Weapon::GetSwingDirection() const
+//{
+//	VECTOR dir = VSub(tipPos, prevTipPos);
+//
+//	if (VSize(dir) < 0.0001f)
+//	{
+//		return VGet(0.0f, 0.0f, 1.0f);
+//	}
+//
+//	return VNorm(dir);
+//}
+
 void Weapon::SetRenderData(const WeaponRenderData& d)
 {
 	renderData = d;

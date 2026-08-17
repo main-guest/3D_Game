@@ -9,7 +9,10 @@ class Weapon
 public:
 	void Init(const TCHAR* path);
 
-	void Update(int parentHandle, const TCHAR* boneName, float characterAngle, bool removeScale = false);
+	void Update(int parentHandle, 
+		const TCHAR* boneName, 
+		float characterAngle, 
+		bool removeScale);
 
 	void Draw();
 
@@ -38,6 +41,12 @@ public:
 	{
 		return prevTipPos;
 	}
+
+	//// 剣そのものが向いている方向
+	//VECTOR GetBladeDirection() const;
+
+	//// 前フレーム → 現在フレームの剣先移動方向
+	//VECTOR GetSwingDirection() const;
 
 	const VECTOR& GetDebugPos()const
 	{

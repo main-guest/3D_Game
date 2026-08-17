@@ -10,6 +10,7 @@
 #include "Collision.h"
 #include "Stage.h"
 #include "Camera.h"
+#include "EffectManager.h"
 
 namespace
 {
@@ -200,6 +201,12 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 
 	swordData.followAttack = true;
 
+	// Effect
+	swordData.slashEffect[0] = "Slash01";
+	swordData.slashEffect[1] = "Slash01";
+	swordData.slashEffect[2] = "Slash01";
+	swordData.slashEffect[3] = "Slash01";
+
 	swordRenderData.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
 	swordRenderData.rotOffset = VGet(DX_PI_F / -2.0f, DX_PI_F / 2.0f, DX_PI_F);
@@ -305,11 +312,11 @@ void Player::Update(float dt, float cameraAngle, PhysicsManager& physics)
 	switch (equipState)
 	{
 	case EquipState::Sword:
-		sword.Update(handle, "mixamorig:RightHand", characterAngle);
+		sword.Update(handle, "mixamorig:RightHand", characterAngle, 1.0f);
 		break;
 
 	case EquipState::Gun01:
-		gun01.Update(handle, "mixamorig:RightHand", characterAngle);
+		gun01.Update(handle, "mixamorig:RightHand", characterAngle, 1.0f);
 		break;
 
 	case EquipState::Unarmed:
@@ -958,6 +965,60 @@ VECTOR Player::GetForward() const
 	forward.z = -cosf(characterAngle);
 
 	return forward;
+}
+
+void Player::PlaySlashEffect()
+{
+	// 剣を装備していなければ何もしない
+	if (equipState != EquipState::Sword)
+		return;
+
+	// 武器がなければ何もしない
+	if (!currentWeaponData)
+		return;
+
+	// === 剣先位置 ===
+	const VECTOR& root =
+		sword.GetRootPosition();
+
+	// エフェクト位置
+	VECTOR effectPos = VGet(
+		root.x,
+		root.y,
+		root.z
+	);
+
+	//// 剣の方向
+	//VECTOR bladeDir = VSub(tip, root);
+
+	//if (VSize(bladeDir) > 0.001f)
+	//{
+	//	bladeDir = VNorm(bladeDir);
+	//}
+
+	//effectPos = VAdd(
+	//	effectPos,
+	//	VScale(bladeDir, 50.0f)
+	//);
+
+	// === 回転 ===
+	VECTOR effectRot = VGet(
+		0.0f,
+		characterAngle,
+		0.0f
+	);
+
+	// コンボに対応するエフェクト名
+	std::string effectName =
+		currentWeaponData->slashEffect[comboStep];
+
+	// 再生
+	EffectManager::Instance().Play(
+		effectName,
+		effectPos,
+		effectRot,
+		1.0f
+	);
 }
 
 void Player::DebugDraw()
@@ -1802,6 +1863,19 @@ bool Player::UpdateAttack()
 		animTime >= currentWeaponData->attackStartFrame[comboStep] &&
 		animTime <= currentWeaponData->attackEndFrame[comboStep];
 
+	if (attackActive)
+	{
+		float startFrame = currentWeaponData->attackStartFrame[comboStep];
+
+		if (!slashEffectPlayed &&
+			animTime >= startFrame)
+		{
+			PlaySlashEffect();
+
+			slashEffectPlayed = true;
+		}
+	}
+
 	// ===== 次段コンボ =====
 		// キャンセル可能になったら
 	if (comboNext &&
@@ -1822,6 +1896,8 @@ bool Player::UpdateAttack()
 		comboNext = false;
 
 		attackHit = false;
+
+		slashEffectPlayed = false;
 
 		ChangeAnimation(currentWeaponData->attackAnim[comboStep], false);
 
@@ -2115,6 +2191,8 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 
 			comboStep = 0;
 			comboNext = false;
+
+			slashEffectPlayed = false;
 
 			currentState = AnimState::Attack;
 
