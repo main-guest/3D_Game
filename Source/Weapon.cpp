@@ -157,29 +157,37 @@ void Weapon::Draw()
 	MV1DrawModel(handle);
 }
 
-//VECTOR Weapon::GetBladeDirection() const
-//{
-//	VECTOR dir = VSub(tipPos, rootPos);
-//
-//	if (VSize(dir) < 0.001f)
-//	{
-//		return VGet(0.0f, 1.0f, 0.0f);
-//	}
-//
-//	return VNorm(dir);
-//}
-//
-//VECTOR Weapon::GetSwingDirection() const
-//{
-//	VECTOR dir = VSub(tipPos, prevTipPos);
-//
-//	if (VSize(dir) < 0.0001f)
-//	{
-//		return VGet(0.0f, 0.0f, 1.0f);
-//	}
-//
-//	return VNorm(dir);
-//}
+VECTOR Weapon::GetMuzzlePosition(const VECTOR& offset) const
+{
+	// 銃口方向を180度反転
+	MATRIX rotMat = MGetRotY(DX_PI_F);
+
+	// オフセットを180度回転
+	VECTOR rotOffset = VTransform(offset, rotMat);
+
+	// 武器のワールド座標へ変換
+	return VTransform(rotOffset, worldMatrix);
+}
+
+VECTOR Weapon::GetMuzzleDirection() const
+{
+	// 武器のローカルZ軸を前方向とする
+	VECTOR dir = VGet(
+		worldMatrix.m[2][0],
+		worldMatrix.m[2][1],
+		worldMatrix.m[2][2]
+	);
+
+	// 正規化
+	float length = VSize(dir);
+
+	if (length > 0.0001f)
+	{
+		dir = VScale(dir, 1.0f / length);
+	}
+
+	return dir;
+}
 
 void Weapon::SetRenderData(const WeaponRenderData& d)
 {

@@ -42,11 +42,9 @@ public:
 		return prevTipPos;
 	}
 
-	//// 剣そのものが向いている方向
-	//VECTOR GetBladeDirection() const;
+	VECTOR GetMuzzlePosition(const VECTOR& offset) const;
 
-	//// 前フレーム → 現在フレームの剣先移動方向
-	//VECTOR GetSwingDirection() const;
+	VECTOR GetMuzzleDirection() const;
 
 	const VECTOR& GetDebugPos()const
 	{
@@ -78,6 +76,9 @@ private:
 
 	// 剣先位置
 	const float BLADE_LENGTH = 150.0f;
+
+	// 銃口位置
+	VECTOR muzzleOffset = VGet(0, 0, 0);
 
 	WeaponRenderData renderData;
 

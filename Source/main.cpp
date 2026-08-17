@@ -54,8 +54,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	fog.Init();
 
 	EffectManager::Instance().Init();
-
+	
+	// エフェクト読み込み
 	EffectManager::Instance().Load("Slash01", "Assets/Effect/Sword/efk/Slash01.efk", 5.0f);
+	EffectManager::Instance().Load("GunShot", "Assets/Effect/Gun/efk/Player_Shot.efk", 5.0f);
 
 	// ===== deltaTime用 =====
 	LONGLONG prevTime = GetNowHiPerformanceCount();

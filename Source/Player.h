@@ -121,7 +121,10 @@ public:
 	}
 
 	// エフェクト
+	void PlayAttackEffect();
+
 	void PlaySlashEffect();
+	void PlayGunEffect();
 
 	void DebugDraw();
 	void DrawCapsuleDebug(std::vector<std::unique_ptr<Enemy>>& enemies);
@@ -339,5 +342,5 @@ private:
 	float lockOnDistance = 800.0f;
 
 	// エフェクト用フラグ
-	bool slashEffectPlayed = false;
+	bool attackEffectPlayed = false;
 };

@@ -26,6 +26,9 @@ struct BaseWeaponData
 	// 攻撃位置補正
 	VECTOR attackOffset = VGet(0, 0, 0);
 
+	// 銃口位置補正
+	VECTOR muzzleOffset = VGet(0, 0, 0);
+
 	// 武器追従判定
 	bool followAttack = false;
 
@@ -63,6 +66,11 @@ struct BaseWeaponData
 
 	// ===== ダッシュ =====
 	int dashAnim = -1;
+
+	// ===== エフェクト =====
+	std::string attackEffect[MaxCombo];
+
+	float effectStartFrame[MaxCombo]{};
 };
 
 struct WeaponData : public BaseWeaponData
@@ -92,9 +100,6 @@ struct WeaponData : public BaseWeaponData
 	float comboCancelFrame[MaxCombo]{};
 
 	float staminaCost = 20.0f;
-
-	// ===== エフェクト =====
-	std::string slashEffect[MaxCombo];
 };
 
 struct EnemyWeaponData : public BaseWeaponData

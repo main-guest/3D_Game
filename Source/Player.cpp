@@ -202,10 +202,15 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	swordData.followAttack = true;
 
 	// Effect
-	swordData.slashEffect[0] = "Slash01";
-	swordData.slashEffect[1] = "Slash01";
-	swordData.slashEffect[2] = "Slash01";
-	swordData.slashEffect[3] = "Slash01";
+	swordData.attackEffect[0] = "Slash01";
+	swordData.attackEffect[1] = "Slash01";
+	swordData.attackEffect[2] = "Slash01";
+	swordData.attackEffect[3] = "Slash01";
+
+	swordData.effectStartFrame[0] = 30.0f;
+	swordData.effectStartFrame[1] = 3.0f;
+	swordData.effectStartFrame[2] = 41.0f;
+	swordData.effectStartFrame[3] = 46.0f;
 
 	swordRenderData.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
@@ -240,6 +245,10 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 		gun01Data.comboAcceptEndFrame[i] = 0.0f;
 
 		gun01Data.comboCancelFrame[i] = 0.0f;
+
+		gun01Data.effectStartFrame[i] = 16.0f;
+
+		gun01Data.attackEffect[i] = "GunShot";
 	}
 
 	gun01Data.comboCount = 1;
@@ -254,6 +263,9 @@ void Player::Init(CollisionWorld* w, Stage* s, Camera* c)
 	gun01Data.attackOffset = VGet(0, 115, 0);
 
 	gun01Data.followAttack = false;
+
+	// 銃口位置補正
+	gun01Data.muzzleOffset = VGet(0.0f, 0.0f, 10.0f);
 
 	gun01RenderData.posOffset = VGet(0.0f, 0.0f, 0.0f);
 
@@ -967,13 +979,35 @@ VECTOR Player::GetForward() const
 	return forward;
 }
 
+void Player::PlayAttackEffect()
+{
+	// 武器を装備していなければ何もしない
+	if (!currentWeaponData)
+		return;
+
+	switch (equipState)
+	{
+		// 剣
+	case EquipState::Sword:
+		PlaySlashEffect();
+		break;
+
+		// 銃
+	case EquipState::Gun01:
+		PlayGunEffect();
+		break;
+
+	default:
+		break;
+	}
+}
+
 void Player::PlaySlashEffect()
 {
 	// 剣を装備していなければ何もしない
 	if (equipState != EquipState::Sword)
 		return;
 
-	// 武器がなければ何もしない
 	if (!currentWeaponData)
 		return;
 
@@ -988,19 +1022,6 @@ void Player::PlaySlashEffect()
 		root.z
 	);
 
-	//// 剣の方向
-	//VECTOR bladeDir = VSub(tip, root);
-
-	//if (VSize(bladeDir) > 0.001f)
-	//{
-	//	bladeDir = VNorm(bladeDir);
-	//}
-
-	//effectPos = VAdd(
-	//	effectPos,
-	//	VScale(bladeDir, 50.0f)
-	//);
-
 	// === 回転 ===
 	VECTOR effectRot = VGet(
 		0.0f,
@@ -1010,13 +1031,36 @@ void Player::PlaySlashEffect()
 
 	// コンボに対応するエフェクト名
 	std::string effectName =
-		currentWeaponData->slashEffect[comboStep];
+		currentWeaponData->attackEffect[comboStep];
 
 	// 再生
 	EffectManager::Instance().Play(
 		effectName,
 		effectPos,
 		effectRot,
+		1.0f
+	);
+}
+
+void Player::PlayGunEffect()
+{
+	//	銃を装備していなければ何もしない
+	if (equipState != EquipState::Gun01)
+		return;
+
+	if (!currentWeaponData)
+		return;
+
+	VECTOR muzzlePos =
+		gun01.GetMuzzlePosition(currentWeaponData->muzzleOffset);
+
+	std::string effectName =
+		currentWeaponData->attackEffect[comboStep];
+
+	EffectManager::Instance().Play(
+		effectName,
+		muzzlePos,
+		VGet(0.0f, characterAngle, 0.0f),
 		1.0f
 	);
 }
@@ -1863,17 +1907,13 @@ bool Player::UpdateAttack()
 		animTime >= currentWeaponData->attackStartFrame[comboStep] &&
 		animTime <= currentWeaponData->attackEndFrame[comboStep];
 
-	if (attackActive)
+	// ===== 攻撃エフェクト =====
+	if (!attackEffectPlayed &&
+		animTime >= currentWeaponData->effectStartFrame[comboStep])
 	{
-		float startFrame = currentWeaponData->attackStartFrame[comboStep];
+		PlayAttackEffect();
 
-		if (!slashEffectPlayed &&
-			animTime >= startFrame)
-		{
-			PlaySlashEffect();
-
-			slashEffectPlayed = true;
-		}
+		attackEffectPlayed = true;
 	}
 
 	// ===== 次段コンボ =====
@@ -1897,7 +1937,7 @@ bool Player::UpdateAttack()
 
 		attackHit = false;
 
-		slashEffectPlayed = false;
+		attackEffectPlayed = false;
 
 		ChangeAnimation(currentWeaponData->attackAnim[comboStep], false);
 
@@ -2192,7 +2232,7 @@ void Player::UpdateInput(float dt, float cameraAngle, std::vector<std::unique_pt
 			comboStep = 0;
 			comboNext = false;
 
-			slashEffectPlayed = false;
+			attackEffectPlayed = false;
 
 			currentState = AnimState::Attack;
 
